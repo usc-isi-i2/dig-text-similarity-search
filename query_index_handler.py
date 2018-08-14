@@ -69,12 +69,17 @@ class Collector(Base):
 
     @staticmethod
     def initialize_sent_dicts(doc_list: List[dict],
+                              new_schema: bool = True,
                               id_joiner: str = "|::|"
                               ) -> List[dict]:
 
         sent_dict_batch = list()
         for doc in doc_list:
-            for j, sent in enumerate(doc["lexisnexis"]["split_doc_description"]):
+            if new_schema:
+                doc_sent_schema = doc["split_sentences"]
+            else:
+                doc_sent_schema = doc["lexisnexis"]["split_doc_description"]
+            for j, sent in enumerate(doc_sent_schema):
                 sent_dict = dict()
                 sent_dict["doc_id"] = doc["doc_id"]
                 sent_dict["text"] = sent

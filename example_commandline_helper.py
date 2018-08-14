@@ -7,15 +7,15 @@ from query_index_handler import Collector
 
 # TODO: Change paths as necessary
 cwd = os.getcwd()
-file1 = os.path.join(cwd, "/data/testing/1-first-10K-split.jl")
-file2 = os.path.join(cwd, "/data/testing/2-first-10K-split.jl")
-file3 = os.path.join(cwd, "/data/testing/3-first-10K-split.jl")
+file1 = os.path.join(cwd, "data/testing/1-first-10K-split.jl")
+file2 = os.path.join(cwd, "data/testing/2-first-10K-split.jl")
+file3 = os.path.join(cwd, "data/testing/3-first-10K-split.jl")
 
 docs = load_docs(file1)
 docs.extend(load_docs(file2))
 docs.extend(load_docs(file3))
 
-index_dir = os.path.join(cwd, "/saved_indexes")
+index_dir = os.path.join(cwd, "saved_indexes")
 base_idx = "IVF4096Flat.index"
 grand_idx = "PCAR256IVF4096SQ8.index"
 grand_puba_idx = "OPQ64_192IVF4096SQ8.index"

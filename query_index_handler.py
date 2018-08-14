@@ -47,9 +47,7 @@ class Collector(Base):
             self._index_vector_map = dict()
         return self._index_vector_map
 
-    def add_to_index_map(self,
-                         new_addition_map: dict
-                         ) -> None:
+    def add_to_index_map(self, new_addition_map: dict) -> None:
 
         for sent_id, idx_row in new_addition_map.items():
             try:
@@ -57,8 +55,8 @@ class Collector(Base):
                     "Duplicate vector detected"
                 self.index_vector_map[idx_row] = sent_id
             except AssertionError:
-                print("Row {} is already occupied by {}".format(sent_id,
-                                        self.index_vector_map[idx_row]))
+                print("Row {} is already occupied by "
+                      "{}".format(sent_id, self.index_vector_map[idx_row]))
 
     @property
     def sentence_dicts(self) -> List[dict]:
@@ -66,10 +64,7 @@ class Collector(Base):
             self._sent_dicts = list()
         return self._sent_dicts
 
-    def extend_sentence_dicts(self,
-                              new_sent_dicts: List[dict]
-                              ) -> None:
-
+    def extend_sentence_dicts(self, new_sent_dicts: List[dict]) -> None:
         self.sentence_dicts.extend(new_sent_dicts)
 
     @staticmethod
@@ -81,7 +76,6 @@ class Collector(Base):
         for doc in doc_list:
             for j, sent in enumerate(doc["lexisnexis"]["split_doc_description"]):
                 sent_dict = dict()
-
                 sent_dict["doc_id"] = doc["doc_id"]
                 sent_dict["text"] = sent
                 sent_dict["tag"] = id_joiner.join([doc["doc_id"], str(j)])
@@ -113,9 +107,7 @@ class Collector(Base):
         dataset = tf.data.Dataset.from_tensor_slices(batched_tensors)
         return dataset.make_one_shot_iterator()
 
-    def make_vectors(self,
-                     dataset: tf.data.Iterator
-                     ) -> List[tf.Tensor]:
+    def make_vectors(self, dataset: tf.data.Iterator) -> List[tf.Tensor]:
 
         make_embeddings = self.model(dataset.get_next())
         embeddings = list()
@@ -139,6 +131,7 @@ class Collector(Base):
 
             for vector in batch:
                 if len(partial_sent_dicts) == 0:
+                    # Skips "" padding in final minibatch
                     break
                 sent_dict = partial_sent_dicts.pop(0)
                 sent_dict["emb"] = vector
@@ -165,30 +158,40 @@ class Collector(Base):
                      start_from_base: bool = False
                      ) -> None:
 
+        # Option to switch indexes
         if start_from_base:
             self.set_grand_index(self.base_index)
 
+        # Prepare sentences for vectorization with TF
         init_sent_dicts = self.initialize_sent_dicts(docs_to_add)
         tensor_str_iter = self.batch_to_dataset(init_sent_dicts)
 
+        # Efficiently compute many sentence vectors at once
         self.activate_batch_mode()
         vector_tensors = self.make_vectors(tensor_str_iter)
 
+        # TODO: Save fully populated sent_dicts to disk for Index reconstruction
         sent_dicts = self.tensors_to_list(embedding_tensors=vector_tensors,
                                           partial_sent_dicts=init_sent_dicts)
-        self.extend_sentence_dicts(sent_dicts)
+        # Vector tracking / housekeeping
+        self.extend_sentence_dicts(sent_dicts)  # TODO: Handle on disk
 
+        # Prepare vectors for faiss.Index
         vectors, idx_vec_map = self.format_vectors(complete_sent_dicts=sent_dicts,
                                                    offset=self.grand_index.ntotal)
+        # Vector tracking / housekeeping
+        self.add_to_index_map(idx_vec_map)  # TODO: Handle on disk
 
-        self.add_to_index_map(idx_vec_map)
+        # Finally, append freshly computed vectors to faiss.Index
         self.grand_index.add(vectors)
 
+    # Note: Call self.activate_query_mode() before this for fastest results
     def query_index(self,
                     query: str,
                     search_k: int = 5000
                     ) -> List[dict]:
 
+        # Vectorize query
         query_vector = self.str_to_vector(query)
         Sim, Idx = self.grand_index.search(query_vector, k=search_k)
 
@@ -200,40 +203,52 @@ class Collector(Base):
                        id_joiner: str = "|::|"
                        ) -> List[dict]:
 
+        # Link Idx (row in faiss.Index) back to corresponding doc
         intermediate_results = list()
         for Sim, Idx in zip(list(similarity_scores.tolist())[0],
                             list(index_indices.tolist())[0]):
             try:
                 tag = self.index_vector_map[Idx]
-                each_result = dict()
-                each_result["sim"] = Sim
-                each_result["tag"] = tag
-                each_result["doc_id"] = tag.split(id_joiner)[0]
-                each_result["sent_num"] = tag.split(id_joiner)[1]
+                [doc_id, sent_num] = tag.split(id_joiner)
+                one_result = dict()
+                one_result["sim"] = Sim
+                one_result["tag"] = tag
+                one_result["doc_id"] = doc_id
+                one_result["sent_num"] = sent_num
                 for sent_dict in self.sentence_dicts:
-                    if each_result["tag"] == sent_dict["tag"]:
-                        each_result["text"] = sent_dict["text"]
-                        intermediate_results.append(each_result)
+                    if one_result["tag"] == sent_dict["tag"]:
+                        one_result["text"] = sent_dict["text"]
+                        intermediate_results.append(one_result)
             except KeyError:
                 continue
 
+        # Format results by document
         final_docs = list()
         for ranked_result in intermediate_results:
             ranked_doc = dict()
             ranked_doc["doc_id"] = ranked_result["doc_id"]
+            ranked_doc["max_score"] = 0
             ranked_doc["sentences"] = list()
             if not any(ranked_doc["doc_id"] in doc["doc_id"]
                        for doc in final_docs):
                 final_docs.append(ranked_doc)
 
+        # Group sentences from the same document
         for ranked_doc in final_docs:
             for ranked_result in intermediate_results:
-                this_result = dict()
+                this_result = dict()    # One result for every matched sentence
                 if ranked_doc["doc_id"] == ranked_result["doc_id"]:
                     this_result["sim"] = ranked_result["sim"]
                     this_result["text"] = ranked_result["text"]
                     this_result["sent_num"] = ranked_result["sent_num"]
+                    if ranked_doc["max_score"] < ranked_result["sim"]:
+                        ranked_doc["max_score"] = ranked_result["sim"]
                 if len(this_result) > 0:
                     ranked_doc["sentences"].append(this_result)
 
-        return list(final_docs)
+        # Order final_doc_rankings by descending max_score
+        final_doc_rankings = sorted(final_docs,
+                                    reverse=True,
+                                    key=lambda k: k["max_score"])
+
+        return final_doc_rankings

@@ -70,15 +70,15 @@ class HBaseAdapter(object):
 
 
 if __name__ == '__main__':
-    # hb = HBaseAdapter('localhost')
+    hb = HBaseAdapter('localhost')
     # # hb.insert_record('sentences', '45', '333', 'sentence_id', 'id')
     # # print(hb.get_record('23', 'sentences'))
     # # print(hb.get_record('45', 'sentences'))
-    # hb.create_table('test', family_name='tested')
-    # hb.insert_record('test', '3', 'dfr', 'tested', 't')
-    # hb.insert_record('test', '3', 'dfr_text', 'tested', 'text')
-    # r =hb.get_record('3', 'test')
-    # print(r)
+    hb.create_table('test', family_name='tested')
+    hb.insert_record('test', '3', 'dfr', 'tested', 't')
+    hb.insert_record('test', '3', 'dfr_text', 'tested', 'text')
+    r =hb.get_record('3', 'test')
+    print(r)
     # print(r[b'tested:t'].decode('utf-8'))
     # # tables = hb._conn.client.getTableNames()
     # # t = 'test'

@@ -80,8 +80,8 @@ class DocumentProcessor(object):
         faiss_ids = self.vectorize_sentences(sentences)
         # ASSUMPTION: returned vector ids are in the same order as the initial sentence order
         for s, f in zip(sentence_tuples, faiss_ids):
-            self.add_record_hbase(s[0], f, _SENTENCE_ID)
-            self.add_record_hbase(s[0], s[1], _SENTENCE_TEXT)
+            self.add_record_hbase(f, s[0], _SENTENCE_ID)
+            self.add_record_hbase(f, s[1], _SENTENCE_TEXT)
 
     def vectorize_sentences(self, sentences):
         """

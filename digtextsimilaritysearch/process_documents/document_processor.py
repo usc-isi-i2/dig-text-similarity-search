@@ -18,7 +18,7 @@ class DocumentProcessor(object):
         if not bytes(self.hbase_table, encoding='utf-8') in self.hbase_adapter.tables():
             self.hbase_adapter.create_table(self.hbase_table, family_name=self.hbase_column_family)
 
-    def add_record_hbase(self, id, value, column_name):
+    def add_record_hbase(self, id, data):
         """
         Function to add id and value into hbase
         :param id: id at which the value will be added in the hbase table
@@ -26,7 +26,8 @@ class DocumentProcessor(object):
         :param column_name: column name in hbase table where value should be interested
         :return:
         """
-        self.hbase_adapter.insert_record(self.hbase_table, id, value, self.hbase_column_family, column_name)
+
+        self.hbase_adapter.insert_record_data(self.hbase_table, id, data)
 
     def get_record_hbase(self, id, column_names=[_SENTENCE_ID, _SENTENCE_TEXT]):
         """
@@ -80,8 +81,10 @@ class DocumentProcessor(object):
         faiss_ids = self.vectorize_sentences(sentences)
         # ASSUMPTION: returned vector ids are in the same order as the initial sentence order
         for s, f in zip(sentence_tuples, faiss_ids):
-            self.add_record_hbase(f, s[0], _SENTENCE_ID)
-            self.add_record_hbase(f, s[1], _SENTENCE_TEXT)
+            data = {}
+            data['{}:{}'.format(self.hbase_column_family, _SENTENCE_ID)] = s[0]
+            data['{}:{}'.format(self.hbase_column_family, _SENTENCE_TEXT)] = s[1]
+            self.add_record_hbase(f, data)
 
     def vectorize_sentences(self, sentences):
         """

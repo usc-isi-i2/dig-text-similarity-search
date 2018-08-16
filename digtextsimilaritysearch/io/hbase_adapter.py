@@ -51,6 +51,12 @@ class HBaseAdapter(object):
             return table.put(record_id, {'{}:{}'.format(column_family, column_name): value})
         raise Exception('table: {} not found'.format(table_name))
 
+    def insert_record_data(self, table_name, record_id, data):
+        table = self.get_table(table_name)
+        if table:
+            return table.put(record_id, data)
+        raise Exception('table: {} not found'.format(table_name))
+
     def __iter__(self, table_name):
         return self.__next__(table_name)
 

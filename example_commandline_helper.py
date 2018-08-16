@@ -23,9 +23,10 @@ grand_puba_idx = "OPQ64_192IVF4096SQ8.index"
 # TODO: Run following command to specify permanent model location
 # $ export TFHUB_CACHE_DIR=/path/to/save/model/in/dir
 tf_model = ".../choose/your/path/wisely"
-# Note: There is a larger version of the Universal Sentence Encoder
-# at "https://www.tensorflow.org/hub/modules/google/universal-sentence-encoder-large/3"
-# (with a different embedding space, so vectors/indices need to be recalculated)
+# Note: There is a larger version of the Universal Sentence Encoder at
+#       "https://tfhub.dev/google/universal-sentence-encoder-large/3"
+# (The large module has a different embedding space than the normal module,
+#  so vectors at query time need to be consistent with the Indexed vectors)
 
 
 collector = Collector(path_to_index_dir=index_dir,

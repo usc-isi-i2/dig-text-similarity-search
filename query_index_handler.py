@@ -3,6 +3,7 @@ import os
 import numpy as np
 import tensorflow as tf
 
+from time import time
 from typing import List
 from base_index_handler import Base
 
@@ -81,9 +82,9 @@ class Collector(Base):
                 doc_sent_schema = doc["lexisnexis"]["split_doc_description"]
             for j, sent in enumerate(doc_sent_schema):
                 sent_dict = dict()
-                sent_dict["doc_id"] = doc["doc_id"]
-                sent_dict["text"] = sent
                 sent_dict["tag"] = id_joiner.join([doc["doc_id"], str(j)])
+                sent_dict["text"] = sent
+                sent_dict["doc_id"] = doc["doc_id"]
                 sent_dict["emb"] = None
                 sent_dict_batch.append(sent_dict)
 
@@ -91,7 +92,7 @@ class Collector(Base):
 
     @staticmethod
     def batch_to_dataset(sent_dict_batch: List[dict],
-                         batch_size: int = 50
+                         batch_size: int = 500
                          ) -> tf.data.Iterator:
 
         batched_tensors = list()
@@ -112,13 +113,27 @@ class Collector(Base):
         dataset = tf.data.Dataset.from_tensor_slices(batched_tensors)
         return dataset.make_one_shot_iterator()
 
-    def make_vectors(self, dataset: tf.data.Iterator) -> List[tf.Tensor]:
+    def make_vectors(self,
+                     dataset: tf.data.Iterator,
+                     print_activity: bool = False
+                     ) -> List[tf.Tensor]:
 
         make_embeddings = self.model(dataset.get_next())
+
+        self.activate_batch_mode()
+
+        i = 0
+        t0 = time()
         embeddings = list()
         while True:
             try:
                 embeddings.append(self.sess.run(make_embeddings))
+
+                i += 500
+                if print_activity and i % 100000 == 0:
+                    print("    {} sentences processed "
+                          "in {}s".format(i, time()-t0))
+
             except tf.errors.OutOfRangeError:
                 self.close_sess()
                 break
@@ -172,7 +187,6 @@ class Collector(Base):
         tensor_str_iter = self.batch_to_dataset(init_sent_dicts)
 
         # Efficiently compute many sentence vectors at once
-        self.activate_batch_mode()
         vector_tensors = self.make_vectors(tensor_str_iter)
 
         # TODO: Save fully populated sent_dicts to disk for Index reconstruction

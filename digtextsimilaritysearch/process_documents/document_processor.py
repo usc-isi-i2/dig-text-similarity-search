@@ -11,7 +11,8 @@ class DocumentProcessor(object):
         self.hbase_adapter = hbase_adapter
         self.hbase_table = hbase_table
         self.hbase_column_family = hbase_column_family
-        self._configure()
+        if self.hbase_adapter:
+            self._configure()
 
     def _configure(self):
         # create hbase table if it doesn't exist

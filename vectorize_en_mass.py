@@ -34,9 +34,7 @@ def main(start=0, end=-1):
     dummy_index_dir = os.path.join(cwd, "saved_indexes")
     dummy_index_name = "IVF4096Flat.index"
 
-    model_path = "/Users/ljferrer/PycharmProjects" \
-                 "/Information-Search-Implementation" \
-                 "/models/96e8f1d3d4d90ce86b2db128249eb8143a91db73"
+    model_path = "https://tfhub.dev/google/universal-sentence-encoder/2"
 
     Q = Collector(path_to_index_dir=dummy_index_dir,
                   base_index_name=dummy_index_name,
@@ -48,7 +46,7 @@ def main(start=0, end=-1):
         files.extend(filenames)
         break
 
-    files.sort()
+    files.sort(reverse=True)
     print("Files to vectorize {}".format(files[start:end]))
 
     # Execute
@@ -94,4 +92,4 @@ def main(start=0, end=-1):
 
 
 if __name__ == "__main__":
-    main(end=3)
+    main()

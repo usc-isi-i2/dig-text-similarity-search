@@ -8,6 +8,32 @@ from doc_loader import load_docs
 from query_index_handler import Collector
 
 
+"""
+This script is intended for testing vectorization of large batches of news 
+articles, sentence by sentence, with TensorFlow's Universal Sentence Encoder.
+
+- It uses the Collector class to vectorize sentences
+    - The Collector needs a saved faiss.Index for base_index_name/grand_index_name, 
+      but these indexes will not be used (hence the name 'dummy_index_name')
+    - The Dataset object created for the TF Session loads all sentences from a 
+      day's worth of documents into memory at once. In the future, this should be 
+      a generator function. 
+- Every sentence that is vectorized is placed into a dict containing:
+    { 'tag': doc_id|::|sent_num, 'doc_id': doc_id,  <-- (doc_id is redundant)
+      'text': sentence_string, 
+      'emb': list(np.array) } 
+    - At present, these dicts are saved in JSON format in a large .json file, 
+      with one sent_dict in each line
+        - This is a very inefficient way to save numpy arrays
+        - The current save method will keep each dict in memory while saving 
+          AND the growing JSON file in memory at the same time
+        - GIL writes each line in the JSON one dict at a time
+    - Usually crashes during the save step (depending on the number of sentence dicts)
+
+(8-20-2018)
+"""
+
+
 def save_sent_dicts(save_these: List[dict], save_in: os.path, fname: str) -> None:
 
     if not fname.endswith(".json"):

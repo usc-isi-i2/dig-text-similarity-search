@@ -2,6 +2,7 @@ import sys
 
 sys.path.append('../')
 from vectorizer.batch_vectorizer import BatchVectorizer
+from indexer.faiss_indexer import FaissIndexer
 
 _SENTENCE_ID = 'sentence_id'
 _SENTENCE_TEXT = 'sentence_text'
@@ -119,13 +120,30 @@ class DocumentProcessor(object):
 if __name__ == "__main__":
     import json
 
-    docs = [json.loads(x) for x in open(
-        '/Users/amandeep/Github/dig-text-similarity-search/digtextsimilaritysearch/unit_tests/resources/news_sample.jl')]
-    print('Loaded docs: {}'.format(len(docs)))
+    # docs = [json.loads(x) for x in open('/Users/amandeep/Github/dig-text-similarity-search/digtextsimilaritysearch/unit_tests/resources/new_2018-08-08.jl')]
+    # print('Loaded docs: {}'.format(len(docs)))
     batch_vectorizer = BatchVectorizer()
-    dp = DocumentProcessor(None, batch_vectorizer, None, None)
-    sentences = dp.preprocess_documents(docs)
-    print(len(sentences))
-    s1_texts = [s[1] for s in sentences]
-    vectors = dp.batch_vectorizer.make_vectors(s1_texts)
-    print(vectors)
+    # fi = FaissIndexer()
+    # dp = DocumentProcessor(fi, batch_vectorizer, None, None)
+    import numpy as np
+    # sentences = dp.preprocess_documents(docs)
+    # print(len(sentences))
+    # s1_texts = [s[1] for s in sentences]
+    # vectors = dp.batch_vectorizer.make_vectors(s1_texts)
+    fi = FaissIndexer(path_to_index_file='/tmp/faiss.index')
+    # ids = fi.index_embeddings(vectors)
+    import time
+    s = time.time()
+    query_vector = batch_vectorizer.make_vectors(["what is the moving annual return?"])
+    v_time = time.time() - s
+    print('time spent vectorizing: {}'.format(v_time))
+    v_time = time.time()
+    r,idx = fi.faiss_index.search(query_vector, k=1)
+    print(r, idx)
+    print('time spent querying: {}'.format(time.time()- v_time))
+    # print(s1_texts[idx[0][0]])
+    #
+    # r1, idx1 = fi.faiss_index.search(batch_vectorizer.make_vectors([s1_texts[0]]), k=1)
+    # print(r1, idx1)
+    # print(s1_texts[0])
+

@@ -18,23 +18,17 @@ class BatchVectorizer(object):
                           tf.tables_initializer()])
 
     def make_vectors(self, sentences) -> List[tf.Tensor]:
-
         batched_tensors = list()
         batched_tensors.append(tf.constant(sentences, dtype=tf.string))
 
         dataset = tf.data.Dataset.from_tensor_slices(batched_tensors).make_one_shot_iterator()
 
         make_embeddings = self.model(dataset.get_next())
-        embeddings = list()
 
-        try:
-            embeddings.append(self.session.run(make_embeddings))
+        return self.session.run(make_embeddings)
 
-        except tf.errors.OutOfRangeError:
-            self.session.close()
-            pass
-
-        return embeddings
+    def close_session(self):
+        self.session.close()
 
     @staticmethod
     def save_vectors(embeddings: List[tf.Tensor], sentences: List[str], file_path):

@@ -1,3 +1,4 @@
+import numpy as np
 import tensorflow as tf
 import tensorflow_hub as hub
 from typing import List
@@ -12,7 +13,7 @@ class BatchVectorizer(object):
         self.batch_mode = tf.constant(batch_mode, dtype=tf.bool)
 
         self.session = tf.Session()
-        print("Initializing TF Session...")
+        print('Initializing TF Session...')
         self.session.run([tf.global_variables_initializer(),
                           tf.tables_initializer()])
 
@@ -34,3 +35,42 @@ class BatchVectorizer(object):
             pass
 
         return embeddings
+
+    @staticmethod
+    def save_vectors(embeddings: List[tf.Tensor],
+                     sentences: List[str],
+                     file_path):
+        """
+        Converts embedding tensors and corresponding list of sentences into np.arrays,
+        then saves both arrays in the same compressed .npz file
+
+        Note: .npz will be appended to file_path automatically
+
+        :param embeddings: List of tensors made from sentences
+        :param sentences: List of corresponding sentences
+        :param file_path: /full/path/to/file_name
+        :return: Writes zipped archive to disk
+        """
+
+        embeddings = np.array(embeddings, dtype=np.float32)
+        sentences = np.array(sentences, dtype=object)
+
+        np.savez_compressed(file=file_path, embeddings=embeddings, sentences=sentences)
+
+    @staticmethod
+    def load_vectors(file_path):
+        """
+        Loads zipped archive containing embeddings and sentences as two separate np.arrays
+
+        :param file_path: /full/path/to/file_name.npz
+        :return: embeddings and sentences as separate np.arrays
+        """
+
+        if not file_path.endswith('.npz'):
+            file_path += '.npz'
+
+        loaded = np.load(file=file_path)
+        embeddings = loaded['embeddings']
+        sentences = loaded['sentences']
+
+        return embeddings, sentences

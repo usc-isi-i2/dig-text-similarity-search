@@ -1,3 +1,8 @@
+import sys
+
+sys.path.append('../')
+from vectorizer.batch_vectorizer import BatchVectorizer
+
 _SENTENCE_ID = 'sentence_id'
 _SENTENCE_TEXT = 'sentence_text'
 
@@ -93,8 +98,7 @@ class DocumentProcessor(object):
         :param sentences:
         :return:
         """
-        # TODO: implement this
-        return []
+        return self.batch_vectorizer.make_vectors(sentences)
 
     def query_text(self, str_query):
         similar_docs = []
@@ -110,3 +114,18 @@ class DocumentProcessor(object):
                 out['sentence'] = sentence_info[_SENTENCE_TEXT]
                 similar_docs.append(out)
         return similar_docs
+
+
+if __name__ == "__main__":
+    import json
+
+    docs = [json.loads(x) for x in open(
+        '/Users/amandeep/Github/dig-text-similarity-search/digtextsimilaritysearch/unit_tests/resources/news_sample.jl')]
+    print('Loaded docs: {}'.format(len(docs)))
+    batch_vectorizer = BatchVectorizer()
+    dp = DocumentProcessor(None, batch_vectorizer, None, None)
+    sentences = dp.preprocess_documents(docs)
+    print(len(sentences))
+    s1_texts = [s[1] for s in sentences]
+    vectors = dp.batch_vectorizer.make_vectors(s1_texts)
+    print(vectors)

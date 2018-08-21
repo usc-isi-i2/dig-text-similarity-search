@@ -2,9 +2,15 @@
 
 ## Initialize virtual environment
 ```
-python3 -m venv dig_text
-source dig_text/bin/activate
-pip install -r requirements.txt
+conda env create .
+source activate dig_text_similarity
+conda install -c pytorch faiss-cpu
+source activate dig_text_similarity
+```
+
+## Deactivate virtual environment
+```
+source deactivate
 ```
 
 ## Run hbase docker (for test purposes only)

@@ -1,0 +1,10 @@
+name: dig_text_similarity
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.6
+  - pip:
+    - tensorflow
+    - tensorflow_hub
+    - happybase>=1.1.0

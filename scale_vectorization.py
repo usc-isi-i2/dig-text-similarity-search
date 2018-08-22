@@ -23,10 +23,11 @@ def get_docs(file_loc, size_of_minibatch):
         for line in fp:
             doc_minibatch.append(json.loads(line))
 
-            if len(minibatch) >= (minibatch_count * size_of_minibatch):
-                minibatch_count += 1
+            if len(doc_minibatch) >= (minibatch_count * size_of_minibatch):
                 print('\n Yielding {} docs'.format(len(doc_minibatch)))
                 yield doc_minibatch
+
+                minibatch_count += 1
                 doc_minibatch = list()
 
     print(' Returning last set of {} docs'.format(len(doc_minibatch)))
@@ -49,15 +50,19 @@ doc_col_name = doc_col_loc.split('/')[-1].split('.')[0]
 for j, minibatch in enumerate(doc_getter):
     t_0 = time()
 
+    # Preprocess and Deallocate
     sentences = dp.preprocess_documents(minibatch)
+    minibatch = None
     t_1 = time()
     print('  Preprocessed {} sentences in {}s'.format(len(sentences), t_1-t_0))
 
+    # Vectorize
     text = [s[1] for s in sentences]
     embeddings = dp.batch_vectorizer.make_vectors(text)
     t_2 = time()
     print('  Created {} embeddings in {}s'.format(len(embeddings), t_2-t_1))
 
+    # Occasionally Reset TF Graph
     if j % 5 == 1:
         print('\n Refreshing TF Session...')
         dp.batch_vectorizer.close_session()
@@ -65,6 +70,7 @@ for j, minibatch in enumerate(doc_getter):
         t_2 = time()
         print(' Resuming vectorization... \n')
 
+    # Save Vectors and Text
     save_name = 'vectorized_' + doc_col_name + '_' + str(j) + '.npz'
     save_loc = os.path.join(save_dir, save_name)
     dp.batch_vectorizer.save_vectors(embeddings, sentences, save_loc)

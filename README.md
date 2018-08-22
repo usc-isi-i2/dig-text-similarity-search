@@ -73,7 +73,7 @@ Ensure dig_text_similarity env is active.
 ```
 Add XLA support. Set everything else to default.
 ```
-Please specify the location of python. [Default is /anaconda3/envs/MyEnv/bin/python]: 
+Please specify the location of python. [Default is /anaconda3/envs/dig_text_similarity/bin/python]: 
 ...
 Do you wish to build TensorFlow with XLA JIT support? [y/N]: y 
 ...

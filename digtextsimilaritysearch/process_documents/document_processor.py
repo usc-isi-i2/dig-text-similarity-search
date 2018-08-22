@@ -1,9 +1,3 @@
-import sys
-
-sys.path.append('../')
-from vectorizer.batch_vectorizer import BatchVectorizer
-from indexer.faiss_indexer import FaissIndexer
-
 _SENTENCE_ID = 'sentence_id'
 _SENTENCE_TEXT = 'sentence_text'
 
@@ -91,7 +85,7 @@ class DocumentProcessor(object):
             data = {}
             data['{}:{}'.format(self.hbase_column_family, _SENTENCE_ID)] = s[0]
             data['{}:{}'.format(self.hbase_column_family, _SENTENCE_TEXT)] = s[1]
-            self.add_record_hbase(f, data)
+            self.add_record_hbase(str(f), data)
 
     def vectorize_sentences(self, sentences):
         """
@@ -99,51 +93,28 @@ class DocumentProcessor(object):
         :param sentences:
         :return:
         """
-        return self.batch_vectorizer.make_vectors(sentences)
+        vectors = self.batch_vectorizer.make_vectors(sentences)
+        return self.indexer.index_embeddings(vectors)
 
-    def query_text(self, str_query):
+    def query_text(self, str_query, k=3):
         similar_docs = []
-        results = self.indexer.search(str_query)
-        # [(faiss_id, score)]
-        for result in results:
-            id = result[0]
-            sentence_info = self.get_record_hbase(id)
+        if not isinstance(str_query, list):
+            str_query = [str_query]
+        query_vector = self.batch_vectorizer.make_vectors(str_query)
+        scores, faiss_ids = self.indexer.search(query_vector, k)
+
+        for score, faiss_id in zip(scores[0], faiss_ids[0]):
+            sentence_info = self.get_record_hbase(str(faiss_id))
             if sentence_info:
                 out = dict()
                 out['doc_id'] = sentence_info[_SENTENCE_ID].split('_')[0]
-                out['score'] = result[1]
+                out['score'] = score
                 out['sentence'] = sentence_info[_SENTENCE_TEXT]
                 similar_docs.append(out)
         return similar_docs
 
-
-if __name__ == "__main__":
-    import json
-
-    # docs = [json.loads(x) for x in open('/Users/amandeep/Github/dig-text-similarity-search/digtextsimilaritysearch/unit_tests/resources/new_2018-08-08.jl')]
-    # print('Loaded docs: {}'.format(len(docs)))
-    batch_vectorizer = BatchVectorizer()
-    # fi = FaissIndexer()
-    # dp = DocumentProcessor(fi, batch_vectorizer, None, None)
-    import numpy as np
-    # sentences = dp.preprocess_documents(docs)
-    # print(len(sentences))
-    # s1_texts = [s[1] for s in sentences]
-    # vectors = dp.batch_vectorizer.make_vectors(s1_texts)
-    fi = FaissIndexer(path_to_index_file='/tmp/faiss.index')
-    # ids = fi.index_embeddings(vectors)
-    import time
-    s = time.time()
-    query_vector = batch_vectorizer.make_vectors(["what is the moving annual return?"])
-    v_time = time.time() - s
-    print('time spent vectorizing: {}'.format(v_time))
-    v_time = time.time()
-    r,idx = fi.faiss_index.search(query_vector, k=1)
-    print(r, idx)
-    print('time spent querying: {}'.format(time.time()- v_time))
-    # print(s1_texts[idx[0][0]])
-    #
-    # r1, idx1 = fi.faiss_index.search(batch_vectorizer.make_vectors([s1_texts[0]]), k=1)
-    # print(r1, idx1)
-    # print(s1_texts[0])
-
+    def index_documents(self, cdr_docs):
+        self.add_sentences(self.preprocess_documents(cdr_docs))
+        print('Documents vectorized and indexed: {}'.format(len(cdr_docs)))
+        print('saving faiss index')
+        self.indexer.save_index('/tmp/faiss_index')

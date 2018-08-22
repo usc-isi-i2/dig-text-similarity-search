@@ -3,7 +3,8 @@ _SENTENCE_TEXT = 'sentence_text'
 
 
 class DocumentProcessor(object):
-    def __init__(self, indexer, batch_vectorizer, hbase_adapter, hbase_table='dig', hbase_column_family='dig'):
+    def __init__(self, indexer, batch_vectorizer, hbase_adapter, hbase_table='dig', hbase_column_family='dig',
+                 save_vectors=False, vector_save_path='/tmp/saved_vectors.npz'):
         self.indexer = indexer
         self.batch_vectorizer = batch_vectorizer
         self.hbase_adapter = hbase_adapter
@@ -11,6 +12,8 @@ class DocumentProcessor(object):
         self.hbase_column_family = hbase_column_family
         if self.hbase_adapter:
             self._configure()
+        self.save_vectors = save_vectors
+        self.vector_save_path = vector_save_path
 
     def _configure(self):
         # create hbase table if it doesn't exist
@@ -68,7 +71,7 @@ class DocumentProcessor(object):
                     sentences.append(('{}_{}'.format(doc_id, i), split_sentences[i]))
         return sentences
 
-    def add_sentences(self, sentence_tuples):
+    def create_vectors(self, sentence_tuples):
         """
         This function does the following steps:
           1. call vectorize_sentences to get the corresponding vector ids
@@ -77,22 +80,11 @@ class DocumentProcessor(object):
         :return: just does its job
         """
         sentences = [s[1] for s in sentence_tuples]
-        faiss_ids = self.vectorize_sentences(sentences)
-        # ASSUMPTION: returned vector ids are in the same order as the initial sentence order
-        for s, f in zip(sentence_tuples, faiss_ids):
-            data = {}
-            data['{}:{}'.format(self.hbase_column_family, _SENTENCE_ID)] = s[0]
-            data['{}:{}'.format(self.hbase_column_family, _SENTENCE_TEXT)] = s[1]
-            self.add_record_hbase(str(f), data)
-
-    def vectorize_sentences(self, sentences):
-        """
-
-        :param sentences:
-        :return:
-        """
         vectors = self.batch_vectorizer.make_vectors(sentences)
-        return self.indexer.index_embeddings(vectors)
+        if self.save_vectors:
+            self.batch_vectorizer.save_vectors(embeddings=vectors, sentences=sentence_tuples,
+                                               file_path=self.vector_save_path)
+        return vectors
 
     def query_text(self, str_query, k=3):
         similar_docs = []
@@ -111,8 +103,28 @@ class DocumentProcessor(object):
                 similar_docs.append(out)
         return similar_docs
 
-    def index_documents(self, cdr_docs):
-        self.add_sentences(self.preprocess_documents(cdr_docs))
-        print('Documents vectorized and indexed: {}'.format(len(cdr_docs)))
-        print('saving faiss index')
-        self.indexer.save_index('/tmp/faiss_index')
+    def index_documents(self, cdr_docs=None, load_vectors=False):
+
+        vectors = None
+        sentence_tuples = None
+        if load_vectors:
+            vectors, sentence_tuples = self.batch_vectorizer.load_vectors(self.vector_save_path)
+            print('Total sentences loaded from file: {}'.format(len(sentence_tuples)))
+        else:
+            if cdr_docs:
+                print('Total cdr docs to be processed: {}'.format(len(cdr_docs)))
+                sentence_tuples = self.preprocess_documents(cdr_docs)
+                vectors = self.create_vectors(sentence_tuples)
+
+        if vectors and sentence_tuples:
+            faiss_ids = self.indexer.index_embeddings(vectors)
+            # ASSUMPTION: returned vector ids are in the same order as the initial sentence order
+            for s, f in zip(sentence_tuples, faiss_ids):
+                data = {}
+                data['{}:{}'.format(self.hbase_column_family, _SENTENCE_ID)] = s[0]
+                data['{}:{}'.format(self.hbase_column_family, _SENTENCE_TEXT)] = s[1]
+                self.add_record_hbase(str(f), data)
+            print('saving faiss index')
+            self.indexer.save_index('/tmp/faiss_index')
+        else:
+            print('Either provide cdr docs or file path to load vectors')

@@ -31,7 +31,7 @@ class BatchVectorizer(object):
         self.session.close()
 
     @staticmethod
-    def save_vectors(embeddings: List[tf.Tensor], sentences: List[str], file_path):
+    def save_vectors(embeddings: List[tf.Tensor], sentences: List[object], file_path):
         """
         Converts embedding tensors and corresponding list of sentences into np.arrays,
         then saves both arrays in the same compressed .npz file

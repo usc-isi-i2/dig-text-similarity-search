@@ -3,11 +3,9 @@ _SENTENCE_TEXT = 'sentence_text'
 
 
 class DocumentProcessor(object):
-    def __init__(self, indexer, batch_vectorizer, query_vectorizer, hbase_adapter, hbase_table='dig',
-                 hbase_column_family='dig'):
+    def __init__(self, indexer, batch_vectorizer, hbase_adapter, hbase_table='dig', hbase_column_family='dig'):
         self.indexer = indexer
         self.batch_vectorizer = batch_vectorizer
-        self.query_vectorizer = query_vectorizer
         self.hbase_adapter = hbase_adapter
         self.hbase_table = hbase_table
         self.hbase_column_family = hbase_column_family

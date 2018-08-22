@@ -10,6 +10,6 @@ docs = [json.loads(x) for x in open(
 batch_vectorizer = BatchVectorizer()
 fi = FaissIndexer()
 hbase_adapter = HBaseAdapter('localhost')
-dp = DocumentProcessor(fi, batch_vectorizer, None, hbase_adapter)
+dp = DocumentProcessor(fi, batch_vectorizer, hbase_adapter)
 dp.index_documents(docs)
 print(dp.query_text("what is the moving annual return"))

@@ -6,16 +6,27 @@ from typing import List
 
 class BatchVectorizer(object):
 
-    def __init__(self, path_to_model='https://tfhub.dev/google/universal-sentence-encoder/2', batch_mode=True):
+    def __init__(self, path_to_model=None, batch_mode=True):
+        if not path_to_model:
+            path_to_model = 'https://tfhub.dev/google/universal-sentence-encoder/2'
+
         print('Loading model: {}'.format(path_to_model))
         self.model = hub.Module(path_to_model)
         print('Done loading model')
         self.batch_mode = tf.constant(batch_mode, dtype=tf.bool)
 
+        self.session = None
+        self.start_session()
+
+    def start_session(self):
         self.session = tf.Session()
         print('Initializing TF Session...')
         self.session.run([tf.global_variables_initializer(),
                           tf.tables_initializer()])
+
+    def close_session(self):
+        print('Closing TF Session...')
+        self.session.close()
 
     def make_vectors(self, sentences) -> List[tf.Tensor]:
         batched_tensors = list()
@@ -27,11 +38,8 @@ class BatchVectorizer(object):
 
         return self.session.run(make_embeddings)
 
-    def close_session(self):
-        self.session.close()
-
     @staticmethod
-    def save_vectors(embeddings: List[tf.Tensor], sentences: List[str], file_path):
+    def save_vectors(embeddings: List[tf.Tensor], sentences: List[tuple], file_path):
         """
         Converts embedding tensors and corresponding list of sentences into np.arrays,
         then saves both arrays in the same compressed .npz file

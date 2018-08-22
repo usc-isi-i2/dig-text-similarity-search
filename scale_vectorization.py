@@ -15,15 +15,15 @@ def get_docs(file_loc, size_of_minibatch):
     doc_minibatch = list()
 
     with open(file_loc, 'r') as fp:
-        for i_count, line in enumerate(fp):
+        for i_count, _ in enumerate(fp):
             pass
     print('There are {} docs in {}'.format(i_count, file_loc))
 
     with open(file_loc, 'r') as fp:
-        for i, line in enumerate(fp):
+        for line in fp:
             doc_minibatch.append(json.loads(line))
 
-            if i >= (minibatch_count * size_of_minibatch):
+            if len(minibatch) >= (minibatch_count * size_of_minibatch):
                 minibatch_count += 1
                 print('\n Yielding {} docs'.format(len(doc_minibatch)))
                 yield doc_minibatch
@@ -62,6 +62,7 @@ for j, minibatch in enumerate(doc_getter):
         print('\n Refreshing TF Session...')
         dp.batch_vectorizer.close_session()
         dp.batch_vectorizer.start_session()
+        t_2 = time()
         print(' Resuming vectorization... \n')
 
     save_name = 'vectorized_' + doc_col_name + '_' + str(j) + '.npz'

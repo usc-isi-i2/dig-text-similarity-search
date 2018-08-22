@@ -42,3 +42,39 @@ This script uses specific methods from the Collector class.
 It reads cdr_docs with a "split_sentences" field, calculates the 
 vector embedding for each sentence, and saves each sent_dict as 
 json.dumps() in a large .json, line-by-line.
+
+### Installing TensorFlow from Source (for CPU)
+TF Docs: https://www.tensorflow.org/install/install_sources <br />
+
+Setup: <br/>
+```$ bazel version``` <br/>
+```$ brew install bazel``` (if no bazel installed) <br/>
+```$ brew upgrade bazel``` <br/>
+```$ source activate MyEnv``` <br/>
+```$ pip install --upgrade pip wheel numpy dev``` <br/>
+
+Clone TF: <br/>
+```$ git clone https://github.com/tensorflow/tensorflow ``` <br/>
+```$ cd tensorflow``` <br/>
+```$ git checkout r1.9``` <br/>
+```$ ./configure``` (ensure MyEnv is active) <br/>
+
+Configure: <br/>
+(Add XLA support. Set everything else to default.) <br/>
+```Please specify the location of python. [Default is /anaconda3/envs/MyEnv/bin/python]: ``` <br/>
+```...``` <br/>
+```Do you wish to build TensorFlow with XLA JIT support? [y/N]: y ``` <br/>
+```...``` <br/>
+
+Build TF: <br/>
+```$ gcc -v``` (note gcc version) <br/>
+** Choose 1 ** <br/>
+If gcc 4: ```$ bazel build --config=mkl --config=opt //tensorflow/tools/pip_package:build_pip_package``` <br/>
+If gcc 5 or later: ```$ bazel build --cxxopt="-D_GLIBCXX_USE_CXX11_ABI=0" --config=mkl --config=opt //tensorflow/tools/pip_package:build_pip_package``` <br/>
+(This will take a long time...) <br/>
+
+Create Package: <br/>
+```$ bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg``` <br/>
+
+Install Package: <br/>
+```$ pip install /tmp/tensorflow_pkg/tensorflow-...-any.whl```<br/>

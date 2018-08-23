@@ -30,8 +30,8 @@ def get_docs(file_loc, size_of_minibatch):
                 doc_minibatch = list()
                 num_minibatch += 1
 
-    print(' Returning last set of {} docs'.format(len(doc_minibatch)))
-    return doc_minibatch
+    print(' Yielding last minibatch with {} docs'.format(len(doc_minibatch)))
+    yield doc_minibatch
 
 
 t_start = time()

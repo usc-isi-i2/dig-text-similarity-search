@@ -74,7 +74,7 @@ for j, minibatch in enumerate(doc_getter):
 
         runtimes.append(time()-t_0)
         m, s = divmod(runtimes[-1], 60)
-        print('  Preprocessed {} docs in {}m:{}s'.format(minibatch_size, m, s))
+        print('  Preprocessed {} docs in {}m:{}s'.format(minibatch_size, int(m), s))
 
         # Occasionally Reset TF Graph
         if j % 5 == 1:
@@ -89,8 +89,8 @@ for j, minibatch in enumerate(doc_getter):
         print(' File {} already exists'.format(save_name))
 
 m, s = divmod(time()-t_init, 60)
-print('Processing completed in {}m:{}s'.format(m, s))
+print('Processing completed in {}m:{}s'.format(int(m), s))
 
 avg_runtime = sum(runtimes) / len(runtimes)
 m, s = divmod(avg_runtime, 60)
-print('Average runtime per minibatch: {}m:{}s'.format(m, s))
+print('Average runtime per minibatch: {}m:{}s'.format(int(m), s))

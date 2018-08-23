@@ -8,3 +8,7 @@ dependencies:
     - happybase>=1.1.0
     - numpy
     - tensorflow_hub
+    - Flask
+    - Flask-API
+    - flask-cors
+    - requests

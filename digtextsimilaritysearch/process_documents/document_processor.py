@@ -90,6 +90,7 @@ class DocumentProcessor(object):
         similar_docs = []
         if not isinstance(str_query, list):
             str_query = [str_query]
+        # query_vector = self.batch_vectorizer.make_vectors(str_query)
         query_vector = self.batch_vectorizer.make_vectors(str_query)
         scores, faiss_ids = self.indexer.search(query_vector, k)
 
@@ -98,7 +99,7 @@ class DocumentProcessor(object):
             if sentence_info:
                 out = dict()
                 out['doc_id'] = sentence_info[_SENTENCE_ID].split('_')[0]
-                out['score'] = score
+                out['score'] = float(score)
                 out['sentence'] = sentence_info[_SENTENCE_TEXT]
                 similar_docs.append(out)
         return similar_docs

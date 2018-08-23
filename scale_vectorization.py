@@ -45,8 +45,8 @@ save_dir = sys.argv[2]
 minibatch_size = int(sys.argv[3]) if sys.argv[3] else 10000
 doc_getter = get_docs(file_loc=doc_col_loc, size_of_minibatch=minibatch_size)
 
+runtimes = list()
 doc_col_name = doc_col_loc.split('/')[-1].split('.')[0]
-
 for j, minibatch in enumerate(doc_getter):
 
     # Check if vectors already exist on disk
@@ -68,20 +68,21 @@ for j, minibatch in enumerate(doc_getter):
         t_2 = time()
         print('  Created {} embeddings in {}s'.format(len(embeddings), t_2-t_1))
 
-        # Occasionally Reset TF Graph
-        if j % 5 == 1:
-            print('\n Refreshing TF Session...')
-            dp.batch_vectorizer.close_session()
-            dp.batch_vectorizer.start_session()
-            t_2 = time()
-            print(' Resuming vectorization... \n')
-
         # Save Vectors and Text
         dp.batch_vectorizer.save_vectors(embeddings, sentences, save_loc)
         print('  Saved {} in {}s'.format(save_loc, time()-t_2))
 
-        m, s = divmod(time()-t_0, 60)
+        runtimes.append(time()-t_0)
+        m, s = divmod(runtimes[-1], 60)
         print('  Preprocessed {} docs in {}m:{}s'.format(minibatch_size, m, s))
+
+        # Occasionally Reset TF Graph
+        if j % 5 == 1:
+            print('\nRefreshing TF Session...')
+            dp.batch_vectorizer.close_session()
+            dp.batch_vectorizer.start_session()
+            t_2 = time()
+            print('Resuming vectorization... \n')
 
     else:
         minibatch = None
@@ -89,3 +90,7 @@ for j, minibatch in enumerate(doc_getter):
 
 m, s = divmod(time()-t_init, 60)
 print('Processing completed in {}m:{}s'.format(m, s))
+
+avg_runtime = sum(runtimes) / len(runtimes)
+m, s = divmod(avg_runtime, 60)
+print('Average runtime per minibatch: {}m:{}s'.format(m, s))

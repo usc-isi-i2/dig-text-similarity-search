@@ -38,7 +38,7 @@ t_start = time()
 batch_vectorizer = BatchVectorizer()
 dp = DocumentProcessor(None, batch_vectorizer, None)
 t_init = time()
-print('System initialized in {}s'.format(t_init-t_start))
+print('System initialized in {:0.3f}s'.format(t_init-t_start))
 
 doc_col_loc = sys.argv[1]
 save_dir = sys.argv[2]
@@ -61,21 +61,21 @@ for j, minibatch in enumerate(doc_getter):
         sentences = dp.preprocess_documents(minibatch)
         minibatch = None
         t_1 = time()
-        print('  Preprocessed {} sentences in {}s'.format(len(sentences), t_1-t_0))
+        print('  Preprocessed {} sentences in {:0.3f}s'.format(len(sentences), t_1-t_0))
 
         # Vectorize
         text = [s[1] for s in sentences]
         embeddings = dp.batch_vectorizer.make_vectors(text)
         t_2 = time()
-        print('  Created {} embeddings in {}s'.format(len(embeddings), t_2-t_1))
+        print('  Created {} embeddings in {:0.3f}s'.format(len(embeddings), t_2-t_1))
 
         # Save Vectors and Text
         dp.batch_vectorizer.save_vectors(embeddings, sentences, save_loc)
-        print('  Saved {} in {}s'.format(save_name, time()-t_2))
+        print('  Saved {} in {:0.3f}s'.format(save_name, time()-t_2))
 
         runtimes.append(time()-t_0)
         m, s = divmod(runtimes[-1], 60)
-        print('  Preprocessed {} docs in {}m:{}s'.format(minibatch_size, int(m), s))
+        print('  Preprocessed {} docs in {}m:{:0.3f}s'.format(minibatch_size, int(m), s))
         g_count += 1
 
         # Occasionally Reset TF Graph
@@ -91,8 +91,8 @@ for j, minibatch in enumerate(doc_getter):
         print(' File {} already exists'.format(save_name))
 
 m, s = divmod(time()-t_init, 60)
-print('Processing completed in {}m:{}s'.format(int(m), s))
+print('Processing completed in {}m:{:0.3f}s'.format(int(m), s))
 
 avg_runtime = sum(runtimes) / len(runtimes)
 m, s = divmod(avg_runtime, 60)
-print('Average runtime per minibatch: {}m:{}s'.format(int(m), s))
+print('Average runtime per minibatch: {}m:{:0.3f}s'.format(int(m), s))

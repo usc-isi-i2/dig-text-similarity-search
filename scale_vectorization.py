@@ -11,8 +11,8 @@ from time import time
 
 
 def get_docs(file_loc, size_of_minibatch):
-    minibatch_count = 1
     doc_minibatch = list()
+    num_minibatch = 0
 
     with open(file_loc, 'r') as fp:
         for i_count, _ in enumerate(fp):
@@ -23,12 +23,12 @@ def get_docs(file_loc, size_of_minibatch):
         for line in fp:
             doc_minibatch.append(json.loads(line))
 
-            if len(doc_minibatch) >= (minibatch_count * size_of_minibatch):
-                print('\n Yielding {} docs'.format(len(doc_minibatch)))
+            if len(doc_minibatch) >= size_of_minibatch:
+                print('\n Yielding minibatch {} with {} '
+                      'docs'.format(num_minibatch, len(doc_minibatch)))
                 yield doc_minibatch
-
-                minibatch_count += 1
                 doc_minibatch = list()
+                num_minibatch += 1
 
     print(' Returning last set of {} docs'.format(len(doc_minibatch)))
     return doc_minibatch
@@ -82,6 +82,10 @@ for j, minibatch in enumerate(doc_getter):
 
         m, s = divmod(time()-t_0, 60)
         print('  Preprocessed {} docs in {}m:{}s'.format(minibatch_size, m, s))
+
+    else:
+        minibatch = None
+        print('{} already exists'.format(save_loc))
 
 m, s = divmod(time()-t_init, 60)
 print('Processing completed in {}m:{}s'.format(m, s))

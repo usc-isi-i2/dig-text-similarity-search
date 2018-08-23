@@ -3,10 +3,10 @@ _SENTENCE_TEXT = 'sentence_text'
 
 
 class DocumentProcessor(object):
-    def __init__(self, indexer, batch_vectorizer, hbase_adapter, hbase_table='dig', hbase_column_family='dig',
+    def __init__(self, indexer, vectorizer, hbase_adapter, hbase_table='dig', hbase_column_family='dig',
                  save_vectors=False, vector_save_path='/tmp/saved_vectors.npz'):
         self.indexer = indexer
-        self.batch_vectorizer = batch_vectorizer
+        self.vectorizer = vectorizer
         self.hbase_adapter = hbase_adapter
         self.hbase_table = hbase_table
         self.hbase_column_family = hbase_column_family
@@ -80,18 +80,17 @@ class DocumentProcessor(object):
         :return: just does its job
         """
         sentences = [s[1] for s in sentence_tuples]
-        vectors = self.batch_vectorizer.make_vectors(sentences)
+        vectors = self.vectorizer.make_vectors(sentences)
         if self.save_vectors:
-            self.batch_vectorizer.save_vectors(embeddings=vectors, sentences=sentence_tuples,
-                                               file_path=self.vector_save_path)
+            self.vectorizer.save_vectors(embeddings=vectors, sentences=sentence_tuples,
+                                         file_path=self.vector_save_path)
         return vectors
 
     def query_text(self, str_query, k=3):
         similar_docs = []
         if not isinstance(str_query, list):
             str_query = [str_query]
-        # query_vector = self.batch_vectorizer.make_vectors(str_query)
-        query_vector = self.batch_vectorizer.make_vectors(str_query)
+        query_vector = self.vectorizer.make_vectors(str_query)
         scores, faiss_ids = self.indexer.search(query_vector, k)
 
         for score, faiss_id in zip(scores[0], faiss_ids[0]):
@@ -109,7 +108,7 @@ class DocumentProcessor(object):
         vectors = None
         sentence_tuples = None
         if load_vectors:
-            vectors, sentence_tuples = self.batch_vectorizer.load_vectors(self.vector_save_path)
+            vectors, sentence_tuples = self.vectorizer.load_vectors(self.vector_save_path)
             print('Total sentences loaded from file: {}'.format(len(sentence_tuples)))
         else:
             if cdr_docs:
@@ -117,7 +116,7 @@ class DocumentProcessor(object):
                 sentence_tuples = self.preprocess_documents(cdr_docs)
                 vectors = self.create_vectors(sentence_tuples)
 
-        if vectors and sentence_tuples:
+        if vectors.any() and sentence_tuples:
             faiss_ids = self.indexer.index_embeddings(vectors)
             # ASSUMPTION: returned vector ids are in the same order as the initial sentence order
             for s, f in zip(sentence_tuples, faiss_ids):

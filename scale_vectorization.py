@@ -70,7 +70,7 @@ for j, minibatch in enumerate(doc_getter):
 
         # Save Vectors and Text
         dp.batch_vectorizer.save_vectors(embeddings, sentences, save_loc)
-        print('  Saved {} in {}s'.format(save_loc, time()-t_2))
+        print('  Saved {} in {}s'.format(save_name, time()-t_2))
 
         runtimes.append(time()-t_0)
         m, s = divmod(runtimes[-1], 60)

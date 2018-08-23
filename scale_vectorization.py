@@ -79,7 +79,7 @@ for j, minibatch in enumerate(doc_getter):
         g_count += 1
 
         # Occasionally Reset TF Graph
-        if g_count % 5 == 1:
+        if g_count % 5 == 0:
             print('\nRefreshing TF Session...')
             dp.batch_vectorizer.close_session()
             dp.batch_vectorizer.start_session()

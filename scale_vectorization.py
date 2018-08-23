@@ -93,6 +93,6 @@ for j, minibatch in enumerate(doc_getter):
 m, s = divmod(time()-t_init, 60)
 print('Processing completed in {}m:{:0.3f}s'.format(int(m), s))
 
-avg_runtime = sum(runtimes) / len(runtimes)
+avg_runtime = sum(runtimes[:-1]) / len(runtimes[:-1])
 m, s = divmod(avg_runtime, 60)
 print('Average runtime per minibatch: {}m:{:0.3f}s'.format(int(m), s))

@@ -45,6 +45,7 @@ save_dir = sys.argv[2]
 minibatch_size = int(sys.argv[3]) if sys.argv[3] else 10000
 doc_getter = get_docs(file_loc=doc_col_loc, size_of_minibatch=minibatch_size)
 
+g_count = 0
 runtimes = list()
 doc_col_name = doc_col_loc.split('/')[-1].split('.')[0]
 for j, minibatch in enumerate(doc_getter):
@@ -75,9 +76,10 @@ for j, minibatch in enumerate(doc_getter):
         runtimes.append(time()-t_0)
         m, s = divmod(runtimes[-1], 60)
         print('  Preprocessed {} docs in {}m:{}s'.format(minibatch_size, int(m), s))
+        g_count += 1
 
         # Occasionally Reset TF Graph
-        if j % 5 == 1:
+        if g_count % 5 == 1:
             print('\nRefreshing TF Session...')
             dp.batch_vectorizer.close_session()
             dp.batch_vectorizer.start_session()

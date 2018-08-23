@@ -85,7 +85,7 @@ for j, minibatch in enumerate(doc_getter):
 
     else:
         minibatch = None
-        print('{} already exists'.format(save_loc))
+        print(' File {} already exists'.format(save_name))
 
 m, s = divmod(time()-t_init, 60)
 print('Processing completed in {}m:{}s'.format(m, s))

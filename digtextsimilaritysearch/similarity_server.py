@@ -48,10 +48,11 @@ def text_similarity_search():
     initialize()
     global dp
     query = request.args.get("query", None)
+    k = request.args.get("k", 3)
     if not query:
         return jsonify({"message": "The service is not able to process null request"}), 400
     try:
-        results = dp.query_text(query)
+        results = dp.query_text(query,k=k)
     except Exception as e:
         return jsonify({"message": str(e)}), 500
 

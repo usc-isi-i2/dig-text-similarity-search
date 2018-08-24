@@ -1,5 +1,5 @@
-from digtextsimilaritysearch.vectorizer.batch_vectorizer \
-    import BatchVectorizer
+from digtextsimilaritysearch.vectorizer.sentence_vectorizer \
+    import SentenceVectorizer
 from digtextsimilaritysearch.process_documents.document_processor \
     import DocumentProcessor
 
@@ -35,14 +35,14 @@ def get_docs(file_loc, size_of_minibatch):
 
 
 t_start = time()
-batch_vectorizer = BatchVectorizer()
-dp = DocumentProcessor(None, batch_vectorizer, None)
+sentence_vectorizer = SentenceVectorizer()
+dp = DocumentProcessor(None, sentence_vectorizer, None)
 t_init = time()
 print('System initialized in {:0.3f}s'.format(t_init-t_start))
 
 doc_col_loc = sys.argv[1]
 save_dir = sys.argv[2]
-minibatch_size = int(sys.argv[3]) if sys.argv[3] else 10000
+minibatch_size = int(sys.argv[3]) if sys.argv[3] else 2500
 doc_getter = get_docs(file_loc=doc_col_loc, size_of_minibatch=minibatch_size)
 
 g_count = 0
@@ -65,12 +65,12 @@ for j, minibatch in enumerate(doc_getter):
 
         # Vectorize
         text = [s[1] for s in sentences]
-        embeddings = dp.batch_vectorizer.make_vectors(text)
+        embeddings = dp.vectorizer.make_vectors(text)
         t_2 = time()
         print('  Created {} embeddings in {:0.3f}s'.format(len(embeddings), t_2-t_1))
 
         # Save Vectors and Text
-        dp.batch_vectorizer.save_vectors(embeddings, sentences, save_loc)
+        dp.vectorizer.save_vectors(embeddings, sentences, save_loc)
         print('  Saved {} in {:0.3f}s'.format(save_name, time()-t_2))
 
         runtimes.append(time()-t_0)
@@ -81,8 +81,8 @@ for j, minibatch in enumerate(doc_getter):
         # Occasionally Reset TF Graph
         if g_count % 5 == 0:
             print('\nRefreshing TF Session...')
-            dp.batch_vectorizer.close_session()
-            dp.batch_vectorizer.start_session()
+            dp.vectorizer.close_session()
+            dp.vectorizer.start_session()
             t_2 = time()
             print('Resuming vectorization... \n')
 

@@ -8,7 +8,7 @@ import json
 
 
 cwd = os.getcwd()
-doc_file = 'data/testing/news_sample.jl'
+doc_file = '../data/testing/news_sample.jl'
 doc_file_path = os.path.join(cwd, doc_file)
 docs = [json.loads(x) for x in open(doc_file_path)]
 

@@ -4,7 +4,7 @@ import tensorflow_hub as hub
 from typing import List
 
 
-class QueryVectorizer(object):
+class SentenceVectorizer(object):
 
     def __init__(self, path_to_model=None):
 

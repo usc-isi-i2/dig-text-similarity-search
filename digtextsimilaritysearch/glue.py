@@ -1,18 +1,22 @@
-from vectorizer.batch_vectorizer import BatchVectorizer
-from vectorizer.query_vectorizer import QueryVectorizer
+from vectorizer.sentence_vectorizer import SentenceVectorizer
 from indexer.faiss_indexer import FaissIndexer
 from storage.hbase_adapter import HBaseAdapter
 from process_documents.document_processor import DocumentProcessor
 
+import os
 import json
 
-docs = [json.loads(x) for x in open(
-    '/Users/amandeep/Github/dig-text-similarity-search/digtextsimilaritysearch/unit_tests/resources/news_sample.jl')]
-# docs = [json.loads(x) for x in open(
-#     '/Users/amandeep/Github/dig-text-similarity-search/digtextsimilaritysearch/unit_tests/resources/new_2018-08-08.jl')]
-batch_vectorizer = QueryVectorizer()
+
+cwd = os.getcwd()
+doc_file = 'data/testing/news_sample.jl'
+doc_file_path = os.path.join(cwd, doc_file)
+docs = [json.loads(x) for x in open(doc_file_path)]
+
 fi = FaissIndexer()
+sentence_vectorizer = SentenceVectorizer()
 hbase_adapter = HBaseAdapter('localhost')
-dp = DocumentProcessor(fi, batch_vectorizer, hbase_adapter, save_vectors=True)
+dp = DocumentProcessor(fi, sentence_vectorizer, hbase_adapter, save_vectors=True)
+
 dp.index_documents(docs, load_vectors=False)
+
 print(dp.query_text("what is the moving annual return"))

@@ -47,5 +47,9 @@ def text_similarity_search():
     return json.dumps(results), 200
 
 
-if __name__ == '__main__':
+def main():
     app.run(host=config['host'], port=config['port'], threaded=True, debug=False)
+
+
+if __name__ == '__main__':
+    main()

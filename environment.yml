@@ -2,8 +2,10 @@ name: dig_text_similarity
 channels:
   - conda-forge
   - defaults
+  - pytorch
 dependencies:
   - python=3.6
+  - faiss-cpu
   - pip:
     - happybase>=1.1.0
     - numpy
@@ -12,3 +14,4 @@ dependencies:
     - Flask-API
     - flask-cors
     - requests
+    - tensorflow

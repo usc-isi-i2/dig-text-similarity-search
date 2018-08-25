@@ -35,8 +35,6 @@ RUN cd /app \
     && conda-env create .
 
 ENV PATH /app/miniconda/envs/dig_text_similarity/bin:$PATH
-RUN conda install -c pytorch faiss-cpu
-
 
 EXPOSE 5555
 ENTRYPOINT ["/app/dig-text-similarity-search/docker-entrypoint.sh"]

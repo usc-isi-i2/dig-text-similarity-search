@@ -27,11 +27,10 @@ RUN wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh &
 ENV PATH=/app/miniconda/bin:${PATH}
 RUN conda update -y conda
 
-
+RUN mkdir /app/dig-text-similarity-search
+ADD . /app/dig-text-similarity-search
 # create and config conda-env
-RUN cd /app \
-    && git clone https://github.com/usc-isi-i2/dig-text-similarity-search \
-    && cd dig-text-similarity-search \
+RUN cd /app/dig-text-similarity-search \
     && conda-env create .
 
 ENV PATH /app/miniconda/envs/dig_text_similarity/bin:$PATH

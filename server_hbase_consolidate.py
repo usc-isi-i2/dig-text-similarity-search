@@ -33,11 +33,12 @@ dp = DocumentProcessor(indexer=fi, vectorizer=sv, hbase_adapter=hb,
 for j, npz in enumerate(news_npzs):
 
     if j == 1:
+        pass
 
-        npz_file = os.path.join(emb_dir, npz + '.npz')
-        print('Loading {}'.format(npz_file))
+    npz_file = os.path.join(emb_dir, npz + '.npz')
+    print('Loading {}'.format(npz_file))
 
-        dp.vector_save_path = npz_file
+    dp.vector_save_path = npz_file
 
-        print('Adding to index...')
-        dp.index_documents(load_vectors=True)
+    print('Adding to index...')
+    dp.index_documents(load_vectors=True)

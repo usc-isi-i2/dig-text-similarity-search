@@ -36,7 +36,7 @@ class DocumentProcessor(object):
         :return:
         """
 
-        self.hbase_adapter.insert_record_data(self.hbase_table, id, data)
+        self.hbase_adapter.insert_record(self.hbase_table, id, data)
 
     def get_record_hbase(self, id, column_names=[_SENTENCE_ID, _SENTENCE_TEXT]):
         """

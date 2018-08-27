@@ -1,7 +1,8 @@
 import happybase
+from digtextsimilaritysearch.storage.key_value_storage import  KeyValueStorage
 
 
-class HBaseAdapter(object):
+class HBaseAdapter(KeyValueStorage):
     """
     Note: Need to increase timeout for thrift in hbase-site.xml
     <property>
@@ -15,7 +16,7 @@ class HBaseAdapter(object):
     """
 
     def __init__(self, host, **kwargs):
-
+        KeyValueStorage.__init__(self)
         self._conn = happybase.Connection(host=host, timeout=6000000, **kwargs)
         self._tables = {}
 
@@ -48,16 +49,16 @@ class HBaseAdapter(object):
             print('Exception:{}, while retrieving table: {}'.format(e, table_name))
         return None
 
-    def insert_record(self, table_name, record_id, value, column_family, column_name):
+    def insert_record_value(self, record_id, value, table_name, column_family, column_name):
         table = self.get_table(table_name)
         if table:
             return table.put(record_id, {'{}:{}'.format(column_family, column_name): value})
         raise Exception('table: {} not found'.format(table_name))
 
-    def insert_record_data(self, table_name, record_id, data):
+    def insert_record(self, record_id, record, table_name):
         table = self.get_table(table_name)
         if table:
-            return table.put(record_id, data)
+            return table.put(record_id, record)
         raise Exception('table: {} not found'.format(table_name))
 
     def __iter__(self, table_name):

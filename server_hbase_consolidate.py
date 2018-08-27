@@ -12,13 +12,24 @@ from digtextsimilaritysearch.process_documents.document_processor \
 
 cwd = os.getcwd()
 emb_dir = os.path.join(cwd, 'data/vectorized_sage_news')
-news_npzs = ['new_2018-08-07',
+news_dirs = ['new_2018-08-07',
              'new_2018-08-08',
              'new_2018-08-09',
              'new_2018-08-10',
              'new_2018-08-11',
              'new_2018-08-12',
              'new_2018-08-13']
+
+news_npzs = list()
+for d in news_dirs:
+    files = list()
+    for (dir_path, _, file_names) in os.walk(os.path.join(emb_dir, d)):
+        files.extend(file_names)
+        for f in files:
+            news_npzs.append(os.path.join(dir_path, f))
+        continue
+
+news_npzs.sort()
 
 sv = SentenceVectorizer()
 hb = HBaseAdapter('localhost')
@@ -30,10 +41,7 @@ idx_path = os.path.join(cwd, 'saved_indexes', idx_name)
 dp = DocumentProcessor(indexer=fi, vectorizer=sv, hbase_adapter=hb,
                        index_save_path=idx_path)
 
-for j, npz in enumerate(news_npzs):
-
-    if j == 1:
-        pass
+for npz in news_npzs:
 
     npz_file = os.path.join(emb_dir, npz + '.npz')
     print('Loading {}'.format(npz_file))

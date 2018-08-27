@@ -36,7 +36,7 @@ class DocumentProcessor(object):
         :return:
         """
 
-        self.hbase_adapter.insert_record(self.hbase_table, id, data)
+        self.hbase_adapter.insert_record(id, data, self.hbase_table)
 
     def get_record_hbase(self, id, column_names=[_SENTENCE_ID, _SENTENCE_TEXT]):
         """
@@ -126,6 +126,7 @@ class DocumentProcessor(object):
         if vectors.any() and sentence_tuples.any():
             print('Adding vectors to index...')
             faiss_ids = self.indexer.index_embeddings(vectors)
+            del vectors
             # ASSUMPTION: returned vector ids are in the same order as the initial sentence order
             print('Adding {} faiss_ids to hbase sequentially...'.format(len(sentence_tuples)))
             for jj, (s, f) in enumerate(zip(sentence_tuples, faiss_ids)):

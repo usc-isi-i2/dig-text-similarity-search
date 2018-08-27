@@ -21,7 +21,7 @@ source deactivate
 `To persist data, use the -v option`
 ```
 docker pull dajobe/hbase
-docker run -t -i -p 9001:9001 -p 9090:9090 -p 2181:2181 -v /tmp/hbase_data:/data --rm dajobe/hbase
+docker run -d -p 9090:9090 -p 2181:2181 -v /path/to/hbase_storage:/data dajobe/hbase
 ```
 
 #### Connect to docker hbase using the hbase_adapter code in this repo:

@@ -123,15 +123,20 @@ class DocumentProcessor(object):
                 sentence_tuples = self.preprocess_documents(cdr_docs)
                 vectors = self.create_vectors(sentence_tuples)
 
-        if vectors.any() and sentence_tuples:
+        if vectors.any() and sentence_tuples.any():
+            print('Adding vectors to index...')
             faiss_ids = self.indexer.index_embeddings(vectors)
             # ASSUMPTION: returned vector ids are in the same order as the initial sentence order
-            for s, f in zip(sentence_tuples, faiss_ids):
+            print('Adding {} faiss_ids to hbase sequentially...'.format(len(sentence_tuples)))
+            for jj, (s, f) in enumerate(zip(sentence_tuples, faiss_ids)):
                 data = dict()
                 data['{}:{}'.format(self.hbase_column_family, _SENTENCE_ID)] = s[0]
                 data['{}:{}'.format(self.hbase_column_family, _SENTENCE_TEXT)] = s[1]
                 self.add_record_hbase(str(f), data)
-            print('saving faiss index')
+                if jj % 100000 == 0:
+                    print('{}/{} faiss_ids added'.format(jj, len(sentence_tuples)))
+
+            print('Saving faiss index...')
             self.indexer.save_index(self.index_save_path)
         else:
             print('Either provide cdr docs or file path to load vectors')

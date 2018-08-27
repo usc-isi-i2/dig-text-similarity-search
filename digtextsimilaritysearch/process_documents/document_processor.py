@@ -100,6 +100,7 @@ class DocumentProcessor(object):
         record_batches = list()
         if vectors.any() and len(sentence_tuples):
             faiss_ids = self.indexer.index_embeddings(vectors)
+            del vectors
             # ASSUMPTION: returned vector ids are in the same order as the initial sentence order
             print('Adding {} faiss_ids to hbase sequentially...'.format(len(sentence_tuples)))
             for jj, (s, f) in enumerate(zip(sentence_tuples, faiss_ids)):

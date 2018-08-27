@@ -3,17 +3,24 @@ _SENTENCE_TEXT = 'sentence_text'
 
 
 class DocumentProcessor(object):
-    def __init__(self, indexer, vectorizer, hbase_adapter, hbase_table='dig', hbase_column_family='dig',
-                 save_vectors=False, vector_save_path='/tmp/saved_vectors.npz'):
+    def __init__(self, indexer, vectorizer, hbase_adapter,
+                 hbase_table='dig', hbase_column_family='dig',
+                 save_vectors=False, vector_save_path='/tmp/saved_vectors.npz',
+                 index_save_path='/tmp/faiss_index'):
+
         self.indexer = indexer
         self.vectorizer = vectorizer
         self.hbase_adapter = hbase_adapter
+
         self.hbase_table = hbase_table
         self.hbase_column_family = hbase_column_family
         if self.hbase_adapter:
             self._configure()
+
         self.save_vectors = save_vectors
         self.vector_save_path = vector_save_path
+
+        self.index_save_path = index_save_path
 
     def _configure(self):
         # create hbase table if it doesn't exist
@@ -120,11 +127,11 @@ class DocumentProcessor(object):
             faiss_ids = self.indexer.index_embeddings(vectors)
             # ASSUMPTION: returned vector ids are in the same order as the initial sentence order
             for s, f in zip(sentence_tuples, faiss_ids):
-                data = {}
+                data = dict()
                 data['{}:{}'.format(self.hbase_column_family, _SENTENCE_ID)] = s[0]
                 data['{}:{}'.format(self.hbase_column_family, _SENTENCE_TEXT)] = s[1]
                 self.add_record_hbase(str(f), data)
             print('saving faiss index')
-            self.indexer.save_index('/tmp/faiss_index')
+            self.indexer.save_index(self.index_save_path)
         else:
             print('Either provide cdr docs or file path to load vectors')

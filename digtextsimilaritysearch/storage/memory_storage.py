@@ -12,6 +12,11 @@ class MemoryStorage(KeyValueStorage):
         return None
 
     def insert_record(self, record_id, record, table_name):
+        self._db[table_name][record_id] = record
+
+    def create_table(self, table_name):
         if table_name not in self._db:
             self._db[table_name] = dict()
-        self._db[table_name][record_id] = record
+
+    def tables(self):
+        return list(self._db)

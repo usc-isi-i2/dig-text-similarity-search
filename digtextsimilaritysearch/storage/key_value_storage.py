@@ -7,3 +7,9 @@ class KeyValueStorage(object):
 
     def insert_record(self, record_id, record, table_name):
         raise NotImplementedError
+
+    def create_table(self, table_name):
+        raise NotImplementedError
+
+    def tables(self):
+        raise NotImplementedError

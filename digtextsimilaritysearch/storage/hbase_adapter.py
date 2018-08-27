@@ -1,5 +1,8 @@
 import happybase
-from digtextsimilaritysearch.storage.key_value_storage import  KeyValueStorage
+from digtextsimilaritysearch.storage.key_value_storage import KeyValueStorage
+
+_SENTENCE_ID = 'sentence_id'
+_SENTENCE_TEXT = 'sentence_text'
 
 
 class HBaseAdapter(KeyValueStorage):
@@ -30,11 +33,18 @@ class HBaseAdapter(KeyValueStorage):
         return self._conn.client.getTableNames()
 
     def create_table(self, table_name, family_name='dig'):
-        self._conn.create_table(table_name, {family_name: dict()})
+        if not bytes(table_name, encoding='utf-8') in self.tables():
+            self._conn.create_table(table_name, {family_name: dict()})
 
-    def get_record(self, record_id, table_name):
+    def get_record(self, record_id, table_name, column_names=[_SENTENCE_ID, _SENTENCE_TEXT], column_family='dig'):
         try:
-            return self.get_table(table_name).row(record_id)
+            record = self.get_table(table_name).row(record_id)
+            if record:
+                result = {}
+                for column_name in column_names:
+                    fam_col = '{}:{}'.format(column_family, column_name).encode('utf-8')
+                    result[column_name] = record.get(fam_col, '').decode('utf-8')
+                return result
         except Exception as e:
             print('Exception: {}, while retrieving record: {}, from table: {}'.format(e, record_id, table_name))
 

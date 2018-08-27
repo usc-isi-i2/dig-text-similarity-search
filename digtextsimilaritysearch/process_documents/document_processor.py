@@ -70,7 +70,7 @@ class DocumentProcessor(object):
         scores, faiss_ids = self.indexer.search(query_vector, k)
 
         for score, faiss_id in zip(scores[0], faiss_ids[0]):
-            sentence_info = self.storage_adapter.get_record(id, self.table_name)
+            sentence_info = self.storage_adapter.get_record(str(faiss_id), self.table_name)
             if sentence_info:
                 out = dict()
                 out['doc_id'] = sentence_info[_SENTENCE_ID].split('_')[0]
@@ -100,7 +100,7 @@ class DocumentProcessor(object):
                 data['{}:{}'.format(column_family, _SENTENCE_ID)] = s[0]
                 data['{}:{}'.format(column_family, _SENTENCE_TEXT)] = s[1]
                 # self.add_record_hbase(str(f), data)
-                self.storage_adapter.insert_record(self.table_name, id, data)
+                self.storage_adapter.insert_record(str(f), data, self.table_name)
             print('saving faiss index')
             self.indexer.save_index(self.index_save_path)
         else:

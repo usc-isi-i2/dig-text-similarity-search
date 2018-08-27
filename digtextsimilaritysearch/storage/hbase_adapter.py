@@ -1,5 +1,5 @@
 import happybase
-from digtextsimilaritysearch.storage.key_value_storage import KeyValueStorage
+from .key_value_storage import KeyValueStorage
 
 _SENTENCE_ID = 'sentence_id'
 _SENTENCE_TEXT = 'sentence_text'

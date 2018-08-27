@@ -1,4 +1,4 @@
-from digtextsimilaritysearch.storage.key_value_storage import KeyValueStorage
+from .key_value_storage import KeyValueStorage
 
 
 class MemoryStorage(KeyValueStorage):

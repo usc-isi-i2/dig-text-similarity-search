@@ -31,7 +31,7 @@ class DocumentProcessor(object):
         """
         Function to add id and value into hbase
         :param id: id at which the value will be added in the hbase table
-        :param value: value to be added in hbase
+        :param data: value to be added in hbase
         :param column_name: column name in hbase table where value should be interested
         :return:
         """
@@ -126,9 +126,10 @@ class DocumentProcessor(object):
         if vectors.any() and sentence_tuples.any():
             print('Adding vectors to index...')
             faiss_ids = self.indexer.index_embeddings(vectors)
-            del vectors
-            # ASSUMPTION: returned vector ids are in the same order as the initial sentence order
+            del vectors  # Free up memory
+
             print('Adding {} faiss_ids to hbase sequentially...'.format(len(sentence_tuples)))
+            # ASSUMPTION: returned vector ids are in the same order as the initial sentence order
             for jj, (s, f) in enumerate(zip(sentence_tuples, faiss_ids)):
                 data = dict()
                 data['{}:{}'.format(self.hbase_column_family, _SENTENCE_ID)] = s[0]

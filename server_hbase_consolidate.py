@@ -41,12 +41,11 @@ idx_path = os.path.join(cwd, 'saved_indexes', idx_name)
 dp = DocumentProcessor(indexer=fi, vectorizer=sv, hbase_adapter=hb,
                        index_save_path=idx_path)
 
+print('\n\n{} .npz file chunks to add to index'.format(len(news_npzs)))
 for npz in news_npzs:
 
-    npz_file = os.path.join(emb_dir, npz + '.npz')
-    print('Loading {}'.format(npz_file))
+    print('\nLoading {}'.format(npz))
+    dp.vector_save_path = npz
 
-    dp.vector_save_path = npz_file
-
-    print('Adding to index...')
     dp.index_documents(load_vectors=True)
+    print('{} added to index'.format(npz))

@@ -5,8 +5,8 @@ _SENTENCE_TEXT = 'sentence_text'
 class DocumentProcessor(object):
     def __init__(self, indexer, vectorizer, hbase_adapter,
                  hbase_table='dig', hbase_column_family='dig',
-                 save_vectors=False, vector_save_path='/tmp/saved_vectors.npz',
-                 index_save_path='/tmp/faiss_index'):
+                 vector_save_path='/tmp/saved_vectors.npz', save_vectors=False,
+                 index_save_path='/tmp/faiss_index.index'):
 
         self.indexer = indexer
         self.vectorizer = vectorizer
@@ -17,8 +17,8 @@ class DocumentProcessor(object):
         if self.hbase_adapter:
             self._configure()
 
-        self.save_vectors = save_vectors
         self.vector_save_path = vector_save_path
+        self.save_vectors = save_vectors
 
         self.index_save_path = index_save_path
 

@@ -24,7 +24,7 @@ sv = SentenceVectorizer()
 hb = HBaseAdapter('localhost')
 
 
-for npz in news_npzs:
+for npz in news_npzs[1:]:
     npz_file = os.path.join(emb_dir, npz + '.npz')
 
     idx_name = 'FlatL2_' + npz + '.index'

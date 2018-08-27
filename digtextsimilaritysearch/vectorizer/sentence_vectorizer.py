@@ -65,18 +65,24 @@ class SentenceVectorizer(object):
         np.savez_compressed(file=file_path, embeddings=embeddings, sentences=sentences)
 
     @staticmethod
-    def load_vectors(file_path):
+    def load_vectors(file_path, mmap=True):
         """
         Loads zipped archive containing embeddings and sentences as two separate np.arrays
 
         :param file_path: /full/path/to/file_name.npz
+        :param mmap: If mmap is True, the .npz file is not read from disk, not into memory
         :return: embeddings and sentences as separate np.arrays
         """
 
         if not file_path.endswith('.npz'):
             file_path += '.npz'
 
-        loaded = np.load(file=file_path)
+        if mmap:
+            mode = 'r'
+        else:
+            mode = None
+
+        loaded = np.load(file=file_path, mmap_mode=mode)
         embeddings = loaded['embeddings']
         sentences = loaded['sentences']
 

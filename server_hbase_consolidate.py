@@ -32,17 +32,17 @@ for d in news_dirs:
         for f in files:
             news_npzs.append(os.path.join(dir_path, f))
         continue
-
 news_npzs.sort()
 
 sv = SentenceVectorizer()
-hb = HBaseAdapter('localhost')
-fi = FaissIndexer()
 
 idx_name = 'FlatL2_Aug_test.index'
 idx_path = os.path.join(cwd, 'saved_indexes', idx_name)
+fi = FaissIndexer(path_to_index_file=idx_path)
 
-dp = DocumentProcessor(indexer=fi, vectorizer=sv, hbase_adapter=hb,
+hb = HBaseAdapter('localhost')
+
+dp = DocumentProcessor(indexer=fi, vectorizer=sv, storage_adapter=hb,
                        index_save_path=idx_path)
 
 print('\n\n{} .npz file chunks to add to index'.format(len(news_npzs)))
@@ -52,7 +52,10 @@ for npz in news_npzs:
     dp.vector_save_path = npz
 
     try:
-        dp.index_documents(load_vectors=True)
+        dp.index_documents(load_vectors=True,
+                           save_faiss_index=True,
+                           batch_mode=True,
+                           batch_size=10000)
         print('{} added to index'.format(npz))
 
     except Exception as e:

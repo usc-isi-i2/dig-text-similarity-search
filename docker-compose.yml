@@ -1,0 +1,14 @@
+version: '1'
+
+services:
+  dig_text_similarity_search:
+    image: uscisii2/digtextsimilaritysearch:1.0.0
+    networks:
+      - dignet_text_similarity
+
+  hbase:
+    image: dajobe/hbase
+    volumes:
+      - ${HBASE_STORAGE_PATH}:/data
+    networks:
+    - dignet_text_similarity

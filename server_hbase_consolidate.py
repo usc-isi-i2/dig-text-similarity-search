@@ -9,6 +9,10 @@ from digtextsimilaritysearch.storage.hbase_adapter \
 from digtextsimilaritysearch.process_documents.document_processor \
     import DocumentProcessor
 
+# Note: ensure hbase docker is running
+# docker pull dajobe/hbase
+# docker run -d -p 9090:9090 -p 2181:2181 -v /lfs1/dig/hbase_storage:/data dajobe/hbase
+
 
 cwd = os.getcwd()
 emb_dir = os.path.join(cwd, 'data/vectorized_sage_news')

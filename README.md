@@ -6,8 +6,6 @@
 ```
 conda env create .
 source activate dig_text_similarity
-conda install -c pytorch faiss-cpu
-source activate dig_text_similarity
 ```
 
 #### Run Unit Tests

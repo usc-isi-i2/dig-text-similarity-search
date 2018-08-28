@@ -51,5 +51,10 @@ for npz in news_npzs:
     print('\nLoading {}'.format(npz))
     dp.vector_save_path = npz
 
-    dp.index_documents(load_vectors=True)
-    print('{} added to index'.format(npz))
+    try:
+        dp.index_documents(load_vectors=True)
+        print('{} added to index'.format(npz))
+
+    except Exception as e:
+        print(e)
+        pass

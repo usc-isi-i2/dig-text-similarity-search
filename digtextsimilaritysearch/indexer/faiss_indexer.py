@@ -8,7 +8,6 @@ class FaissIndexer(object):
         self.faiss_index = faiss.read_index(path_to_index_file) \
             if path_to_index_file \
             else faiss.IndexFlatL2(512)
-            # else faiss.IndexIDMap(faiss.IndexFlatL2(512))
 
     def index_embeddings(self, embeddings) -> List[int]:
         ids = np.arange(len(embeddings)).astype('int64') + self.faiss_index.ntotal

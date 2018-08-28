@@ -1,5 +1,7 @@
 import os
 
+from time import time
+
 from digtextsimilaritysearch.indexer.faiss_indexer \
     import FaissIndexer
 from digtextsimilaritysearch.vectorizer.sentence_vectorizer \
@@ -9,10 +11,12 @@ from digtextsimilaritysearch.storage.hbase_adapter \
 from digtextsimilaritysearch.process_documents.document_processor \
     import DocumentProcessor
 
+
 # Note: ensure hbase docker is running
 # docker pull dajobe/hbase
 # docker run -d -p 9090:9090 -p 2181:2181 -v /lfs1/dig/hbase_storage:/data dajobe/hbase
 
+t_start = time()
 
 cwd = os.getcwd()
 emb_dir = os.path.join(cwd, 'data/vectorized_sage_news')
@@ -36,7 +40,7 @@ news_npzs.sort()
 
 sv = SentenceVectorizer()
 
-idx_name = 'FlatL2_Aug_test.index'
+idx_name = 'FlatL2_Aug_7-13.index'
 idx_path = os.path.join(cwd, 'saved_indexes', idx_name)
 fi = FaissIndexer(path_to_index_file=idx_path)
 
@@ -45,8 +49,13 @@ hb = HBaseAdapter('localhost')
 dp = DocumentProcessor(indexer=fi, vectorizer=sv, storage_adapter=hb,
                        index_save_path=idx_path)
 
+t_init = time()
+print('\nTime used for initialization: {}s'.format(t_init-t_start))
+time_stamps = list()
+
 print('\n\n{} .npz file chunks to add to index'.format(len(news_npzs)))
 for npz in news_npzs:
+    t_0 = time()
 
     print('\nLoading {}'.format(npz))
     dp.vector_save_path = npz
@@ -61,3 +70,9 @@ for npz in news_npzs:
     except Exception as e:
         print(e)
         pass
+
+    finally:
+        t_1 = time()
+        t_diff = t_1-t_0
+        time_stamps.append(t_diff)
+        print('Time passed: {}s'.format(t_diff))

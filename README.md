@@ -10,6 +10,12 @@ conda install -c pytorch faiss-cpu
 source activate dig_text_similarity
 ```
 
+#### Run Unit Tests
+Ensure hbase is running (see below: Run hbase docker)
+```
+python -W ignore -m unittest discover
+```
+
 #### Deactivate:
 ```
 source deactivate

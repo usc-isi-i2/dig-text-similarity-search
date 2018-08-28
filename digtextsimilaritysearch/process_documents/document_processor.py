@@ -65,7 +65,7 @@ class DocumentProcessor(object):
         return vectors
 
     def query_text(self, str_query, k=3):
-        similar_docs = []
+        similar_docs = list()
         if not isinstance(str_query, list):
             str_query = [str_query]
         query_vector = self.vectorizer.make_vectors(str_query)

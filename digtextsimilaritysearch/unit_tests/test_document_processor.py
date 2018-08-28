@@ -6,11 +6,6 @@ from indexer.faiss_indexer import FaissIndexer
 from storage.memory_storage import MemoryStorage
 
 
-# import sys
-#
-# sys.path.append('.')
-
-
 class TestDocumentProcessor(unittest.TestCase):
     def setUp(self):
         self.docs = [json.loads(line) for line in open('unit_tests/resources/news_sample.jl')]

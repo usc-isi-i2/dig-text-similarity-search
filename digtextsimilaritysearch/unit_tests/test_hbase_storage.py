@@ -24,6 +24,18 @@ class TestDocumentProcessor(unittest.TestCase):
         r = self.hb.get_record('3', 'test_1', column_names=['col_1'])
         self.assertEqual({'col_1': 'value_1'}, r)
 
+    def test_batch_insert(self):
+        self.hb.create_table('test_1')
+        doc_list = list()
+
+        for i in range(0, 10):
+            doc_list.append((str(i), {'dig:col_1': 'this_{}'.format(i)}))
+        self.hb.insert_records_batch(doc_list, 'test_1')
+        expected_r_1 = {'col_1': 'this_4'}
+        expected_r_2 = {'col_1': 'this_9'}
+        self.assertEqual(expected_r_1, self.hb.get_record('4', 'test_1', column_names=['col_1']))
+        self.assertEqual(expected_r_2, self.hb.get_record('9', 'test_1', column_names=['col_1']))
+
     def tearDown(self):
         self.hb.delete_table('test_1')
         self.hb.delete_table('test_2')

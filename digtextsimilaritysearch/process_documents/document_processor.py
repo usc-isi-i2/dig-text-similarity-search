@@ -72,6 +72,9 @@ class DocumentProcessor(object):
         for score, faiss_id in zip(scores[0], faiss_ids[0]):
             sentence_info = self.storage_adapter.get_record(str(faiss_id), self.table_name)
             if sentence_info:
+                for k in list(sentence_info):
+                    if ':' in k:
+                        sentence_info[k.split(':')[1]] = sentence_info[k]
                 out = dict()
                 out['doc_id'] = sentence_info[_SENTENCE_ID].split('_')[0]
                 out['score'] = float(score)
@@ -79,7 +82,7 @@ class DocumentProcessor(object):
                 similar_docs.append(out)
         return similar_docs
 
-    def index_documents(self, cdr_docs=None, load_vectors=False, column_family='dig'):
+    def index_documents(self, cdr_docs=None, load_vectors=False, column_family='dig', save_faiss_index=False):
 
         vectors = None
         sentence_tuples = None
@@ -99,9 +102,9 @@ class DocumentProcessor(object):
                 data = dict()
                 data['{}:{}'.format(column_family, _SENTENCE_ID)] = s[0]
                 data['{}:{}'.format(column_family, _SENTENCE_TEXT)] = s[1]
-                # self.add_record_hbase(str(f), data)
                 self.storage_adapter.insert_record(str(f), data, self.table_name)
-            print('saving faiss index')
-            self.indexer.save_index(self.index_save_path)
+            if save_faiss_index:
+                print('saving faiss index')
+                self.indexer.save_index(self.index_save_path)
         else:
             print('Either provide cdr docs or file path to load vectors')

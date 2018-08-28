@@ -71,6 +71,12 @@ class HBaseAdapter(KeyValueStorage):
             return table.put(record_id, record)
         raise Exception('table: {} not found'.format(table_name))
 
+    def delete_table(self, table_name):
+        try:
+            self._conn.delete_table(table_name, disable=True)
+        except:
+            pass
+
     def __iter__(self, table_name):
         return self.__next__(table_name)
 

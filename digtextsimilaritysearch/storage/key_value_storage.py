@@ -13,3 +13,6 @@ class KeyValueStorage(object):
 
     def tables(self):
         raise NotImplementedError
+
+    def insert_records_batch(self, records, table_name):
+        raise NotImplementedError

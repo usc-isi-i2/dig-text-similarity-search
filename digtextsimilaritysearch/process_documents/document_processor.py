@@ -79,7 +79,8 @@ class DocumentProcessor(object):
                 similar_docs.append(out)
         return similar_docs
 
-    def index_documents(self, cdr_docs=None, load_vectors=False, column_family='dig', save_faiss_index=False):
+    def index_documents(self, cdr_docs=None, load_vectors=False, column_family='dig', save_faiss_index=False,
+                        batch_mode=False, batch_size=1000):
 
         vectors = None
         sentence_tuples = None
@@ -92,6 +93,7 @@ class DocumentProcessor(object):
                 sentence_tuples = self.preprocess_documents(cdr_docs)
                 vectors = self.create_vectors(sentence_tuples)
 
+        record_batches = list()
         if vectors.any() and sentence_tuples:
             faiss_ids = self.indexer.index_embeddings(vectors)
             # ASSUMPTION: returned vector ids are in the same order as the initial sentence order
@@ -99,9 +101,25 @@ class DocumentProcessor(object):
                 data = dict()
                 data['{}:{}'.format(column_family, _SENTENCE_ID)] = s[0]
                 data['{}:{}'.format(column_family, _SENTENCE_TEXT)] = s[1]
-                self.storage_adapter.insert_record(str(f), data, self.table_name)
+                if batch_mode:
+                    record_batches.append((str(f), data))
+                else:
+                    self.storage_adapter.insert_record(str(f), data, self.table_name)
+
+            if batch_mode:
+                self.insert_bulk_records(record_batches, self.table_name, batch_size)
             if save_faiss_index:
                 print('saving faiss index')
                 self.indexer.save_index(self.index_save_path)
         else:
             print('Either provide cdr docs or file path to load vectors')
+
+    def insert_bulk_records(self, records, table_name, batch_size):
+        num_records = len(records)
+        if num_records <= batch_size:
+            self.storage_adapter.insert_records_batch(records, table_name)
+        else:
+            count = 0
+            while count <= num_records:
+                self.storage_adapter.insert_records_batch(records[count:count + batch_size], table_name)
+                count += batch_size

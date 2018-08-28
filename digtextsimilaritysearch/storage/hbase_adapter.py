@@ -71,6 +71,19 @@ class HBaseAdapter(KeyValueStorage):
             return table.put(record_id, record)
         raise Exception('table: {} not found'.format(table_name))
 
+    def insert_records_batch(self, records, table_name):
+        """
+        Adds records into hbase in batch mode
+        :param records: list of records to be inserted, each record a tuple (id, data)
+        :param table_name: table in hbase where records will be shipped to
+        :return: exception in case of failure
+        """
+        table = self.get_table(table_name)
+        batch = table.batch()
+        for record in records:
+            batch.put(record[0], record[1])
+        batch.send()
+
     def delete_table(self, table_name):
         try:
             self._conn.delete_table(table_name, disable=True)

@@ -25,3 +25,8 @@ class MemoryStorage(KeyValueStorage):
 
     def tables(self):
         return list(self._db)
+
+    def insert_records_batch(self, records, table_name):
+        for record in records:
+            # record has to a tuple (id, data)
+            self.insert_record(record[0], record[1], table_name)

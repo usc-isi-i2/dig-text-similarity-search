@@ -94,21 +94,25 @@ class DocumentProcessor(object):
         return vectors
 
     def query_text(self, str_query, k=3):
-        similar_docs = []
+        results = list()
         if not isinstance(str_query, list):
             str_query = [str_query]
         query_vector = self.vectorizer.make_vectors(str_query)
-        scores, faiss_ids = self.indexer.search(query_vector, k)
+        all_scores, all_faiss_ids = self.indexer.search(query_vector, k)
 
-        for score, faiss_id in zip(scores[0], faiss_ids[0]):
-            sentence_info = self.get_record_hbase(str(faiss_id))
-            if sentence_info:
-                out = dict()
-                out['doc_id'] = sentence_info[_SENTENCE_ID].split('_')[0]
-                out['score'] = float(score)
-                out['sentence'] = sentence_info[_SENTENCE_TEXT]
-                similar_docs.append(out)
-        return similar_docs
+        for one_query_scores, one_query_faiss_ids in zip(all_scores, all_faiss_ids):
+            similar_docs = list()
+            for score, faiss_id in zip(one_query_scores, one_query_faiss_ids):
+                sentence_info = self.get_record_hbase(str(faiss_id))
+                if sentence_info:
+                    out = dict()
+                    out['doc_id'] = sentence_info[_SENTENCE_ID].split('_')[0]
+                    out['score'] = float(score)
+                    out['sentence'] = sentence_info[_SENTENCE_TEXT]
+                    similar_docs.append(out)
+            results.append(similar_docs)
+
+        return results
 
     def index_documents(self, cdr_docs=None, load_vectors=False):
 

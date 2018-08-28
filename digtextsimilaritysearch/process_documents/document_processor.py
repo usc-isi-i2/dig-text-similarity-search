@@ -72,9 +72,6 @@ class DocumentProcessor(object):
         for score, faiss_id in zip(scores[0], faiss_ids[0]):
             sentence_info = self.storage_adapter.get_record(str(faiss_id), self.table_name)
             if sentence_info:
-                for k in list(sentence_info):
-                    if ':' in k:
-                        sentence_info[k.split(':')[1]] = sentence_info[k]
                 out = dict()
                 out['doc_id'] = sentence_info[_SENTENCE_ID].split('_')[0]
                 out['score'] = float(score)

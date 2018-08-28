@@ -12,6 +12,11 @@ class MemoryStorage(KeyValueStorage):
         return None
 
     def insert_record(self, record_id, record, table_name):
+        # remove any ":" in field names
+        for k in list(record):
+            if ':' in k:
+                record[k.split(':')[1]] = record[k]
+                record.pop(k)
         self._db[table_name][record_id] = record
 
     def create_table(self, table_name):

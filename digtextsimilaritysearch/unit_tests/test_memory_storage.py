@@ -1,5 +1,5 @@
 import unittest
-from digtextsimilaritysearch.storage.memory_storage import MemoryStorage
+from storage.memory_storage import MemoryStorage
 
 
 class TestDocumentProcessor(unittest.TestCase):

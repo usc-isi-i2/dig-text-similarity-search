@@ -1,5 +1,5 @@
 import unittest
-from digtextsimilaritysearch.storage.hbase_adapter import HBaseAdapter
+from storage.hbase_adapter import HBaseAdapter
 
 
 class TestDocumentProcessor(unittest.TestCase):

@@ -1,0 +1,11 @@
+*.out
+*.err
+.idea
+.DS_Store
+*.test
+*.log
+examples/*
+notebooks/*
+digtextsimilaritysearch/unit_tests/*
+dig_text/*
+data/*

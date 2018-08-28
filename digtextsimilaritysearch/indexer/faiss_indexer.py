@@ -1,12 +1,13 @@
+import os
 import faiss
-from typing import List
 import numpy as np
+from typing import List
 
 
 class FaissIndexer(object):
     def __init__(self, path_to_index_file=None):
         self.faiss_index = faiss.read_index(path_to_index_file) \
-            if path_to_index_file \
+            if path_to_index_file and os.path.exists(path_to_index_file) \
             else faiss.IndexFlatL2(512)
 
     def index_embeddings(self, embeddings) -> List[int]:

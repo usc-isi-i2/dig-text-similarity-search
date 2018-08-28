@@ -138,7 +138,19 @@ class DocumentProcessor(object):
                 data = dict()
                 data['{}:{}'.format(self.hbase_column_family, _SENTENCE_ID)] = s[0]
                 data['{}:{}'.format(self.hbase_column_family, _SENTENCE_TEXT)] = s[1]
-                self.add_record_hbase(str(f), data)
+
+                try:
+                    self.add_record_hbase(str(f), data)
+                except Exception as e:
+                    print(e)
+                    try:
+                        self.add_record_hbase(str(f), data)
+                    except Exception as e:
+                        print('Could not add {}::{}'.format(str(f), data))
+                        print(e)
+                    finally:
+                        self.add_record_hbase(str(f), dict())
+
                 if jj % 100000 == 0:
                     print('{}/{} faiss_ids added'.format(jj, len(sentence_tuples)))
 

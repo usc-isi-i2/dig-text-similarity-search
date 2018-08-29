@@ -50,13 +50,14 @@ class HBaseAdapter(KeyValueStorage):
                    column_names=(_SENTENCE_ID, _SENTENCE_TEXT),
                    column_family='dig'):
         try:
-            record = self.get_table(table_name).row(record_id)
-            if record:
-                result = {}
-                for column_name in column_names:
-                    fam_col = '{}:{}'.format(column_family, column_name).encode('utf-8')
-                    result[column_name] = record.get(fam_col, '').decode('utf-8')
-                return result
+            with self._conn_pool.connection(timeout=self._timeout) as _conn:
+                record = self.get_table(table_name).row(record_id)
+                if record:
+                    result = {}
+                    for column_name in column_names:
+                        fam_col = '{}:{}'.format(column_family, column_name).encode('utf-8')
+                        result[column_name] = record.get(fam_col, '').decode('utf-8')
+                    return result
         except Exception as e:
             print('Exception: {}, while retrieving record: {}, '
                   'from table: {}'.format(e, record_id, table_name))
@@ -74,16 +75,25 @@ class HBaseAdapter(KeyValueStorage):
         return self._tables[table_name]
 
     def insert_record_value(self, record_id, value, table_name, column_family, column_name):
-        table = self.get_table(table_name)
-        if table:
-            return table.put(record_id, {'{}:{}'.format(column_family, column_name): value})
-        raise Exception('table: {} not found'.format(table_name))
+        try:
+            with self._conn_pool.connection(timeout=self._timeout) as _conn:
+                table = self.get_table(table_name)
+                if table:
+                    return table.put(record_id, {'{}:{}'.format(column_family, column_name): value})
+                raise Exception('Table: {} not found'.format(table_name))
+        except Exception as e:
+            pass
 
     def insert_record(self, record_id, record, table_name):
-        table = self.get_table(table_name)
-        if table:
-            return table.put(record_id, record)
-        raise Exception('table: {} not found'.format(table_name))
+        try:
+            with self._conn_pool.connection(timeout=self._timeout) as _conn:
+                table = self.get_table(table_name)
+                if table:
+                    return table.put(record_id, record)
+                raise Exception('Table: {} not found'.format(table_name))
+        except Exception as e:
+            print('Exception: {}, while writing record (id:{}, val:{}) '
+                  'to table: {}'.format(e, record_id, record, table_name))
 
     def insert_records_batch(self, records, table_name):
         """
@@ -92,11 +102,16 @@ class HBaseAdapter(KeyValueStorage):
         :param table_name: table in hbase where records will be shipped to
         :return: exception in case of failure
         """
-        table = self.get_table(table_name)
-        batch = table.batch()
-        for record in records:
-            batch.put(record[0], record[1])
-        batch.send()
+        try:
+            with self._conn_pool.connection(timeout=self._timeout) as _conn:
+                table = self.get_table(table_name)
+                batch = table.batch()
+                for record in records:
+                    batch.put(record[0], record[1])
+                batch.send()
+        except Exception as e:
+            print('Exception: {}, while writing batch of records '
+                  'to table: {}'.format(e, table_name))
 
     def delete_table(self, table_name):
         try:

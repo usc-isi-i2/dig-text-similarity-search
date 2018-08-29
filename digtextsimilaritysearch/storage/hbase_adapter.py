@@ -20,20 +20,34 @@ class HBaseAdapter(KeyValueStorage):
 
     def __init__(self, host, size=10, **kwargs):
         KeyValueStorage.__init__(self)
-        self._conn_pool = happybase.ConnectionPool(size=size, host=host, **kwargs)
+        self._conn_pool = None
+        self._conn_host = host
+        self._conn_size = size
         self._timeout = 6000000
+        self._conn_kwargs = kwargs
+        if not self._conn_pool:
+            self.establish_conn_pool()
+
         self._tables = {}
+
+    def establish_conn_pool(self):
+        proto = 'framed'
+        self._conn_pool = happybase.ConnectionPool(size=self._conn_size,
+                                                   host=self._conn_host,
+                                                   timeout=self._timeout,
+                                                   transport=proto,
+                                                   **self._conn_kwargs)
 
     def __del__(self):
         try:
-            with self._conn_pool.connection(timeout=self._timeout) as _conn:
+            with self._conn_pool.connection() as _conn:
                 _conn.close()
         except Exception as e:
             print('Exception: {}, while closing connection pool'.format(e))
 
     def tables(self):
         try:
-            with self._conn_pool.connection(timeout=self._timeout) as _conn:
+            with self._conn_pool.connection() as _conn:
                 return _conn.client.getTableNames()
         except Exception as e:
             print('Exception: {}, while getting table names'.format(e))
@@ -41,7 +55,7 @@ class HBaseAdapter(KeyValueStorage):
     def create_table(self, table_name, family_name='dig'):
         if not bytes(table_name, encoding='utf-8') in self.tables():
             try:
-                with self._conn_pool.connection(timeout=self._timeout) as _conn:
+                with self._conn_pool.connection() as _conn:
                     _conn.create_table(table_name, {family_name: dict()})
             except Exception as e:
                 print('Exception: {}, while creating table: {}'.format(e, table_name))
@@ -50,7 +64,7 @@ class HBaseAdapter(KeyValueStorage):
                    column_names=(_SENTENCE_ID, _SENTENCE_TEXT),
                    column_family='dig'):
         try:
-            with self._conn_pool.connection(timeout=self._timeout) as _conn:
+            with self._conn_pool.connection() as _conn:
                 record = self.get_table(table_name).row(record_id)
                 if record:
                     result = {}
@@ -67,7 +81,7 @@ class HBaseAdapter(KeyValueStorage):
     def get_table(self, table_name):
         if table_name not in self._tables:
             try:
-                with self._conn_pool.connection(timeout=self._timeout) as _conn:
+                with self._conn_pool.connection() as _conn:
                     self._tables[table_name] = _conn.table(table_name)
             except Exception as e:
                 print('Exception:{}, while retrieving table: {}'.format(e, table_name))
@@ -76,7 +90,7 @@ class HBaseAdapter(KeyValueStorage):
 
     def insert_record_value(self, record_id, value, table_name, column_family, column_name):
         try:
-            with self._conn_pool.connection(timeout=self._timeout) as _conn:
+            with self._conn_pool.connection() as _conn:
                 table = self.get_table(table_name)
                 if table:
                     return table.put(record_id, {'{}:{}'.format(column_family, column_name): value})
@@ -88,7 +102,7 @@ class HBaseAdapter(KeyValueStorage):
 
     def insert_record(self, record_id, record, table_name):
         try:
-            with self._conn_pool.connection(timeout=self._timeout) as _conn:
+            with self._conn_pool.connection() as _conn:
                 table = self.get_table(table_name)
                 if table:
                     return table.put(record_id, record)
@@ -105,7 +119,7 @@ class HBaseAdapter(KeyValueStorage):
         :return: exception in case of failure
         """
         try:
-            with self._conn_pool.connection(timeout=self._timeout) as _conn:
+            with self._conn_pool.connection() as _conn:
                 table = self.get_table(table_name)
                 batch = table.batch()
                 for record in records:
@@ -114,6 +128,7 @@ class HBaseAdapter(KeyValueStorage):
         except Exception as e:
             print('Exception: {}, while writing batch of records '
                   'to table: {}'.format(e, table_name))
+            self.establish_conn_pool()
             self.insert_records_batch(records, table_name)
 
     @staticmethod
@@ -129,7 +144,7 @@ class HBaseAdapter(KeyValueStorage):
 
     def delete_table(self, table_name):
         try:
-            with self._conn_pool.connection(timeout=self._timeout) as _conn:
+            with self._conn_pool.connection() as _conn:
                 _conn.delete_table(table_name, disable=True)
         except Exception as e:
             print('Exception: {}, while deleting table: {}'.format(e, table_name))
@@ -139,8 +154,12 @@ class HBaseAdapter(KeyValueStorage):
 
     def __next__(self, table_name):
         table = self.get_table(table_name)
-        if table:
-            for key, data in table.scan(filter=b'FirstKeyOnlyFilter()'):
-                yield {key: data}
-        else:
-            raise Exception('Table: {} not found'.format(table_name))
+        try:
+            with self._conn_pool.connection() as _conn:
+                if table:
+                    for key, data in table.scan(filter=b'FirstKeyOnlyFilter()'):
+                        yield {key: data}
+                else:
+                    raise Exception('Table: {} not found'.format(table_name))
+        except Exception as e:
+            print('Exception: {}, while scanning table: {}'.format(e, table_name))

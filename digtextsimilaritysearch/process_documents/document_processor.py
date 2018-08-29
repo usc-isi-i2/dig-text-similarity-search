@@ -1,3 +1,5 @@
+from time import sleep
+
 _SENTENCE_ID = 'sentence_id'
 _SENTENCE_TEXT = 'sentence_text'
 
@@ -128,3 +130,4 @@ class DocumentProcessor(object):
             while count <= num_records:
                 self.storage_adapter.insert_records_batch(records[count:count + batch_size], table_name)
                 count += batch_size
+                sleep(0.1)

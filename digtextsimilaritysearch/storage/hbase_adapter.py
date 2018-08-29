@@ -110,10 +110,11 @@ class HBaseAdapter(KeyValueStorage):
                 batch = table.batch()
                 for record in records:
                     batch.put(record[0], record[1])
-                self.send_batch(_conn, batch)
+                batch.send()
         except Exception as e:
             print('Exception: {}, while writing batch of records '
                   'to table: {}'.format(e, table_name))
+            self.insert_records_batch(records, table_name)
 
     @staticmethod
     def send_batch(connection, batch):

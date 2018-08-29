@@ -1,4 +1,5 @@
 import os
+import sys
 
 from time import time
 
@@ -40,7 +41,7 @@ news_npzs.sort()
 
 sv = SentenceVectorizer()
 
-idx_name = 'FlatL2_Aug_7-13.index'
+idx_name = 'FlatL2_Aug_7-13_' + sys.argv[1] + '.index'
 idx_path = os.path.join(cwd, 'saved_indexes', idx_name)
 fi = FaissIndexer(path_to_index_file=idx_path)
 
@@ -54,7 +55,9 @@ print('\nTime used for initialization: {}s'.format(t_init-t_start))
 time_stamps = list()
 
 print('\n\n{} .npz file chunks to add to index'.format(len(news_npzs)))
-for npz in news_npzs:
+s = int(sys.argv[2]) if sys.argv[2] else 0
+e = int(sys.argv[3]) if sys.argv[3] else -1
+for npz in news_npzs[s:e]:
     t_0 = time()
 
     print('\nLoading {}'.format(npz))

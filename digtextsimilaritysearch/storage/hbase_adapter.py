@@ -18,7 +18,7 @@ class HBaseAdapter(KeyValueStorage):
     </property>
     """
 
-    def __init__(self, host, size=5, **kwargs):
+    def __init__(self, host, size=10, **kwargs):
         KeyValueStorage.__init__(self)
         self._conn_pool = happybase.ConnectionPool(size=size, host=host, **kwargs)
         self._timeout = 6000000
@@ -110,10 +110,21 @@ class HBaseAdapter(KeyValueStorage):
                 batch = table.batch()
                 for record in records:
                     batch.put(record[0], record[1])
-                batch.send()
+                self.send_batch(_conn, batch)
         except Exception as e:
             print('Exception: {}, while writing batch of records '
                   'to table: {}'.format(e, table_name))
+
+    @staticmethod
+    def send_batch(connection, batch):
+        try:
+            with connection:
+                batch.send()
+        except Exception as e:
+            print('Exception: {}, retrying recursively'.format(e))
+            connection.close()
+            connection.open()
+            HBaseAdapter.send_batch(connection, batch)
 
     def delete_table(self, table_name):
         try:

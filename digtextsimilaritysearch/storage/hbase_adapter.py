@@ -23,7 +23,7 @@ class HBaseAdapter(KeyValueStorage):
         self._conn_host = host
         self._conn_size = size
         self._timeout = 6000000
-        self._transport = 'framed'
+        self._transport = 'buffered'
         self._conn_kwargs = kwargs
         self._conn_pool = happybase.ConnectionPool(size=self._conn_size,
                                                    host=self._conn_host,

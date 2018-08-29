@@ -55,8 +55,8 @@ print('\nTime used for initialization: {}s'.format(t_init-t_start))
 time_stamps = list()
 
 print('\n\n{} .npz file chunks to add to index'.format(len(news_npzs)))
-s = int(sys.argv[2]) if sys.argv[2] else 0
-e = int(sys.argv[3]) if sys.argv[3] else -1
+s = int(sys.argv[2]) if len(sys.argv) >= 3 else 0
+e = int(sys.argv[3]) if len(sys.argv) >= 4 else -1
 for npz in news_npzs[s:e]:
     t_0 = time()
 

@@ -67,7 +67,7 @@ for npz in news_npzs[s:e]:
         dp.index_documents(load_vectors=True,
                            save_faiss_index=True,
                            batch_mode=True,
-                           batch_size=10000)
+                           batch_size=1000)
         print('{} added to index'.format(npz))
 
     except Exception as e:

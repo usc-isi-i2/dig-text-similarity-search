@@ -67,12 +67,11 @@ class HBaseAdapter(KeyValueStorage):
         if table_name not in self._tables:
             try:
                 with self._conn_pool.connection(timeout=self._timeout) as _conn:
-                        self._tables[table_name] = _conn.table(table_name)
-                return self._tables[table_name]
-
+                    self._tables[table_name] = _conn.table(table_name)
             except Exception as e:
                 print('Exception:{}, while retrieving table: {}'.format(e, table_name))
-        return None
+                return None
+        return self._tables[table_name]
 
     def insert_record_value(self, record_id, value, table_name, column_family, column_name):
         table = self.get_table(table_name)

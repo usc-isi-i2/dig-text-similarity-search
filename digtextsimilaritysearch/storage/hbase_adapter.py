@@ -20,22 +20,24 @@ class HBaseAdapter(KeyValueStorage):
 
     def __init__(self, host, size=10, **kwargs):
         KeyValueStorage.__init__(self)
-        self._conn_pool = None
         self._conn_host = host
         self._conn_size = size
         self._timeout = 6000000
+        self._transport = 'framed'
         self._conn_kwargs = kwargs
-        if not self._conn_pool:
-            self.establish_conn_pool()
+        self._conn_pool = happybase.ConnectionPool(size=self._conn_size,
+                                                   host=self._conn_host,
+                                                   timeout=self._timeout,
+                                                   transport=self._transport,
+                                                   **self._conn_kwargs)
 
         self._tables = {}
 
     def establish_conn_pool(self):
-        proto = 'framed'
         self._conn_pool = happybase.ConnectionPool(size=self._conn_size,
                                                    host=self._conn_host,
                                                    timeout=self._timeout,
-                                                   transport=proto,
+                                                   transport=self._transport,
                                                    **self._conn_kwargs)
 
     def __del__(self):
@@ -130,17 +132,6 @@ class HBaseAdapter(KeyValueStorage):
                   'to table: {}'.format(e, table_name))
             self.establish_conn_pool()
             self.insert_records_batch(records, table_name)
-
-    @staticmethod
-    def send_batch(connection, batch):
-        try:
-            with connection:
-                batch.send()
-        except Exception as e:
-            print('Exception: {}, retrying recursively'.format(e))
-            connection.close()
-            connection.open()
-            HBaseAdapter.send_batch(connection, batch)
 
     def delete_table(self, table_name):
         try:

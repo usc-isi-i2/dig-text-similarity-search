@@ -82,7 +82,9 @@ class HBaseAdapter(KeyValueStorage):
                     return table.put(record_id, {'{}:{}'.format(column_family, column_name): value})
                 raise Exception('Table: {} not found'.format(table_name))
         except Exception as e:
-            pass
+            print('Exception: {}, while writing record (id: {}, val: {}) '
+                  'in table: {} (col_fam: {}, col_name: {})'
+                  ''.format(e, record_id, value, table_name, column_family, column_name))
 
     def insert_record(self, record_id, record, table_name):
         try:
@@ -92,7 +94,7 @@ class HBaseAdapter(KeyValueStorage):
                     return table.put(record_id, record)
                 raise Exception('Table: {} not found'.format(table_name))
         except Exception as e:
-            print('Exception: {}, while writing record (id:{}, val:{}) '
+            print('Exception: {}, while writing record (id: {}, rec: {}) '
                   'to table: {}'.format(e, record_id, record, table_name))
 
     def insert_records_batch(self, records, table_name):
@@ -129,4 +131,4 @@ class HBaseAdapter(KeyValueStorage):
             for key, data in table.scan(filter=b'FirstKeyOnlyFilter()'):
                 yield {key: data}
         else:
-            raise Exception('table: {} not found'.format(table_name))
+            raise Exception('Table: {} not found'.format(table_name))

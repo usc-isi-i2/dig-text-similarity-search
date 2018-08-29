@@ -104,7 +104,7 @@ class DocumentProcessor(object):
 
             print('Adding {} faiss_ids to hbase sequentially...'.format(len(sentence_tuples)))
             # ASSUMPTION: returned vector ids are in the same order as the initial sentence order
-            for jj, (s, f) in enumerate(zip(sentence_tuples, faiss_ids)):
+            for s, f in zip(sentence_tuples, faiss_ids):
                 data = dict()
                 data[_SENTENCE_ID] = s[0]
                 data[_SENTENCE_TEXT] = s[1]

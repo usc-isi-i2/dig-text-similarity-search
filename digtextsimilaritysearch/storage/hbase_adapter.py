@@ -18,9 +18,9 @@ class HBaseAdapter(KeyValueStorage):
     </property>
     """
 
-    def __init__(self, host, **kwargs):
+    def __init__(self, host, size=5, **kwargs):
         KeyValueStorage.__init__(self)
-        self._conn_pool = happybase.ConnectionPool(size=5, host=host, **kwargs)
+        self._conn_pool = happybase.ConnectionPool(size=size, host=host, **kwargs)
         self._timeout = 6000000
         self._tables = {}
 

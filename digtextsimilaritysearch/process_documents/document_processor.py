@@ -98,11 +98,11 @@ class DocumentProcessor(object):
                 vectors = self.create_vectors(sentence_tuples)
 
         record_batches = list()
-        if vectors.any() and sentence_tuples.any():
+        if vectors.any() and len(sentence_tuples) > 0:
             faiss_ids = self.indexer.index_embeddings(vectors)
             del vectors  # Free up memory
             # ASSUMPTION: returned vector ids are in the same order as the initial sentence order
-            for jj, (s, f) in enumerate(zip(sentence_tuples, faiss_ids)):
+            for s, f in zip(sentence_tuples, faiss_ids):
                 data = dict()
                 data['{}:{}'.format(column_family, _SENTENCE_ID)] = s[0]
                 data['{}:{}'.format(column_family, _SENTENCE_TEXT)] = s[1]

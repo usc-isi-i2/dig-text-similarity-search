@@ -97,4 +97,4 @@ for i, npz in enumerate(npz_queue, start=(len(small_npzs)-len(npz_queue))):
 
     mark_completed(npz)
 
-    sleep(5)
+    sleep(1.5)

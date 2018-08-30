@@ -60,7 +60,7 @@ if small_npzs == npz_queue and os.path.isfile(completed_log):
 # Init
 sv = SentenceVectorizer()
 
-idx_name = 'FlatL2_Aug_7-13_' + sys.argv[1] + '.index'
+idx_name = 'FlatL2_Aug_7-13_ES0.index'
 idx_path = os.path.join(cwd, 'saved_indexes', idx_name)
 fi = FaissIndexer(path_to_index_file=idx_path)
 
@@ -79,7 +79,7 @@ print('\nTime used for initialization: {}s'.format(t_init-t_start))
 print('\n\n{}/{} .npz file chunks to add to index'
       ''.format(len(npz_queue), len(small_npzs)))
 time_stamps = list()
-for i, npz in enumerate(npz_queue[:1], start=(len(small_npzs)-len(npz_queue))):
+for i, npz in enumerate(npz_queue, start=(len(small_npzs)-len(npz_queue))):
     t_0 = time()
 
     print('\nLoading {}'.format(npz))
@@ -94,3 +94,5 @@ for i, npz in enumerate(npz_queue[:1], start=(len(small_npzs)-len(npz_queue))):
     print('Chunk {} complete'.format(i))
     print('Time passed: {}s'.format(t_diff))
     print('Avg time per chunk: {}'.format(sum(time_stamps)/len(time_stamps)))
+
+    sleep(5)

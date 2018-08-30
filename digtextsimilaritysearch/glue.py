@@ -14,8 +14,8 @@ docs = [json.loads(x) for x in open(doc_file_path)]
 
 fi = FaissIndexer()
 sentence_vectorizer = SentenceVectorizer()
-hbase_adapter = HBaseAdapter('localhost')
-dp = DocumentProcessor(fi, sentence_vectorizer, hbase_adapter, save_vectors=True)
+# hbase_adapter = HBaseAdapter('localhost')
+dp = DocumentProcessor(fi, sentence_vectorizer, None, save_vectors=True, logstash_input_file='/tmp/test.jl')
 
 dp.index_documents(docs, load_vectors=False)
 

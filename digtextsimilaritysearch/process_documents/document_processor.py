@@ -1,3 +1,5 @@
+import json
+
 _SENTENCE_ID = 'sentence_id'
 _SENTENCE_TEXT = 'sentence_text'
 
@@ -5,7 +7,7 @@ _SENTENCE_TEXT = 'sentence_text'
 class DocumentProcessor(object):
     def __init__(self, indexer, vectorizer, storage_adapter,
                  table_name='dig', vector_save_path='/tmp/saved_vectors.npz', save_vectors=False,
-                 index_save_path='/tmp/faiss_index.index'):
+                 index_save_path='/tmp/faiss_index.index', logstash_input_file='/tmp/logstash_input.jl'):
 
         self.indexer = indexer
         self.vectorizer = vectorizer
@@ -19,6 +21,7 @@ class DocumentProcessor(object):
         self.save_vectors = save_vectors
 
         self.index_save_path = index_save_path
+        self.logstash_input = open(logstash_input_file, mode="a")
 
     def _configure(self):
         self.storage_adapter.create_table(self.table_name)
@@ -99,15 +102,20 @@ class DocumentProcessor(object):
             # ASSUMPTION: returned vector ids are in the same order as the initial sentence order
             for s, f in zip(sentence_tuples, faiss_ids):
                 data = dict()
-                data['{}:{}'.format(column_family, _SENTENCE_ID)] = s[0]
-                data['{}:{}'.format(column_family, _SENTENCE_TEXT)] = s[1]
-                if batch_mode:
-                    record_batches.append((str(f), data))
-                else:
-                    self.storage_adapter.insert_record(str(f), data, self.table_name)
+                data[_SENTENCE_ID] = s[0]
+                data[_SENTENCE_TEXT] = s[1]
+                data['faiss_id'] = str(f)
+                self.logstash_input.write('{}\n'.format(json.dumps(data)))
 
-            if batch_mode:
-                self.insert_bulk_records(record_batches, self.table_name, batch_size)
+                # data['{}:{}'.format(column_family, _SENTENCE_ID)] = s[0]
+                # data['{}:{}'.format(column_family, _SENTENCE_TEXT)] = s[1]
+            #     if batch_mode:
+            #         record_batches.append((str(f), data))
+            #     else:
+            #         self.storage_adapter.insert_record(str(f), data, self.table_name)
+            #
+            # if batch_mode:
+            #     self.insert_bulk_records(record_batches, self.table_name, batch_size)
             if save_faiss_index:
                 print('saving faiss index')
                 self.indexer.save_index(self.index_save_path)

@@ -12,10 +12,11 @@ query_str = """{
 
 
 class ESAdapter(KeyValueStorage):
-    def __init__(self, es_endpoint='http://localhost:9200'):
+    def __init__(self, es_endpoint='http://localhost:9200', logstash_file_path='/tmp/logstash_input.jl'):
         KeyValueStorage.__init__(self)
 
         self.es_endpoint = es_endpoint
+        self.logstash_file = open(logstash_file_path, mode='a')
 
     def get_record(self, record_id, table_name):
         # table_name = index in this case
@@ -31,7 +32,12 @@ class ESAdapter(KeyValueStorage):
         return sources
 
     def insert_record(self, record_id, record, table_name):
-        print('lol wat')
+        for k in list(record):
+            if ':' in k:
+                record[k.split(':')[1]] = record[k]
+                record.pop(k)
+        record['faiss_id'] = record_id
+        self.logstash_file.write('{}\n'.format(json.dumps(record)))
 
     def create_table(self, table_name):
         print('no way')
@@ -40,4 +46,5 @@ class ESAdapter(KeyValueStorage):
         print('thats not how it works')
 
     def insert_records_batch(self, records, table_name):
-        print('see insert_record')
+        for record in records:
+            self.insert_record(record[0], record[1], table_name)

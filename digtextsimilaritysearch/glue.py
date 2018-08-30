@@ -17,7 +17,7 @@ fi = FaissIndexer()
 sentence_vectorizer = SentenceVectorizer()
 # hbase_adapter = HBaseAdapter('localhost')
 es_adapter = ESAdapter()
-dp = DocumentProcessor(fi, sentence_vectorizer, es_adapter, save_vectors=True, logstash_input_file='/tmp/test.jl', table_name='dig-text-similarity-search')
+dp = DocumentProcessor(fi, sentence_vectorizer, es_adapter, save_vectors=True, table_name='dig-text-similarity-search')
 
 dp.index_documents(docs, load_vectors=False)
 

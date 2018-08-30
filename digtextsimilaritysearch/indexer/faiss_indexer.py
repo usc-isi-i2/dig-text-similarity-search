@@ -3,6 +3,7 @@ import numpy as np
 from typing import List
 from os.path import exists
 
+
 class FaissIndexer(object):
     def __init__(self, path_to_index_file=None):
         self.faiss_index = faiss.read_index(path_to_index_file) \

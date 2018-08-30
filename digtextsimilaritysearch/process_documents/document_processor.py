@@ -98,7 +98,7 @@ class DocumentProcessor(object):
                 vectors = self.create_vectors(sentence_tuples)
 
         record_batches = list()
-        if vectors.any() and sentence_tuples:
+        if vectors.any() and len(sentence_tuples):
             faiss_ids = self.indexer.index_embeddings(vectors)
             # ASSUMPTION: returned vector ids are in the same order as the initial sentence order
             for s, f in zip(sentence_tuples, faiss_ids):

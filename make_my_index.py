@@ -64,7 +64,7 @@ idx_name = 'FlatL2_Aug_7-13_' + sys.argv[1] + '.index'
 idx_path = os.path.join(cwd, 'saved_indexes', idx_name)
 fi = FaissIndexer(path_to_index_file=idx_path)
 
-logstash_path = '/lfs1/dig/dig_text_sim/logstash_input.jl'
+logstash_path = '/lfs1/dig_text_sim/logstash_input.jl'
 es = ESAdapter(logstash_file_path=logstash_path)
 
 table = 'dig-text-similarity-search'

@@ -25,10 +25,16 @@ class ESAdapter(KeyValueStorage):
         query = json.loads(query_str)
         query['query']['ids']['values'] = record_id
         url = '{}/{}/_search'.format(self.es_endpoint, table_name)
-        r = requests.post(url, data=json.dumps(query))
         sources = list()
-        for hit in r.json()['hits']['hits']:
-            sources.append(hit['_source'])
+        r = None
+        try:
+            r = requests.post(url, data=json.dumps(query))
+        except Exception as e:
+            print('Exception:{} occured while calling elasticsearch'.format(str(e)))
+
+        if r and r.status_code == 200:
+            for hit in r.json()['hits']['hits']:
+                sources.append(hit['_source'])
         return sources
 
     def insert_record(self, record_id, record, table_name):

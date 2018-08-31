@@ -82,7 +82,7 @@ time_stamps = list()
 for i, npz in enumerate(npz_queue, start=(len(small_npzs)-len(npz_queue))):
     t_0 = time()
 
-    if i % 50 == 0 or i >= (len(small_npzs)-10):
+    if i % 100 == 0 or i >= (len(small_npzs)-10):
         save_index = True
     else:
         save_index = False

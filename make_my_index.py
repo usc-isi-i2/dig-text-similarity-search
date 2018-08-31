@@ -1,5 +1,4 @@
 import os
-import sys
 
 from time import time, sleep
 
@@ -76,7 +75,7 @@ print('\nTime used for initialization: {}s'.format(t_init-t_start))
 
 
 # Run it
-print('\n\n{}/{} .npz file chunks to add to index'
+print('\n\n{} of {} .npz file chunks queued for adding to index'
       ''.format(len(npz_queue), len(small_npzs)))
 time_stamps = list()
 for i, npz in enumerate(npz_queue, start=(len(small_npzs)-len(npz_queue))):
@@ -87,18 +86,18 @@ for i, npz in enumerate(npz_queue, start=(len(small_npzs)-len(npz_queue))):
     else:
         save_index = False
 
-    print('\nLoading {}'.format(npz))
+    print('\nLoading file: {}'.format(npz))
     dp.vector_save_path = npz
 
     dp.index_documents(load_vectors=True,
                        save_faiss_index=save_index)
-    print('{} added to index'.format(npz))
+    print('Added to index: {}'.format(npz))
 
     t_diff = time()-t_0
     time_stamps.append(t_diff)
-    print('Chunk {} complete'.format(i))
-    print('Time passed: {}s'.format(t_diff))
-    print('Avg time per chunk: {}'.format(sum(time_stamps)/len(time_stamps)))
+    print('Chunk {} of {} indexed'.format(i, len(small_npzs)))
+    print('Time passed: {:0.2f}s'.format(t_diff))
+    print('Avg time per chunk: {:0.2f}'.format(sum(time_stamps)/len(time_stamps)))
 
     mark_completed(npz)
 

@@ -82,11 +82,16 @@ time_stamps = list()
 for i, npz in enumerate(npz_queue, start=(len(small_npzs)-len(npz_queue))):
     t_0 = time()
 
+    if i % 50 == 0 or i >= (len(small_npzs)-10):
+        save_index = True
+    else:
+        save_index = False
+
     print('\nLoading {}'.format(npz))
     dp.vector_save_path = npz
 
     dp.index_documents(load_vectors=True,
-                       save_faiss_index=True)
+                       save_faiss_index=save_index)
     print('{} added to index'.format(npz))
 
     t_diff = time()-t_0
@@ -97,4 +102,4 @@ for i, npz in enumerate(npz_queue, start=(len(small_npzs)-len(npz_queue))):
 
     mark_completed(npz)
 
-    sleep(1.5)
+    sleep(2)

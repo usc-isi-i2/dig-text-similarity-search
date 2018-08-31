@@ -17,7 +17,7 @@ t_start = time()
 sv = SentenceVectorizer()
 
 cwd = os.getcwd()
-idx_name = 'FlatL2_Aug_7-13_ES.index'
+idx_name = 'ckpt4000_FlatL2_Aug_7-13_ES.index'
 idx_path = os.path.join(cwd, 'saved_indexes', idx_name)
 fi = FaissIndexer(path_to_index_file=idx_path)
 

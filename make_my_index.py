@@ -103,3 +103,9 @@ for i, npz in enumerate(npz_queue, start=(len(small_npzs)-len(npz_queue))):
     mark_completed(npz)
 
     sleep(2)
+
+t_tot = time() - t_init
+m, s = divmod(t_tot, 60)
+print('\n\nNumber of chunks indexed: {}'.format(len(time_stamps)))
+print('Average time per chunk: {:0.2f}s'.format(t_tot/len(time_stamps)))
+print('Total time elapsed: {}m:{}s'.format(int(m), int(s)))

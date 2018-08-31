@@ -73,10 +73,10 @@ for i, (q, rs, t) in enumerate(zip(queries, all_results, time_stamps), start=1):
             f.write('Query: {}\n'.format(q))
             f.write('Results were gathered in: {:0.4f}s\n\n'.format(t))
             for j, r in enumerate(rs, start=1):
-                f.write('Result: {}'.format(j))
-                f.write('Difference Score: {:0.5f}'.format(r['score']))
-                f.write('Text: {}'.format(r['sentence']))
-                f.write('Document ID: {}\n'.format(r['doc_id']))
+                f.write(' Result: {}\n'.format(j))
+                f.write(' Difference Score: {:0.5f}\n'.format(r['score']))
+                f.write(' Text: {}\n'.format(r['sentence']))
+                f.write(' Document ID: {}\n\n'.format(r['doc_id']))
 
     except FileExistsError:
         print('File already exists: {}'.format(file_path))

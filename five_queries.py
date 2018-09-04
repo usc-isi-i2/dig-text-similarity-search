@@ -52,18 +52,32 @@ q4 = 'Will American pastor Andrew Brunson leave Turkey ' \
 queries = [q0, q1, q2, q3, q4]
 
 
+# K
+k_search = 50
+k_report = 10
+
+
 # Run it
 all_results = list()
 time_stamps = list()
-for q in queries:
+for i, q in enumerate(queries, start=1):
     t_0 = time()
-    results = dp.query_text(str_query=q, k=10)
+    results = dp.query_text(str_query=q, k=k_search)
     all_results.append(results)
     t_diff = time() - t_0
     time_stamps.append(t_diff)
+    print('Query {} completed in {:0.4f}s'.format(i, t_diff))
+
+
+# Check time for batch search
+t_batch = time()
+_ = dp.query_text(str_query=queries, k=k_search)
+t_batch = time() - t_batch
+print('Batch query completed in {:0.4f}s'.format(t_batch))
 
 
 # Report it
+base_url = 'http://dig:dIgDiG@mydig-sage-internal.isi.edu/es/sage_news/ads/'
 for i, (q, rs, t) in enumerate(zip(queries, all_results, time_stamps), start=1):
     file_name = 'query_test_' + str(i) + '_results.txt'
     file_path = os.path.join(cwd, file_name)
@@ -71,12 +85,20 @@ for i, (q, rs, t) in enumerate(zip(queries, all_results, time_stamps), start=1):
     try:
         with open(file_path, 'x') as f:
             f.write('Query: {}\n'.format(q))
-            f.write('Results were gathered in: {:0.4f}s\n\n'.format(t))
-            for j, r in enumerate(rs, start=1):
-                f.write('  Result: {}\n'.format(j))
-                f.write('  Difference Score: {:0.5f}\n'.format(r['score']))
-                f.write('  Text: {}\n'.format(r['sentence'].replace('\n', ' ')))
-                f.write('  Document ID: {}\n\n'.format(r['doc_id']))
+            f.write('Results for single query gathered in: {:0.4f}s\n'.format(t))
+            f.write('Compare: Results for {} queries batch-gathered in '
+                    '{:0.4f}s\n\n\n'.format(len(queries), t_batch))
+            j = 1
+            doc_ids = set()
+            for r in rs:
+                if j <= k_report and r['doc_id'] not in doc_ids:
+                    j += 1
+                    doc_ids.add(r['doc_id'])
+                    f.write('  Result: {}\n'.format(j))
+                    f.write('  Difference Score: {:0.5f}\n'.format(r['score']))
+                    f.write('  Text: {}\n'.format(r['sentence'].replace('\n', ' ')))
+                    f.write('  Document ID: {}\n'.format(r['doc_id']))
+                    f.write('  Link to cdr_doc: {}{} \n\n'.format(base_url, r['doc_id']))
 
     except FileExistsError:
         print('File already exists: {}'.format(file_path))

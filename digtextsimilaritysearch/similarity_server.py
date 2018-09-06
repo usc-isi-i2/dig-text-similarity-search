@@ -7,7 +7,8 @@ import json
 from indexer.faiss_indexer import FaissIndexer
 from process_documents.document_processor import DocumentProcessor
 from vectorizer.sentence_vectorizer import SentenceVectorizer
-from storage.hbase_adapter import HBaseAdapter
+# from storage.hbase_adapter import HBaseAdapter
+from storage.es_adapter import ESAdapter
 from config import config
 
 app = Flask(__name__)
@@ -19,11 +20,14 @@ query_vectorizer = SentenceVectorizer()
 print('Initializing Faiss Indexer')
 faiss_indexer = FaissIndexer(path_to_index_file=config['faiss_index_path'])
 
-print('Initializing Hbase Adapter')
-hbase_adapter = HBaseAdapter(config['hbase_server'])
+# print('Initializing Hbase Adapter')
+# hbase_adapter = HBaseAdapter(config['hbase_server'])
+
+print('Initializing ES Adapter')
+es_adapter = ESAdapter()
 
 print('Initializing Document Processor')
-dp = DocumentProcessor(faiss_indexer, query_vectorizer, hbase_adapter)
+dp = DocumentProcessor(faiss_indexer, query_vectorizer, es_adapter)
 
 
 @app.route("/")

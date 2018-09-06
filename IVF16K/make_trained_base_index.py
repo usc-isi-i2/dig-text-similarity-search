@@ -57,7 +57,8 @@ if not os.path.isfile(training_path):
     t_gather1 = time()
     print('Training set stacked and saved in {:0.2f}s'.format(t_gather1-t_gather0))
 else:
-    training_set = np.load(training_path)
+    loaded_set = np.load(training_path)
+    training_set = loaded_set['training_set']
     print('Training set loaded')
 
 

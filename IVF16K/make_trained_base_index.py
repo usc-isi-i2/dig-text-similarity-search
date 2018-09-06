@@ -32,7 +32,7 @@ trained_base_index = os.path.join(index_dir, 'emptyTrainedIVF16384.index')
 t_init0 = time()
 sv = SentenceVectorizer()
 t_init1 = time()
-print('Initialized in {:0.2f}s'.format(t_init1-t_init0))
+print('\nInitialized in {:0.2f}s\n'.format(t_init1-t_init0))
 
 
 # Make training set (use first 100 chunks by default)
@@ -40,7 +40,7 @@ if not os.path.isfile(training_path):
     small_npzs = list()
     for (dir_path, _, file_list) in os.walk(emb_dir):
         for f in file_list:
-            if f.endswith('.npz'):
+            if f.endswith('.npz') and not f.startswith('train'):
                 small_npzs.append(os.path.join(dir_path, f))
         break
     small_npzs.sort()

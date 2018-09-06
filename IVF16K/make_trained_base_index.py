@@ -12,13 +12,20 @@ from digtextsimilaritysearch.vectorizer.sentence_vectorizer \
 
 
 t_start = time()
-n_train = int(sys.argv[1]) if len(sys.argv) > 1 else 100
 
 # Set up paths
 cwd = os.getcwd()
+print('cwd: {}'.format(cwd))
+parent_dir = 'dig-text-similarity-search'
+assert cwd.endswith(parent_dir), 'Aborted...\n\nPlease run in {}'.format(parent_dir)
+
+n_train = int(sys.argv[1]) if len(sys.argv) > 1 else 100
 emb_dir = os.path.join(cwd, 'data/vectorized_sage_news/new_2018-08-from07to13')
-index_dir = os.path.join(cwd, 'saved_indexes')
 training_path = os.path.join(emb_dir, 'training_set{}.npz'.format(n_train))
+
+index_dir = os.path.join(cwd, 'saved_indexes/IVF16K_indexes')
+if not os.path.isdir(index_dir):
+    os.mkdir(index_dir)
 trained_base_index = os.path.join(index_dir, 'emptyTrainedIVF16384.index')
 
 # Init

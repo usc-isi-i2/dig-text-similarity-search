@@ -75,7 +75,7 @@ class DiskBuildIVF16K(BaseIndex):
         self.invlist_paths.extend(paths_to_add)
         self.n_invlists()
 
-    def build_disk_index(self, merged_ivfs_path, merged_index_path):
+    def build_disk_index(self, merged_ivfs_path, merged_index_path) -> int:
         ivfs = list()
         for invlpth in self.invlist_paths:
             index = faiss.read_index(invlpth)
@@ -96,3 +96,4 @@ class DiskBuildIVF16K(BaseIndex):
         self.index.replace_invlists(invlists)
         self.save_index(merged_index_path)
         self.index = None
+        return int(ntotal)

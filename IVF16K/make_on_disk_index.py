@@ -62,7 +62,10 @@ t_0 = time()
 timestamps = list()
 for i, (npz, invl) in enumerate(zip(small_npzs, small_invlists)):
     t_1 = time()
-    dp.index_docs_on_disk(offset=(i*100000), path_to_npz=npz, path_to_invlist=invl)
+    try:
+        dp.index_docs_on_disk(offset=(i*100000), path_to_npz=npz, path_to_invlist=invl)
+    except Exception as e:
+        print(e)
     timestamps.append(time()-t_1)
     if i % 100 == 0 or i >= len(small_npzs)-2:
         print('  {:4d} .npz files indexed'.format(i))

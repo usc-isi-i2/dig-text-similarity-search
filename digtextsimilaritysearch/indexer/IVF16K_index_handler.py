@@ -38,8 +38,8 @@ class DiskBuildIVF16K(BaseIndex):
         Expected npz_path format:
             '/.../vectorized_new_<yyyy>-<mm>-<dd>_<fk>_10K<fk2>.npz'
 
-        Offset/tag format: (21 digit np.long with 7 trailing zeros)
-            <yyyy><mm><dd>0<fk><fk2>0000000
+        Offset/tag format: (22 digit np.long with 7 trailing zeros)
+            <yyyy><mm><dd>00<fk><fk2>0000000
 
         :param npz_path: Path to preprocessed_news.npz
         :param embeddings: Preprocessed sentence embeddings in need of faiss_ids
@@ -53,8 +53,8 @@ class DiskBuildIVF16K(BaseIndex):
         file_keys = filename.split('_')[-2:]
         file_keys[1] = file_keys[1].split('K')[-1]
 
-        offset = '{}{}{}0{}{}0000000'.format(date_keys[0], date_keys[1], date_keys[2],
-                                             file_keys[0], file_keys[1])
+        offset = '{}{}{}00{}{}0000000'.format(date_keys[0], date_keys[1], date_keys[2],
+                                              file_keys[0], file_keys[1])
         offset = np.long(offset)
         faiss_ids = offset + np.arange(start=0, stop=len(sentences), dtype=np.long)
         return faiss_ids

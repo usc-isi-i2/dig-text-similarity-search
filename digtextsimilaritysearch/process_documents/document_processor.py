@@ -1,3 +1,4 @@
+import numpy as np
 from time import sleep
 
 _SENTENCE_ID = 'sentence_id'
@@ -149,13 +150,14 @@ class DocumentProcessor(object):
             data['{}:{}'.format(column_family, _SENTENCE_TEXT)] = s[1]
             self.storage_adapter.insert_record(str(f), data, self.table_name)
 
-    def index_docs_on_disk(self, path_to_npz, path_to_invlist=None):
+    def index_docs_on_disk(self, offset, path_to_npz, path_to_invlist=None):
         if not path_to_invlist:
             path_to_invlist = 'invl_' + path_to_npz.replace('.npz', '.index')
 
         if self.index_builder:
             vectors, sent_tups = self.vectorizer.load_vectors(path_to_npz)
-            faiss_ids = self.index_builder.generate_faiss_ids(path_to_npz, vectors, sent_tups)
+            # faiss_ids = self.index_builder.generate_faiss_ids(path_to_npz, vectors, sent_tups)
+            faiss_ids = np.arange(start=0, stop=len(vectors), dtype=np.int64) + offset
             self.index_builder.generate_invlist(path_to_invlist, faiss_ids, vectors)
             self.add_to_db(sent_tups, faiss_ids)
         else:

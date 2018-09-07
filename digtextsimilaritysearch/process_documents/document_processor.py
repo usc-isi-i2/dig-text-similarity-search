@@ -5,13 +5,14 @@ _SENTENCE_TEXT = 'sentence_text'
 
 
 class DocumentProcessor(object):
-    def __init__(self, indexer, vectorizer, storage_adapter,
+    def __init__(self, indexer, vectorizer, storage_adapter, index_builder,
                  table_name='dig', vector_save_path='/tmp/saved_vectors.npz', save_vectors=False,
                  index_save_path='/tmp/faiss_index.index'):
 
         self.indexer = indexer
         self.vectorizer = vectorizer
         self.storage_adapter = storage_adapter
+        self.index_builder = index_builder
 
         self.table_name = table_name
         if self.storage_adapter:
@@ -134,3 +135,18 @@ class DocumentProcessor(object):
                 self.storage_adapter.insert_records_batch(records[count:count + batch_size], table_name)
                 count += batch_size
                 sleep(0.1)
+
+    def index_docs_on_disk(self, paths_to_npz, paths_to_invlist=None):
+        if not isinstance(paths_to_npz, list):
+            list(paths_to_npz)
+        if not paths_to_invlist:
+            paths_to_invlist = list()
+            for npz in paths_to_npz:
+                paths_to_invlist.append(npz.replace('.npz', '.index'))
+
+        for npz, invlist in zip(paths_to_npz, paths_to_invlist):
+            vectors, sentence_tuples = self.vectorizer.load_vectors(npz)
+            self.index_builder.generate_invlists(npz, invlist, vectors, sentence_tuples)
+
+    def build_index_on_disk(self, merged_ivfs_path, merged_index_path):
+        self.index_builder.build_disk_index(merged_ivfs_path, merged_index_path)

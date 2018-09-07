@@ -5,7 +5,7 @@ _SENTENCE_TEXT = 'sentence_text'
 
 
 class DocumentProcessor(object):
-    def __init__(self, indexer, vectorizer, storage_adapter, index_builder,
+    def __init__(self, indexer, vectorizer, storage_adapter, index_builder=None,
                  table_name='dig', vector_save_path='/tmp/saved_vectors.npz', save_vectors=False,
                  index_save_path='/tmp/faiss_index.index'):
 
@@ -82,6 +82,7 @@ class DocumentProcessor(object):
                 out['score'] = float(score)
                 out['sentence'] = sentence_info[_SENTENCE_TEXT]
                 similar_docs.append(out)
+                # TODO: rank by doc and number of sentences
         return similar_docs
 
     def index_documents(self, cdr_docs=None, load_vectors=False, column_family='dig', save_faiss_index=False,
@@ -103,8 +104,9 @@ class DocumentProcessor(object):
             faiss_ids = self.indexer.index_embeddings(vectors)
             del vectors  # Free up memory
 
-            print('Adding {} faiss_ids to hbase sequentially...'.format(len(sentence_tuples)))
+            print('Adding {} faiss_ids to database sequentially...'.format(len(sentence_tuples)))
             # ASSUMPTION: returned vector ids are in the same order as the initial sentence order
+            # TODO: iron out repeated code
             for s, f in zip(sentence_tuples, faiss_ids):
                 data = dict()
                 data[_SENTENCE_ID] = s[0]
@@ -117,6 +119,7 @@ class DocumentProcessor(object):
                 else:
                     self.storage_adapter.insert_record(str(f), data, self.table_name)
 
+            # TODO: depreciate or keep batch_mode
             if batch_mode:
                 self.insert_bulk_records(record_batches, self.table_name, batch_size)
             if save_faiss_index:
@@ -136,6 +139,16 @@ class DocumentProcessor(object):
                 count += batch_size
                 sleep(0.1)
 
+    def add_to_db(self, sentence_tuples, faiss_ids, column_family='dig'):
+        # ASSUMPTION: vector ids are in the same order as the initial sentence order
+        for s, f in zip(sentence_tuples, faiss_ids):
+            data = dict()
+            data[_SENTENCE_ID] = s[0]
+            data[_SENTENCE_TEXT] = s[1]
+            data['{}:{}'.format(column_family, _SENTENCE_ID)] = s[0]
+            data['{}:{}'.format(column_family, _SENTENCE_TEXT)] = s[1]
+            self.storage_adapter.insert_record(str(f), data, self.table_name)
+
     def index_docs_on_disk(self, paths_to_npz, paths_to_invlist=None):
         if not isinstance(paths_to_npz, list):
             list(paths_to_npz)
@@ -144,9 +157,17 @@ class DocumentProcessor(object):
             for npz in paths_to_npz:
                 paths_to_invlist.append(npz.replace('.npz', '.index'))
 
-        for npz, invlist in zip(paths_to_npz, paths_to_invlist):
-            vectors, sentence_tuples = self.vectorizer.load_vectors(npz)
-            self.index_builder.generate_invlists(npz, invlist, vectors, sentence_tuples)
+        if self.index_builder:
+            for npz, invlist in zip(paths_to_npz, paths_to_invlist):
+                vectors, sentence_tuples = self.vectorizer.load_vectors(npz)
+                faiss_ids = self.index_builder.generate_faiss_ids(npz, vectors, sentence_tuples)
+                self.index_builder.generate_invlists(invlist, faiss_ids, vectors)
+                self.add_to_db(sentence_tuples, faiss_ids)
+        else:
+            raise Exception('Cannot index on disk without index_builder')
 
     def build_index_on_disk(self, merged_ivfs_path, merged_index_path):
-        self.index_builder.build_disk_index(merged_ivfs_path, merged_index_path)
+        if self.index_builder:
+            self.index_builder.build_disk_index(merged_ivfs_path, merged_index_path)
+        else:
+            raise Exception('Cannot index on disk without index_builder')

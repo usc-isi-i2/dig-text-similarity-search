@@ -56,6 +56,7 @@ dp = DocumentProcessor(indexer=None, index_builder=idx_bdr,
 t_init1 = time()
 print('\n\nInitialized in {:0.2f}s\n'.format(t_init1-t_init0))
 
+print('{} .npz files found\n'.format(len(small_npzs)))
 
 # DoIT!
 t_0 = time()
@@ -67,8 +68,8 @@ for i, (npz, invl) in enumerate(zip(small_npzs, small_invlists)):
     except Exception as e:
         print(e)
     timestamps.append(time()-t_1)
-    if i % 100 == 0 or i >= len(small_npzs)-2:
-        print('  {:4d} .npz files indexed'.format(i))
+    if i % 20 == 0 or i >= len(small_npzs)-2:
+        print('  {:4d} of {} .npz files indexed'.format(i+1, len(small_npzs)))
         print('  Average time per chunk: {:0.2f}s'
               '\n'.format(sum(timestamps)/len(timestamps)))
 

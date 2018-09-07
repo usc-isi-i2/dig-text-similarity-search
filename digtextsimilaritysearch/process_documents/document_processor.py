@@ -164,10 +164,10 @@ class DocumentProcessor(object):
                 self.index_builder.generate_invlists(invlist, faiss_ids, vectors)
                 self.add_to_db(sentence_tuples, faiss_ids)
         else:
-            raise Exception('Cannot index on disk without index_builder')
+            raise Exception('Cannot index on disk without an index_builder')
 
     def build_index_on_disk(self, merged_ivfs_path, merged_index_path):
         if self.index_builder:
             self.index_builder.build_disk_index(merged_ivfs_path, merged_index_path)
         else:
-            raise Exception('Cannot index on disk without index_builder')
+            raise Exception('Cannot build index on disk without an index_builder')

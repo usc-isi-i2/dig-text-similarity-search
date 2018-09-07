@@ -149,20 +149,15 @@ class DocumentProcessor(object):
             data['{}:{}'.format(column_family, _SENTENCE_TEXT)] = s[1]
             self.storage_adapter.insert_record(str(f), data, self.table_name)
 
-    def index_docs_on_disk(self, paths_to_npz, paths_to_invlist=None):
-        if not isinstance(paths_to_npz, list):
-            list(paths_to_npz)
-        if not paths_to_invlist:
-            paths_to_invlist = list()
-            for npz in paths_to_npz:
-                paths_to_invlist.append(npz.replace('.npz', '.index'))
+    def index_docs_on_disk(self, path_to_npz, path_to_invlist=None):
+        if not path_to_invlist:
+            path_to_invlist = 'invl_' + path_to_npz.replace('.npz', '.index')
 
         if self.index_builder:
-            for npz, invlist in zip(paths_to_npz, paths_to_invlist):
-                vectors, sentence_tuples = self.vectorizer.load_vectors(npz)
-                faiss_ids = self.index_builder.generate_faiss_ids(npz, vectors, sentence_tuples)
-                self.index_builder.generate_invlists(invlist, faiss_ids, vectors)
-                self.add_to_db(sentence_tuples, faiss_ids)
+            vectors, sent_tups = self.vectorizer.load_vectors(path_to_npz)
+            faiss_ids = self.index_builder.generate_faiss_ids(path_to_npz, vectors, sent_tups)
+            self.index_builder.generate_invlist(path_to_invlist, faiss_ids, vectors)
+            self.add_to_db(sent_tups, faiss_ids)
         else:
             raise Exception('Cannot index on disk without an index_builder')
 

@@ -58,11 +58,10 @@ class DiskBuildIVF16K(BaseIndex):
         faiss_ids = offset + np.arange(start=0, stop=len(sentences), dtype=np.long)
         return faiss_ids
 
-    def generate_invlists(self, npz_path, invlist_path,
-                          embeddings: np.array, sentences: np.array):
+    def generate_invlist(self, invlist_path, faiss_ids,
+                         embeddings: np.array) -> np.array:
         self.load_empty()
-        fIDs = self.generate_faiss_ids(npz_path, embeddings, sentences)
-        self.index_embeddings(embeddings, fIDs)
+        self.index_embeddings(embeddings, faiss_ids)
         self.invlist_paths.append(invlist_path)
         self.save_index(invlist_path)
         self.index = None

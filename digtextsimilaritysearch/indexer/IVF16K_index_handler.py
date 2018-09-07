@@ -31,7 +31,8 @@ class DiskBuildIVF16K(BaseIndex):
                             ''.format(empty_index.ntotal, empty_index.is_trained))
 
     @staticmethod
-    def generate_faiss_ids(npz_path, embeddings, sentences) -> np.array:
+    def generate_faiss_ids(npz_path,
+                           embeddings: np.array, sentences: np.array) -> np.array:
         """
         Generates unique faiss_ids by making an offset/tag from the npz_path
 
@@ -67,9 +68,12 @@ class DiskBuildIVF16K(BaseIndex):
         self.save_index(invlist_path)
         self.index = None
 
+    def n_invlists(self):
+        print('* n invlists: {}'.format(len(self.invlist_paths)))
+
     def extend_invlist_paths(self, paths_to_add: List[str]):
         self.invlist_paths.extend(paths_to_add)
-        print('* n invlists: {}'.format(len(self.invlist_paths)))
+        self.n_invlists()
 
     def build_disk_index(self, merged_ivfs_path, merged_index_path):
         ivfs = list()

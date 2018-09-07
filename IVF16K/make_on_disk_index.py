@@ -1,5 +1,9 @@
 import os
+import sys
 from time import time
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
 from digtextsimilaritysearch.indexer.IVF16K_index_handler \
     import DiskBuildIVF16K

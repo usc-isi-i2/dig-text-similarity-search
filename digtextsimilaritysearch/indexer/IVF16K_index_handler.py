@@ -26,7 +26,8 @@ class DiskBuildIVF16K(BaseIndex):
         if empty_index.is_trained and empty_index.ntotal == 0:
             self.index = empty_index
         else:
-            raise Exception('Empty index ({}) must be pre-trained ({})'
+            raise Exception('Index must be empty and pre-trained.\n'
+                            ' index.ntotal: ({}), index.is_trained: ({})'
                             ''.format(empty_index.ntotal, empty_index.is_trained))
 
     @staticmethod

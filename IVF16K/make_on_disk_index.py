@@ -61,20 +61,25 @@ print('{} .npz files found\n'.format(len(small_npzs)))
 # DoIT!
 t_0 = time()
 timestamps = list()
-for i, (npz, invl) in enumerate(zip(small_npzs, small_invlists)):
-    t_1 = time()
-    try:
-        dp.index_docs_on_disk(offset=(i*100000), path_to_npz=npz, path_to_invlist=invl)
-    except Exception as e:
-        print(e)
-    timestamps.append(time()-t_1)
-    if i % 20 == 0 or i >= len(small_npzs)-2:
-        print('  {:4d} of {} .npz files indexed'.format(i+1, len(small_npzs)))
-        print('  Average time per chunk: {:0.2f}s'
-              '\n'.format(sum(timestamps)/len(timestamps)))
+timestamps.append(0)
+doit = False if len(sys.argv) > 1 else True
+if doit:
+    for i, (npz, invl) in enumerate(zip(small_npzs, small_invlists)):
+        t_1 = time()
+        try:
+            dp.index_docs_on_disk(offset=(i*100000),
+                                  path_to_npz=npz,
+                                  path_to_invlist=invl)
+        except Exception as e:
+            print(e)
+        timestamps.append(time()-t_1)
+        if i % 20 == 0 or i >= len(small_npzs)-2:
+            print('  {:4d} of {} .npz files indexed'.format(i+1, len(small_npzs)))
+            print('  Average time per chunk: {:0.2f}s'
+                  '\n'.format(sum(timestamps[1:])/len(timestamps[1:])))
 
 # Merge
-merged_ivfs = os.path.join(index_dir, '')
+merged_ivfs = os.path.join(index_dir, 'mergedIVF16384.ivfdata')
 deployable_index = os.path.join(index_dir, 'populatedIVF16384.index')
 ntotal = dp.build_index_on_disk(merged_ivfs_path=merged_ivfs,
                                 merged_index_path=deployable_index)

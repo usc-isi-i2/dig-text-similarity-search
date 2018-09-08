@@ -12,7 +12,7 @@ class DeployIVF16K(BaseIndex):
         self.index.add_with_ids(embeddings, faiss_ids)
 
 
-class DiskBuildIVF16K(BaseIndex):
+class DiskBuilderIVF16K(BaseIndex):
     def __init__(self, path_to_empty_index):
         BaseIndex.__init__(self)
         self.path_to_empty_index = path_to_empty_index

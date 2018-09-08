@@ -6,7 +6,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
 from digtextsimilaritysearch.indexer.IVF16K_index_handler \
-    import DiskBuildIVF16K
+    import DiskBuilderIVF16K
 from digtextsimilaritysearch.vectorizer.sentence_vectorizer \
     import SentenceVectorizer
 from digtextsimilaritysearch.storage.es_adapter \
@@ -42,7 +42,7 @@ for npz in small_npzs:
 # Init
 t_init0 = time()
 empty_index_path = os.path.join(index_dir, 'emptyTrainedIVF16384.index')
-idx_bdr = DiskBuildIVF16K(path_to_empty_index=empty_index_path)
+idx_bdr = DiskBuilderIVF16K(path_to_empty_index=empty_index_path)
 
 sv = SentenceVectorizer()
 

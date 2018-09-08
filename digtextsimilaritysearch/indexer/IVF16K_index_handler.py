@@ -1,3 +1,4 @@
+import sys
 from typing import List
 from .base_index_handler import *
 
@@ -77,10 +78,11 @@ class DiskBuilderIVF16K(BaseIndex):
 
     def build_disk_index(self, merged_ivfs_path, merged_index_path) -> int:
         ivfs = list()
-        for invlpth in self.invlist_paths:
+        for i, invlpth in enumerate(self.invlist_paths):
             index = faiss.read_index(invlpth)
             ivfs.append(index.invlists)
             index.own_invlists = False      # Prevents de-allocation
+            print('iter {} size {}'.format(i, sys.getsizeof(ivfs)/(1024*1024*1024)))
 
         self.load_empty()
         invlists = faiss.OnDiskInvertedLists(self.index.nlist,

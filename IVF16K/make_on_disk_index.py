@@ -78,7 +78,7 @@ if doit:
             print('  Average time per chunk: {:0.2f}s'
                   '\n'.format(sum(timestamps[1:])/len(timestamps[1:])))
 else:
-    dp.index_builder.exextend_invlist_paths(small_invlists)
+    dp.index_builder.extend_invlist_paths(small_invlists)
 
 # Merge
 merged_ivfs = os.path.join(index_dir, 'mergedIVF16384.ivfdata')

@@ -82,7 +82,9 @@ class DiskBuilderIVF16K(BaseIndex):
             index = faiss.read_index(invlpth)
             ivfs.append(index.invlists)
             index.own_invlists = False      # Prevents de-allocation
-            print('iter {} size {}'.format(i, sys.getsizeof(ivfs)/(1024*1024*1024)))
+            del index
+            if i % 100 == 0:
+                print('  {} invlists aggregated at size {}b'.format(i, sys.getsizeof(ivfs)))
 
         self.load_empty()
         invlists = faiss.OnDiskInvertedLists(self.index.nlist,

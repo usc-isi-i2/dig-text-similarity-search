@@ -26,7 +26,7 @@ dt_sim_dir = '/lfs1/dig_text_sim'
 
 # Init
 t_init0 = time()
-deployable = os.path.join(dt_sim_dir, 'populatedIVF16384.index')
+deployable = os.path.join(index_dir, 'populatedIVF16384.index')
 idx = DeployIVF16K(path_to_deployable_index=deployable)
 
 sv = SentenceVectorizer()
@@ -72,6 +72,8 @@ time_stamps = list()
 for i, q in enumerate(queries, start=1):
     t_0 = time()
     results = dp.query_text(str_query=q, k=k_search)
+    print(results)
+    print(type(results))
     all_results.append(results)
     t_diff = time() - t_0
     time_stamps.append(t_diff)

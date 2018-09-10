@@ -21,12 +21,12 @@ print('cwd: {}'.format(cwd))
 emb_dir = os.path.join(cwd, 'data/vectorized_sage_news/new_2018-08-from07to13')
 index_dir = os.path.join(cwd, 'saved_indexes/IVF16K_indexes')
 subindex_dir = os.path.join(index_dir, 'subindexes')
-
-deployable = os.path.join(index_dir, 'populatedIVF16384.index')
+dt_sim_dir = '/lfs1/dig_text_sim'
 
 
 # Init
 t_init0 = time()
+deployable = os.path.join(dt_sim_dir, 'populatedIVF16384.index')
 idx = DeployIVF16K(path_to_deployable_index=deployable)
 
 sv = SentenceVectorizer()

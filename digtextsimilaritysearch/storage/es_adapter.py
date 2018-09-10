@@ -32,6 +32,7 @@ class ESAdapter(KeyValueStorage):
         except Exception as e:
             print('Exception:{} occured while calling elasticsearch'.format(str(e)))
 
+        print(r)
         if r and r.status_code == 200:
             for hit in r.json()['hits']['hits']:
                 sources.append(hit['_source'])

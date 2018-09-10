@@ -25,6 +25,7 @@ class ESAdapter(KeyValueStorage):
         query = json.loads(query_str)
         query['query']['ids']['values'] = record_id
         url = '{}/{}/_search'.format(self.es_endpoint, table_name)
+        print('url={}'.format(url))
         sources = list()
         r = None
         try:

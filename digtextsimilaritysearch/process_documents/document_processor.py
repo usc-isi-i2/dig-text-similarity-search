@@ -84,7 +84,8 @@ class DocumentProcessor(object):
                 out['sentence'] = sentence_info[_SENTENCE_TEXT]
                 similar_docs.append(out)
                 # TODO: rank by doc and number of sentences
-        return similar_docs
+        test = (similar_docs, scores, faiss_ids)
+        return test
 
     def index_documents(self, cdr_docs=None, load_vectors=False, column_family='dig', save_faiss_index=False,
                         batch_mode=False, batch_size=1000):

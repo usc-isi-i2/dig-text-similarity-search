@@ -73,7 +73,10 @@ for i, q in enumerate(queries, start=1):
     t_0 = time()
     results = dp.query_text(str_query=q, k=k_search)
     print(results)
-    print(type(results))
+    print(results[1])
+    print(type(results[1]))
+    print(results[2])
+    print(type(results[2]))
     all_results.append(results)
     t_diff = time() - t_0
     time_stamps.append(t_diff)
@@ -91,7 +94,7 @@ print(len(all_results[0]))
 
 # Report it
 base_url = 'http://dig:dIgDiG@mydig-sage-internal.isi.edu/es/sage_news/ads/'
-for i, (q, rs, t) in enumerate(zip(queries, all_results, time_stamps), start=1):
+for i, (q, rs, t) in enumerate(zip(queries, all_results[0], time_stamps), start=1):
     file_name = 'IVF16K_query_test_' + str(i) + '_results.txt'
     file_path = os.path.join(cwd, file_name)
 

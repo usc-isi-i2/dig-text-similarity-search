@@ -84,6 +84,8 @@ _ = dp.query_text(str_query=queries, k=k_search)
 t_batch = time() - t_batch
 print('Batch query completed in {:0.4f}s'.format(t_batch))
 
+print(len(all_results))
+print(len(all_results[0]))
 
 # Report it
 base_url = 'http://dig:dIgDiG@mydig-sage-internal.isi.edu/es/sage_news/ads/'

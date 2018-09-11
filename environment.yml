@@ -5,7 +5,7 @@ channels:
   - pytorch
 dependencies:
   - python=3.6
-  - faiss-cpu
+  - faiss-cpu=1.4.0
   - pip:
     - happybase>=1.1.0
     - numpy

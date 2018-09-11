@@ -62,6 +62,8 @@ day_of_news = os.path.join(daily_news_dir, raw_file)
 assert os.path.isfile(day_of_news), 'Must pass target filename as argument'
 write_name = 'split_' + raw_file.split('/')[-1]
 day_of_splits = os.path.join(split_news_dir, write_name)
+assert not os.path.isfile(day_of_splits), 'Script requires a clean run'
+# TODO: Expand script to work on list of files (so it can be ran overnight)
 
 # Print n_docs
 n_docs = get_doc_count(day_of_news)

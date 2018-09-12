@@ -74,6 +74,7 @@ rep_invl = int(sys.argv[2]) if len(sys.argv) > 2 else 1000
 t_0, t_1 = time(), time()
 doc_generator = gen_doc(day_of_news)
 split_generator = gen_split(doc_generator)
+time_stamps = list()
 
 for i, split_doc in enumerate(split_generator):
     add_doc(day_of_splits, split_doc)
@@ -81,8 +82,10 @@ for i, split_doc in enumerate(split_generator):
     if i % rep_invl == 0:
         m, s = divmod(time()-t_0, 60)
         print(' {:7d} Docs processed in {}m{:0.2f}s'.format(i, int(m), s))
-        print('       * Avg time per doc: {:0.4f}s\n'.format((time()-t_1)/rep_invl))
+        t_diff = time() - t_1
+        time_stamps.append(t_diff)
         t_1 = time()
+        print('       * Avg time per doc: {:0.4f}s\n'.format(sum(time_stamps)/(i+1)))
 
 m, s = divmod(time()-t_0, 60)
 print('\nProcess completed in {}m{:0.2f}s'.format(int(m), s))

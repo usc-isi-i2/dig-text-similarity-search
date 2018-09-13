@@ -66,7 +66,7 @@ param_parser.add_option('-i', '--input', dest='input_file',
                         help="Specify input file with '-i filename.jl'")
 param_parser.add_option('-b', '--batch', dest='batch_size',
                         type='int', default=16)
-param_parser.add_option('-mb', '--minibatch', dest='minibatch_size',
+param_parser.add_option('-m', '--minibatch', dest='minibatch_size',
                         type='int', default=4)
 param_parser.add_option('-t', '--threads', dest='n_threads',
                         type='int', default=2)

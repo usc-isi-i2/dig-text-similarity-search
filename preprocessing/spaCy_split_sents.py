@@ -3,8 +3,16 @@ import json
 import spacy
 from time import time
 from optparse import OptionParser
+# <editor-fold desc="Set OpenBLAS n_threads=1">
+
+# Set Thread Budget
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
+print('OpenBLAS n_threads: {}'.format(os.environ['OPENBLAS_NUM_THREADS']))
+
+# </editor-fold>
 
 
+# Workhorse Funcs
 def get_doc_count(file_loc):
     i_count = 0
     with open(file_loc, 'r') as fp:
@@ -60,10 +68,14 @@ def add_doc(split_doc_gen, output_file, rep_invtl=1000):
             ii += 1
 
 
-# Runtime Params
+# Parse Params
 param_parser = OptionParser()
 param_parser.add_option('-i', '--input', dest='input_file',
                         help="Specify input file with '-i filename.jl'")
+param_parser.add_option('-d', '--raw_dir', dest='raw_news_dir',
+                        default='/lfs1/dig_text_sim/raw_news/')
+param_parser.add_option('-s', '--split_dir', dest='split_news_dir',
+                        default='/lfs1/dig_text_sim/split_news/')
 param_parser.add_option('-b', '--batch', dest='batch_size',
                         type='int', default=16)
 param_parser.add_option('-m', '--minibatch', dest='minibatch_size',
@@ -74,18 +86,13 @@ param_parser.add_option('-r', '--report_intvl', dest='report_interval',
                         type='int', default=1000)
 (opts, args) = param_parser.parse_args()
 
-raw_file = opts.input_file
-docs_per_batch = opts.batch_size
-docs_per_minibatch = opts.minibatch_size
-usable_threads = opts.n_threads
-report_interval = opts.report_interval
-
 # Dir Paths
-daily_news_dir = '/lfs1/dig_text_sim/raw_news/'
-split_news_dir = '/lfs1/dig_text_sim/split_news/'
+daily_news_dir = opts.raw_news_dir
+split_news_dir = opts.split_news_dir
 assert os.path.isdir(split_news_dir), 'Try: mkdir {}'.format(split_news_dir)
 
 # Files
+raw_file = opts.input_file
 day_of_news = os.path.join(daily_news_dir, raw_file)
 assert os.path.isfile(day_of_news), 'Must pass target filename as argument'
 write_name = 'split_' + raw_file.split('/')[-1]
@@ -97,15 +104,19 @@ n_docs = get_doc_count(day_of_news)
 print('\nFound {} documents in {}\n'.format(n_docs, day_of_news))
 
 # Generators
+docs_per_batch = opts.batch_size
+docs_per_minibatch = opts.minibatch_size
+usable_threads = opts.n_threads
 doc_generator = gen_doc(file_loc=day_of_news, b_size=docs_per_batch)
-split_generator = gen_split(doc_gen=doc_generator,
-                            mb_size=docs_per_minibatch, n_thr=usable_threads)
+split_generator = gen_split(doc_gen=doc_generator, mb_size=docs_per_minibatch,
+                            n_thr=usable_threads)
 
 # Run it
 t_start = time()
+report_interval = opts.report_interval
 add_doc(split_doc_gen=split_generator,
         output_file=day_of_splits, rep_invtl=report_interval)
 
-# Final Report
-m, s = divmod(time()-t_start, 60)
+# Report Time
+m, s = divmod(time() - t_start, 60)
 print('\nProcess completed in {}m{:0.2f}s'.format(int(m), s))

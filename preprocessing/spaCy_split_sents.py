@@ -1,15 +1,16 @@
 import os
 import json
-import spacy
+# import spacy
 from time import time
 from optparse import OptionParser
 # <editor-fold desc="Set OpenBLAS n_threads=1">
 
 # Set Thread Budget
-os.environ['OPENBLAS_NUM_THREADS'] = '1'
+os.environ['OPENBLAS_NUM_THREADS'] = '2'
 print('OpenBLAS n_threads: {}'.format(os.environ['OPENBLAS_NUM_THREADS']))
 
 # </editor-fold>
+import spacy
 
 
 # Workhorse Funcs

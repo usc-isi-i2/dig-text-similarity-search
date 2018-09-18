@@ -56,3 +56,20 @@ class ESAdapter(KeyValueStorage):
     def insert_records_batch(self, records, table_name):
         for record in records:
             self.insert_record(record[0], record[1], table_name)
+
+    def insert_record_es(self, record_id, record, table_name):
+        for k in list(record):
+            if ':' in k:
+                record[k.split(':')[1]] = record[k]
+                record.pop(k)
+        record['faiss_id'] = record_id
+        self.write_to_es(table_name, record)
+
+    def write_to_es(self, table_name, record):
+        try:
+            response = requests.post("{}/{}/{}".format(self.es_endpoint, "index", table_name), data=record)
+            if response.status_code != 200:
+                raise IOError("Error while indexing documents on elasticsearch - {}".format(response))
+            return response
+        except Exception as e:
+            print("Exception : {} occured while writing in elasticsearch".format(repr(e)))

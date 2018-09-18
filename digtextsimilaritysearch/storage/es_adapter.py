@@ -1,6 +1,7 @@
 from .key_value_storage import KeyValueStorage
 import json
 import requests
+from elasticsearch import Elasticsearch
 
 query_str = """{
                 "query": {
@@ -12,9 +13,10 @@ query_str = """{
 
 
 class ESAdapter(KeyValueStorage):
-    def __init__(self, es_endpoint='http://localhost:9200', logstash_file_path='/tmp/logstash_input.jl'):
+    def __init__(self, es_endpoint='http://localhost:9200', logstash_file_path='/tmp/logstash_input.jl', http_auth=None):
         KeyValueStorage.__init__(self)
 
+        self.es = Elasticsearch([es_endpoint], show_ssl_warnings=False, http_auth=http_auth,retry_on_timeout=True)
         self.es_endpoint = es_endpoint
         self.logstash_file = open(logstash_file_path, mode='a')
 
@@ -57,19 +59,18 @@ class ESAdapter(KeyValueStorage):
         for record in records:
             self.insert_record(record[0], record[1], table_name)
 
-    def insert_record_es(self, record_id, record, table_name):
+    def insert_record_es(self, record_id, record, doc_type, table_name):
         for k in list(record):
             if ':' in k:
                 record[k.split(':')[1]] = record[k]
                 record.pop(k)
         record['faiss_id'] = record_id
-        self.write_to_es(table_name, record)
+        self.write_to_es(table_name, doc_type, record)
 
-    def write_to_es(self, table_name, record):
+    def write_to_es(self, table_name, doc_type, record):
         try:
-            response = requests.post("{}/{}/{}".format(self.es_endpoint, "index", table_name), data=record)
-            if response.status_code != 200:
-                raise IOError("Error while indexing documents on elasticsearch - {}".format(response))
+            response = self.es.index(index=table_name,doc_type=doc_type , body=record)
             return response
         except Exception as e:
             print("Exception : {} occured while writing in elasticsearch".format(repr(e)))
+            raise e

@@ -149,7 +149,7 @@ class DocumentProcessor(object):
             data[_SENTENCE_TEXT] = s[1]
             data['{}:{}'.format(column_family, _SENTENCE_ID)] = s[0]
             data['{}:{}'.format(column_family, _SENTENCE_TEXT)] = s[1]
-            self.storage_adapter.insert_record_es(str(f), data, self.table_name)
+            self.storage_adapter.insert_record_es(str(f), data, "record", self.table_name)
 
     def index_docs_on_disk(self, offset, path_to_npz, path_to_invlist=None):
         if not path_to_invlist:

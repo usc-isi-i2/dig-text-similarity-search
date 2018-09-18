@@ -1,13 +1,15 @@
+import os
+import sys
+import json
+from time import time
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+
 from digtextsimilaritysearch.vectorizer.sentence_vectorizer \
     import SentenceVectorizer
 from digtextsimilaritysearch.process_documents.document_processor \
     import DocumentProcessor
-
-import os
-import sys
-import json
-
-from time import time
 
 
 def get_docs(file_loc, size_of_minibatch):
@@ -15,8 +17,9 @@ def get_docs(file_loc, size_of_minibatch):
     num_minibatch = 0
 
     with open(file_loc, 'r') as fp:
-        for i_count, _ in enumerate(fp):
-            pass
+        i_count = 0
+        for _ in fp:
+            i_count += 1
     print('There are {} docs in {}'.format(i_count, file_loc))
 
     with open(file_loc, 'r') as fp:

@@ -79,7 +79,7 @@ class DiskBuilderIVF16K(BaseIndex):
     def build_disk_index(self, merged_ivfs_path, merged_index_path) -> int:
         ivfs = list()
         for i, invlpth in enumerate(self.invlist_paths):
-            index = faiss.read_index(invlpth)
+            index = faiss.read_index(invlpth, faiss.IO_FLAG_MMAP)
             ivfs.append(index.invlists)
             index.own_invlists = False      # Prevents de-allocation
             del index

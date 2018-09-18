@@ -13,10 +13,13 @@ query_str = """{
 
 
 class ESAdapter(KeyValueStorage):
-    def __init__(self, es_endpoint='http://localhost:9200', logstash_file_path='/tmp/logstash_input.jl', http_auth=None, doc_type="docs"):
+    def __init__(self, es_endpoint='http://localhost:9200',
+                 logstash_file_path='/tmp/logstash_input.jl',
+                 http_auth=None, doc_type="docs"):
         KeyValueStorage.__init__(self)
 
-        self.es = Elasticsearch([es_endpoint], show_ssl_warnings=False, http_auth=http_auth,retry_on_timeout=True)
+        self.es = Elasticsearch([es_endpoint], show_ssl_warnings=False,
+                                http_auth=http_auth, retry_on_timeout=True)
         self.es_endpoint = es_endpoint
         self.logstash_file = open(logstash_file_path, mode='a')
         self.doc_type = doc_type
@@ -34,7 +37,7 @@ class ESAdapter(KeyValueStorage):
         try:
             r = requests.post(url, data=json.dumps(query))
         except Exception as e:
-            print('Exception:{} occured while calling elasticsearch'.format(str(e)))
+            print('Exception:{} occurred while calling elasticsearch'.format(str(e)))
 
         print(r)
         if r and r.status_code == 200:
@@ -48,7 +51,8 @@ class ESAdapter(KeyValueStorage):
     def tables(self):
         print('thats not how it works')
 
-    def prepare_record(self, record_id, record):
+    @staticmethod
+    def prepare_record(record_id, record):
         for k in list(record):
             if ':' in k:
                 record[k.split(':')[1]] = record[k]
@@ -60,12 +64,12 @@ class ESAdapter(KeyValueStorage):
         record = self.prepare_record(record_id, record)
         self.write_to_es(table_name, record)
 
-    def write_to_es(self, table_name, doc_type, record):
+    def write_to_es(self, table_name, record):
         try:
-            response = self.es.index(index=table_name,doc_type=self.doc_type , body=record)
+            response = self.es.index(index=table_name, doc_type=self.doc_type, body=record)
             return response
         except Exception as e:
-            print("Exception : {} occured while writing in elasticsearch".format(repr(e)))
+            print("Exception : {} occurred while writing in elasticsearch".format(repr(e)))
             raise e
 
     def insert_records_batch(self, table_name, records):
@@ -73,6 +77,7 @@ class ESAdapter(KeyValueStorage):
             {
                 "_index": table_name,
                 "_type": self.doc_type,
+                "_id": doc['faiss_id'],
                 **doc
             }
             for doc in records

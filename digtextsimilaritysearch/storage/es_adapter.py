@@ -42,14 +42,6 @@ class ESAdapter(KeyValueStorage):
                 sources.append(hit['_source'])
         return sources
 
-    def insert_record(self, record_id, record, table_name):
-        for k in list(record):
-            if ':' in k:
-                record[k.split(':')[1]] = record[k]
-                record.pop(k)
-        record['faiss_id'] = record_id
-        self.logstash_file.write('{}\n'.format(json.dumps(record)))
-
     def create_table(self, table_name):
         print('no way')
 
@@ -64,7 +56,7 @@ class ESAdapter(KeyValueStorage):
         record['faiss_id'] = record_id
         return record
 
-    def insert_record_es(self, record_id, record, table_name):
+    def insert_record(self, record_id, record, table_name):
         record = self.prepare_record(record_id, record)
         self.write_to_es(table_name, record)
 

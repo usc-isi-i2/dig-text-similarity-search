@@ -150,7 +150,7 @@ class DocumentProcessor(object):
             data['{}:{}'.format(column_family, _SENTENCE_ID)] = s[0]
             data['{}:{}'.format(column_family, _SENTENCE_TEXT)] = s[1]
             if not batch_mode:
-                self.storage_adapter.insert_record_es(str(f), data, self.table_name)
+                self.storage_adapter.insert_record(str(f), data, self.table_name)
             else:
                 data = self.storage_adapter.prepare_record(str(f), data)
                 records.append(data)
@@ -166,7 +166,7 @@ class DocumentProcessor(object):
             # faiss_ids = self.index_builder.generate_faiss_ids(path_to_npz, vectors, sent_tups)
             faiss_ids = np.arange(start=0, stop=len(vectors), dtype=np.int64) + offset
             self.index_builder.generate_invlist(path_to_invlist, faiss_ids, vectors)
-            self.add_to_db(sent_tups, doc_type, faiss_ids)
+            self.add_to_db(sent_tups, faiss_ids)
         else:
             raise Exception('Cannot index on disk without an index_builder')
 

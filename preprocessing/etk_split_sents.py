@@ -1,8 +1,25 @@
 import os
-import sys
 import json
-
 from time import time
+from optparse import OptionParser
+# <editor-fold desc="Parse Params">
+param_parser = OptionParser()
+param_parser.add_option('-i', '--input', dest='input_file',
+                        help="Specify input file with '-i filename.jl'")
+param_parser.add_option('-d', '--raw_dir', dest='raw_news_dir',
+                        default='/lfs1/dig_text_sim/raw_news/')
+param_parser.add_option('-s', '--split_dir', dest='split_news_dir',
+                        default='/lfs1/dig_text_sim/split_news/')
+param_parser.add_option('-r', '--report_intvl', dest='report_interval',
+                        type='int', default=1000)
+param_parser.add_option('-o', '--openblas', dest='set_openblas', default=True)
+(opts, args) = param_parser.parse_args()
+# </editor-fold>
+# <editor-fold desc="Set OpenBLAS num threads">
+if opts.set_openblas:
+    os.environ['OPENBLAS_NUM_THREADS'] = '2'
+    print('OpenBLAS n_threads: {}'.format(os.environ['OPENBLAS_NUM_THREADS']))
+# </editor-fold>
 from etk.etk import ETK
 from etk.document import Document
 from etk.etk_module import ETKModule
@@ -52,23 +69,23 @@ def add_doc(file_loc, split_gen):
 
 
 # Dir Paths
-daily_news_dir = '/lfs1/dig_text_sim/raw_news/'
-split_news_dir = '/lfs1/dig_text_sim/split_news/'
+daily_news_dir = opts.raw_news_dir
+split_news_dir = opts.split_news_dir
 assert os.path.isdir(split_news_dir), 'Try: mkdir {}'.format(split_news_dir)
 
 # Files
-raw_file = sys.argv[1]  # TODO: Remember to pass in target filename as argument
+raw_file = opts.input_file
 day_of_news = os.path.join(daily_news_dir, raw_file)
 assert os.path.isfile(day_of_news), 'Must pass target filename as argument'
 write_name = 'split_' + raw_file.split('/')[-1]
 day_of_splits = os.path.join(split_news_dir, write_name)
 assert not os.path.isfile(day_of_splits), 'Script requires a clean run'
-# TODO: Expand script to work on list of files (so it can be ran overnight)
+
 
 # Print n_docs
 n_docs = get_doc_count(day_of_news)
 print('\nFound {} documents in {}\n'.format(n_docs, day_of_news))
-rep_invl = int(sys.argv[2]) if len(sys.argv) > 2 else 1000
+rep_invl = opts.report_interval
 
 # Run it
 t_0, t_1 = time(), time()

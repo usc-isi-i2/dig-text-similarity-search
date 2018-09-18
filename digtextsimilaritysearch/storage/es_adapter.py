@@ -1,7 +1,7 @@
 from .key_value_storage import KeyValueStorage
 import json
 import requests
-from elasticsearch import Elasticsearch
+from elasticsearch import Elasticsearch, helpers
 
 query_str = """{
                 "query": {
@@ -55,16 +55,16 @@ class ESAdapter(KeyValueStorage):
     def tables(self):
         print('thats not how it works')
 
-    def insert_records_batch(self, records, table_name):
-        for record in records:
-            self.insert_record(record[0], record[1], table_name)
-
-    def insert_record_es(self, record_id, record, doc_type, table_name):
+    def prepare_record(self, record_id, record):
         for k in list(record):
             if ':' in k:
                 record[k.split(':')[1]] = record[k]
                 record.pop(k)
         record['faiss_id'] = record_id
+        return record
+
+    def insert_record_es(self, record_id, record, doc_type, table_name):
+        record = self.prepare_record(record_id, record)
         self.write_to_es(table_name, doc_type, record)
 
     def write_to_es(self, table_name, doc_type, record):
@@ -74,3 +74,14 @@ class ESAdapter(KeyValueStorage):
         except Exception as e:
             print("Exception : {} occured while writing in elasticsearch".format(repr(e)))
             raise e
+
+    def insert_records_batch(self, table_name, records, doc_type):
+        actions = [
+            {
+                "_index": table_name,
+                "_type": doc_type,
+                **doc
+            }
+            for doc in records
+            ]
+        helpers.bulk(self.es, actions)

@@ -141,15 +141,22 @@ class DocumentProcessor(object):
                 count += batch_size
                 sleep(0.1)
 
-    def add_to_db(self, sentence_tuples, faiss_ids, column_family='dig'):
+    def add_to_db(self, sentence_tuples, faiss_ids, doc_type, column_family='dig', batch_mode=False):
         # ASSUMPTION: vector ids are in the same order as the initial sentence order
+        records = []
         for s, f in zip(sentence_tuples, faiss_ids):
             data = dict()
             data[_SENTENCE_ID] = s[0]
             data[_SENTENCE_TEXT] = s[1]
             data['{}:{}'.format(column_family, _SENTENCE_ID)] = s[0]
             data['{}:{}'.format(column_family, _SENTENCE_TEXT)] = s[1]
-            self.storage_adapter.insert_record_es(str(f), data, "record", self.table_name)
+            if not batch_mode:
+                self.storage_adapter.insert_record_es(str(f), data, doc_type, self.table_name)
+            else:
+                data = self.storage_adapter.prepare_record(str(f), data)
+                records.append(data)
+        if batch_mode:
+            self.storage_adapter.insert_records_batch(self.table_name, doc_type, records)
 
     def index_docs_on_disk(self, offset, path_to_npz, path_to_invlist=None):
         if not path_to_invlist:

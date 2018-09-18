@@ -3,7 +3,7 @@ import json
 # import spacy
 from time import time
 from optparse import OptionParser
-# <editor-fold desc="Set OpenBLAS n_threads=1">
+# <editor-fold desc="Set OpenBLAS n_threads=2">
 
 # Set Thread Budget
 os.environ['OPENBLAS_NUM_THREADS'] = '2'
@@ -82,7 +82,7 @@ param_parser.add_option('-b', '--batch', dest='batch_size',
 param_parser.add_option('-m', '--minibatch', dest='minibatch_size',
                         type='int', default=4)
 param_parser.add_option('-t', '--threads', dest='n_threads',
-                        type='int', default=2)
+                        type='int', default=4)
 param_parser.add_option('-r', '--report_intvl', dest='report_interval',
                         type='int', default=1000)
 (opts, args) = param_parser.parse_args()

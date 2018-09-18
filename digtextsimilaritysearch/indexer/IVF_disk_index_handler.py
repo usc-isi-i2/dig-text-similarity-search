@@ -2,7 +2,7 @@ from typing import List
 from .base_index_handler import *
 
 
-class DeployIVF16K(BaseIndex):
+class DeployIVF(BaseIndex):
     def __init__(self, path_to_deployable_index, nprobe: int = 32):
         BaseIndex.__init__(self)
         self.index = faiss.read_index(path_to_deployable_index)
@@ -13,7 +13,7 @@ class DeployIVF16K(BaseIndex):
         print('Use the DiskBuilderIVF class for adding to index')
 
 
-class DiskBuilderIVF16K(BaseIndex):
+class DiskBuilderIVF(BaseIndex):
     def __init__(self, path_to_empty_index):
         BaseIndex.__init__(self)
         self.path_to_empty_index = path_to_empty_index

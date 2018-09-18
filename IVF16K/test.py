@@ -5,8 +5,8 @@ from time import time
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
-from digtextsimilaritysearch.indexer.IVF16K_index_handler \
-    import DeployIVF16K
+from digtextsimilaritysearch.indexer.IVF_disk_index_handler \
+    import DeployIVF
 from digtextsimilaritysearch.vectorizer.sentence_vectorizer \
     import SentenceVectorizer
 from digtextsimilaritysearch.storage.es_adapter \
@@ -27,7 +27,7 @@ dt_sim_dir = '/lfs1/dig_text_sim'
 # Init
 t_init0 = time()
 deployable = os.path.join(index_dir, 'populatedIVF16384.index')
-idx = DeployIVF16K(path_to_deployable_index=deployable)
+idx = DeployIVF(path_to_deployable_index=deployable)
 
 sv = SentenceVectorizer()
 

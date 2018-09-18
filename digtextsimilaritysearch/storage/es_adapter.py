@@ -13,7 +13,7 @@ query_str = """{
 
 
 class ESAdapter(KeyValueStorage):
-    def __init__(self, es_endpoint='http://localhost:9200', logstash_file_path='/tmp/logstash_input.jl', http_auth=None, doc_type="record"):
+    def __init__(self, es_endpoint='http://localhost:9200', logstash_file_path='/tmp/logstash_input.jl', http_auth=None, doc_type="docs"):
         KeyValueStorage.__init__(self)
 
         self.es = Elasticsearch([es_endpoint], show_ssl_warnings=False, http_auth=http_auth,retry_on_timeout=True)

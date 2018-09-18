@@ -9,7 +9,8 @@ class DeployIVF16K(BaseIndex):
         self.index.nprobe = nprobe
 
     def index_embeddings(self, embeddings: np.array, faiss_ids: np.array):
-        self.index.add_with_ids(embeddings, faiss_ids)
+        # self.index.add_with_ids(embeddings, faiss_ids)
+        print('Use the DiskBuilderIVF class for adding to index')
 
 
 class DiskBuilderIVF16K(BaseIndex):

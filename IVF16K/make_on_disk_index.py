@@ -11,6 +11,8 @@ from digtextsimilaritysearch.vectorizer.sentence_vectorizer \
     import SentenceVectorizer
 from digtextsimilaritysearch.storage.es_adapter \
     import ESAdapter
+from digtextsimilaritysearch.storage.memory_storage \
+    import MemoryStorage
 from digtextsimilaritysearch.process_documents.document_processor \
     import DocumentProcessor
 
@@ -18,9 +20,11 @@ from digtextsimilaritysearch.process_documents.document_processor \
 t_start = time()
 
 # Resource paths
-cwd = os.getcwd()
-emb_dir = os.path.join(cwd, 'data/vectorized_sage_news/new_2018-08-from07to13')
-index_dir = os.path.join(cwd, 'saved_indexes/IVF16K_indexes')
+cwd = os.path.abspath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+emb_dir = os.path.join(cwd, '../data/vectorized_sage_news/new_2018-08-from07to13')
+assert os.path.isdir(emb_dir)
+index_dir = os.path.join(cwd, '../saved_indexes/IVF16K_indexes')
+assert os.path.isdir(index_dir)
 subindex_dir = os.path.join(index_dir, 'subindexes')
 
 # Get .npz paths
@@ -42,12 +46,14 @@ for npz in small_npzs:
 # Init
 t_init0 = time()
 empty_index_path = os.path.join(index_dir, 'emptyTrainedIVF16384.index')
+assert os.path.exists(empty_index_path)
 idx_bdr = DiskBuilderIVF16K(path_to_empty_index=empty_index_path)
 
-sv = SentenceVectorizer()
+sv = SentenceVectorizer
 
-logstash_path = '/lfs1/dig_text_sim/IVF16K_logstash_input.jl'
-es = ESAdapter(logstash_file_path=logstash_path)
+# logstash_path = '/lfs1/dig_text_sim/IVF16K_logstash_input.jl'
+# es = ESAdapter(logstash_file_path=logstash_path)
+es = MemoryStorage()        # For quick local testing
 
 table = 'dig-text-similarity-search-IVF16K'
 dp = DocumentProcessor(indexer=None, index_builder=idx_bdr,
@@ -73,8 +79,8 @@ if doit:
         except Exception as e:
             print(e)
         timestamps.append(time()-t_1)
-        if i % 20 == 0 or i >= len(small_npzs)-2:
-            print('  {:4d} of {} .npz files indexed'.format(i+1, len(small_npzs)))
+        if i % 50 == 0 or i >= len(small_npzs)-2:
+            print('  {:4d} of {} .npz files indexed'.format(i, len(small_npzs)))
             print('  Average time per chunk: {:0.2f}s'
                   '\n'.format(sum(timestamps[1:])/len(timestamps[1:])))
 else:

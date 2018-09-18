@@ -8,13 +8,12 @@ _SENTENCE_TEXT = 'sentence_text'
 class DocumentProcessor(object):
     def __init__(self, indexer, vectorizer, storage_adapter, index_builder=None,
                  table_name='dig', vector_save_path='/tmp/saved_vectors.npz', save_vectors=False,
-                 index_save_path='/tmp/faiss_index.index'):
+                 index_save_path='/tmp/faiss_index.index', doc_type="record"):
 
         self.indexer = indexer
         self.vectorizer = vectorizer
         self.storage_adapter = storage_adapter
         self.index_builder = index_builder
-
         self.table_name = table_name
         if self.storage_adapter:
             self._configure()
@@ -141,7 +140,7 @@ class DocumentProcessor(object):
                 count += batch_size
                 sleep(0.1)
 
-    def add_to_db(self, sentence_tuples, faiss_ids, doc_type, column_family='dig', batch_mode=False):
+    def add_to_db(self, sentence_tuples, faiss_ids, column_family='dig', batch_mode=False):
         # ASSUMPTION: vector ids are in the same order as the initial sentence order
         records = []
         for s, f in zip(sentence_tuples, faiss_ids):
@@ -151,14 +150,14 @@ class DocumentProcessor(object):
             data['{}:{}'.format(column_family, _SENTENCE_ID)] = s[0]
             data['{}:{}'.format(column_family, _SENTENCE_TEXT)] = s[1]
             if not batch_mode:
-                self.storage_adapter.insert_record_es(str(f), data, doc_type, self.table_name)
+                self.storage_adapter.insert_record_es(str(f), data, self.table_name)
             else:
                 data = self.storage_adapter.prepare_record(str(f), data)
                 records.append(data)
         if batch_mode:
-            self.storage_adapter.insert_records_batch(self.table_name, doc_type, records)
+            self.storage_adapter.insert_records_batch(self.table_name, records)
 
-    def index_docs_on_disk(self, offset, path_to_npz, doc_type, path_to_invlist=None):
+    def index_docs_on_disk(self, offset, path_to_npz, path_to_invlist=None):
         if not path_to_invlist:
             path_to_invlist = 'invl_' + path_to_npz.replace('.npz', '.index')
 

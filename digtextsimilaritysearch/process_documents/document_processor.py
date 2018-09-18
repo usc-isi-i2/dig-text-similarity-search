@@ -8,7 +8,7 @@ _SENTENCE_TEXT = 'sentence_text'
 class DocumentProcessor(object):
     def __init__(self, indexer, vectorizer, storage_adapter, index_builder=None,
                  table_name='dig', vector_save_path='/tmp/saved_vectors.npz', save_vectors=False,
-                 index_save_path='/tmp/faiss_index.index', doc_type="record"):
+                 index_save_path='/tmp/faiss_index.index'):
 
         self.indexer = indexer
         self.vectorizer = vectorizer

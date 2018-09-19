@@ -37,7 +37,7 @@ class ESAdapter(KeyValueStorage):
         try:
             r = requests.post(url, data=json.dumps(query))
         except Exception as e:
-            print('Exception:{} occurred while calling elasticsearch'.format(str(e)))
+            print('Exception: {} occurred while calling elasticsearch'.format(str(e)))
 
         print(r)
         if r and r.status_code == 200:

@@ -29,7 +29,7 @@ class DocumentProcessor(object):
     @staticmethod
     def preprocess_documents(cdr_docs):
         """
-        Proprocess cdr docs into a list of (<sid>, <sentence>) tuples
+        Preprocess cdr docs into a list of (<sid>, <sentence>) tuples
         :param cdr_docs: documents with split sentences
         :return: a list of (<sid>, <sentence>) tuples
         """

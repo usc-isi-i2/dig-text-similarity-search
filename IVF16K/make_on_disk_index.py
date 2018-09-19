@@ -3,7 +3,14 @@ import sys
 from time import time
 from optparse import OptionParser
 # <editor-fold desc="Parse Options">
+cwd = os.path.abspath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+tmp_emb_dir = os.path.join(cwd, '../data/vectorized_sage_news/new_2018-08-from07to13')
+tmp_index_dir = os.path.join(cwd, '../saved_indexes/IVF16K_indexes')
+
 arg_parser = OptionParser()
+arg_parser.add_option('-i', '--input_npz_dir', default=tmp_emb_dir)
+arg_parser.add_option('-o', '--output_index_dir', default=tmp_index_dir)
+arg_parser.add_option('-b', '--base_empty_index', default='emptyTrainedIVF16384.index')
 arg_parser.add_option('-e', '--build_from_existing', action='store_true', default=False)
 args = arg_parser.parse_args()
 # </editor-fold>
@@ -23,15 +30,32 @@ from digtextsimilaritysearch.process_documents.document_processor \
     import DocumentProcessor
 
 
+"""
+Script for making many, small subindexes and merges them into an 
+on-disk searchable index. 
+
+  - Requires sentences to be preprocessed into .npz files. 
+  - Makes one subindex per .npz
+  - Makes faiss_ids with dummy offset (for demonstration purposes)
+
+Options: 
+    -i  Full path to .npz directory
+    -o  Full path to index directory
+    -b  Name of pre-trained, base index (empty)
+    -e  Builds on-disk index from existing subindexes (default False)
+"""
+
+
 t_start = time()
 
 # Resource paths
-cwd = os.path.abspath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-emb_dir = os.path.join(cwd, '../data/vectorized_sage_news/new_2018-08-from07to13')
-assert os.path.isdir(emb_dir)
-index_dir = os.path.join(cwd, '../saved_indexes/IVF16K_indexes')
-assert os.path.isdir(index_dir)
+emb_dir = args.input_npz_dir
+assert os.path.isdir(emb_dir), 'Full path does not exist: {}'.format(emb_dir)
+index_dir = args.output_index_dir
+assert os.path.isdir(index_dir), 'Full path does not exist: {}'.format(index_dir)
 subindex_dir = os.path.join(index_dir, 'subindexes')
+if not os.path.isdir(subindex_dir):
+    os.mkdir(subindex_dir)
 
 # Get .npz paths
 small_npzs = list()
@@ -51,8 +75,8 @@ for npz in small_npzs:
 
 # Init
 t_init0 = time()
-empty_index_path = os.path.join(index_dir, 'emptyTrainedIVF16384.index')
-assert os.path.exists(empty_index_path)
+empty_index_path = os.path.join(index_dir, args.base_empty_index)
+assert os.path.exists(empty_index_path), 'Does not exist: {}'.format(empty_index_path)
 idx_bdr = DiskBuilderIVF(path_to_empty_index=empty_index_path)
 
 sv = SentenceVectorizer

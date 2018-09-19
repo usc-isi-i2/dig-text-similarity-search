@@ -80,7 +80,7 @@ if __name__ == '__main__':
                     (ifp, doc_id, doc_dict[doc_id], result['sentence_id'], result['sentence'], result['score'],
                      str(time_taken), -1))
 
-        df = pd.DataFrame(data=evaluation_list,
-                          columns=['ifp', 'doc_id', 'doc_text', 'sentence_id', 'sentence_text', 'score', 'query_time',
-                                   'relevance'])
-        df.to_csv(output, index=False, mode='a')
+    df = pd.DataFrame(data=evaluation_list,
+                      columns=['ifp', 'doc_id', 'doc_text', 'sentence_id', 'sentence_text', 'score', 'query_time',
+                               'relevance'])
+    df.to_csv(output, index=False)

@@ -4,14 +4,14 @@ from time import time
 from optparse import OptionParser
 # <editor-fold desc="Parse Options">
 cwd = os.path.abspath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-tmp_emb_dir = os.path.join(cwd, '../data/vectorized_sage_news/new_2018-08-from07to13')
 tmp_index_dir = os.path.join(cwd, '../saved_indexes/IVF16K_indexes')
+tmp_logstash_path = '/lfs1/dig_text_sim/IVF16K_logstash_input.jl'
 
 arg_parser = OptionParser()
-arg_parser.add_option('-i', '--input_npz_dir', default=tmp_emb_dir)
 arg_parser.add_option('-o', '--output_index_dir', default=tmp_index_dir)
+arg_parser.add_option('-l', '--logstash_path', default=tmp_logstash_path)
+arg_parser.add_option('-t', '--table', default='dig-text-similarity-search-IVF16K')
 arg_parser.add_option('-p', '--populated_index', default='populatedIVF16384.index')
-arg_parser.add_option('-e', '--build_from_existing', action='store_true', default=False)
 args = arg_parser.parse_args()
 # </editor-fold>
 
@@ -28,13 +28,21 @@ from digtextsimilaritysearch.process_documents.document_processor \
     import DocumentProcessor
 
 
+"""
+Script for testing on-disk index search speed and quality.
+
+Options:
+    -o  Full path to index directory
+    -l  Full path to logstash file for ESAdapter
+    -t  Table name used by DocumentProcessor
+    -p  Name of populated index
+"""
+
+
 # Paths
-emb_dir = args.input_npz_dir
-assert os.path.isdir(emb_dir), 'Full path does not exist: {}'.format(emb_dir)
 index_dir = args.output_index_dir
 assert os.path.isdir(index_dir), 'Full path does not exist: {}'.format(index_dir)
 subindex_dir = os.path.join(index_dir, 'subindexes')
-
 
 # Init
 t_init0 = time()
@@ -43,10 +51,11 @@ idx = DeployIVF(path_to_deployable_index=deployable)
 
 sv = SentenceVectorizer()
 
-logstash_path = '/lfs1/dig_text_sim/IVF16K_logstash_input.jl'
+# TODO: Update to new ESAdapter w/o logstash
+logstash_path = args.logstash_path
 es = ESAdapter(logstash_file_path=logstash_path)
 
-table = 'dig-text-similarity-search-IVF16K'
+table = args.table
 dp = DocumentProcessor(indexer=idx, vectorizer=sv,
                        storage_adapter=es, table_name=table)
 t_init1 = time()

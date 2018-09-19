@@ -1,6 +1,12 @@
 import os
 import sys
 from time import time
+from optparse import OptionParser
+# <editor-fold desc="Parse Options">
+arg_parser = OptionParser()
+arg_parser.add_option('-j', '--just_build', action='store_false', default=True)
+args = arg_parser.parse_args()
+# </editor-fold>
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
@@ -51,9 +57,9 @@ idx_bdr = DiskBuilderIVF(path_to_empty_index=empty_index_path)
 
 sv = SentenceVectorizer
 
-endpoint = 'http://localhost:9200'
-es = ESAdapter(es_endpoint=endpoint)
-# es = MemoryStorage()        # For quick local testing
+# endpoint = 'http://localhost:9200'
+# es = ESAdapter(es_endpoint=endpoint)
+es = MemoryStorage()        # For quick local testing
 
 table = 'dig-text-similarity-search-IVF16K'
 dp = DocumentProcessor(indexer=None, index_builder=idx_bdr,
@@ -68,8 +74,7 @@ print('{} .npz files found\n'.format(len(small_npzs)))
 t_0 = time()
 timestamps = list()
 timestamps.append(0)
-doit = False if len(sys.argv) > 1 else True
-if doit:
+if not args.just_build:
     for i, (npz, invl) in enumerate(zip(small_npzs, small_invlists)):
         t_1 = time()
         try:

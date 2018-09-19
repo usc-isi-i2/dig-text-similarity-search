@@ -4,7 +4,7 @@ from time import time
 from optparse import OptionParser
 # <editor-fold desc="Parse Options">
 arg_parser = OptionParser()
-arg_parser.add_option('-j', '--just_build', action='store_false', default=True)
+arg_parser.add_option('-e', '--build_from_existing', action='store_true', default=False)
 args = arg_parser.parse_args()
 # </editor-fold>
 
@@ -74,7 +74,9 @@ print('{} .npz files found\n'.format(len(small_npzs)))
 t_0 = time()
 timestamps = list()
 timestamps.append(0)
-if not args.just_build:
+if args.build_from_existing:
+    dp.index_builder.extend_invlist_paths(small_invlists)
+else:
     for i, (npz, invl) in enumerate(zip(small_npzs, small_invlists)):
         t_1 = time()
         try:
@@ -88,8 +90,6 @@ if not args.just_build:
             print('  {:4d} of {} .npz files indexed'.format(i, len(small_npzs)))
             print('  Average time per chunk: {:0.2f}s'
                   '\n'.format(sum(timestamps[1:])/len(timestamps[1:])))
-else:
-    dp.index_builder.extend_invlist_paths(small_invlists)
 
 # Merge
 merged_ivfs = os.path.join(index_dir, 'mergedIVF16384.ivfdata')

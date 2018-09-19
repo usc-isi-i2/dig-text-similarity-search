@@ -54,6 +54,8 @@ if __name__ == '__main__':
     else:
         ifps = [ifp]
 
+    evaluation_list = list()
+    
     for ifp in ifps:
         start_time = time()
         results = dp.query_text(ifp, k=k)
@@ -70,8 +72,6 @@ if __name__ == '__main__':
         doc_dict = {}
         for hit in es_results:
             doc_dict[hit['_id']] = hit['_source']['knowledge_graph']['description'][0]['value']
-
-        evaluation_list = list()
 
         for result in results:
             doc_id = result['doc_id']

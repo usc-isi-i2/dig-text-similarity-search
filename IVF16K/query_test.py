@@ -12,7 +12,7 @@ arg_parser.add_option('-o', '--output_index_dir', default=tmp_index_dir)
 arg_parser.add_option('-l', '--logstash_path', default=tmp_logstash_path)
 arg_parser.add_option('-t', '--table', default='dig-text-similarity-search-IVF16K')
 arg_parser.add_option('-p', '--populated_index', default='populatedIVF16384.index')
-args = arg_parser.parse_args()
+(args, _) = arg_parser.parse_args()
 # </editor-fold>
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -46,7 +46,7 @@ subindex_dir = os.path.join(index_dir, 'subindexes')
 
 # Init
 t_init0 = time()
-deployable = os.path.join(index_dir, 'populatedIVF16384.index')
+deployable = os.path.join(index_dir, args.populated_index)
 idx = DeployIVF(path_to_deployable_index=deployable)
 
 sv = SentenceVectorizer()

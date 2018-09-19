@@ -14,7 +14,7 @@ arg_parser.add_option('-b', '--base_empty_index', default='emptyTrainedIVF16384.
 arg_parser.add_option('-m', '--merged_ivf_data', default='mergedIVF16384.ivfdata')
 arg_parser.add_option('-p', '--populated_index', default='populatedIVF16384.index')
 arg_parser.add_option('-e', '--build_from_existing', action='store_true', default=False)
-args = arg_parser.parse_args()
+(args, _) = arg_parser.parse_args()
 # </editor-fold>
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))

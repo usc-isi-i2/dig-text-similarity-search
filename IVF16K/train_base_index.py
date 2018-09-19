@@ -14,7 +14,7 @@ arg_parser.add_option('-i', '--input_npz_dir', default=tmp_emb_dir)
 arg_parser.add_option('-o', '--output_index_dir', default=tmp_index_dir)
 arg_parser.add_option('-b', '--base_empty_index', default='emptyTrainedIVF16384.index')
 arg_parser.add_option('-n', '--n_training', type='int', default=100)
-args = arg_parser.parse_args()
+(args, _) = arg_parser.parse_args()
 # </editor-fold>
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))

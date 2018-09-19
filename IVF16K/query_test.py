@@ -1,6 +1,19 @@
 import os
 import sys
 from time import time
+from optparse import OptionParser
+# <editor-fold desc="Parse Options">
+cwd = os.path.abspath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+tmp_emb_dir = os.path.join(cwd, '../data/vectorized_sage_news/new_2018-08-from07to13')
+tmp_index_dir = os.path.join(cwd, '../saved_indexes/IVF16K_indexes')
+
+arg_parser = OptionParser()
+arg_parser.add_option('-i', '--input_npz_dir', default=tmp_emb_dir)
+arg_parser.add_option('-o', '--output_index_dir', default=tmp_index_dir)
+arg_parser.add_option('-p', '--populated_index', default='populatedIVF16384.index')
+arg_parser.add_option('-e', '--build_from_existing', action='store_true', default=False)
+args = arg_parser.parse_args()
+# </editor-fold>
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
@@ -16,12 +29,11 @@ from digtextsimilaritysearch.process_documents.document_processor \
 
 
 # Paths
-cwd = os.getcwd()
-print('cwd: {}'.format(cwd))
-emb_dir = os.path.join(cwd, 'data/vectorized_sage_news/new_2018-08-from07to13')
-index_dir = os.path.join(cwd, 'saved_indexes/IVF16K_indexes')
+emb_dir = args.input_npz_dir
+assert os.path.isdir(emb_dir), 'Full path does not exist: {}'.format(emb_dir)
+index_dir = args.output_index_dir
+assert os.path.isdir(index_dir), 'Full path does not exist: {}'.format(index_dir)
 subindex_dir = os.path.join(index_dir, 'subindexes')
-dt_sim_dir = '/lfs1/dig_text_sim'
 
 
 # Init
@@ -88,9 +100,6 @@ t_batch = time()
 _ = dp.query_text(str_query=queries, k=k_search)
 t_batch = time() - t_batch
 print('Batch query completed in {:0.4f}s'.format(t_batch))
-
-print(len(all_results))
-print(len(all_results[0]))
 
 # Report it
 base_url = 'http://dig:dIgDiG@mydig-sage-internal.isi.edu/es/sage_news/ads/'

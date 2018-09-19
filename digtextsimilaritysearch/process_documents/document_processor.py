@@ -80,6 +80,7 @@ class DocumentProcessor(object):
                 out['doc_id'] = sentence_info[_SENTENCE_ID].split('_')[0]
                 out['score'] = float(score)
                 out['sentence'] = sentence_info[_SENTENCE_TEXT]
+                out['sentence_id'] = sentence_info[_SENTENCE_ID]
                 similar_docs.append(out)
         return similar_docs
 

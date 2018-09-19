@@ -83,7 +83,7 @@ class DocumentProcessor(object):
                 out['sentence'] = sentence_info[_SENTENCE_TEXT]
                 out['sentence_id'] = sentence_info[_SENTENCE_ID]
                 similar_docs.append(out)
-                # TODO: rerank by sentences in docs
+                # TODO: rerank by docs with multiple sentence hits
         return similar_docs
 
     def index_documents(self, cdr_docs=None, load_vectors=False, column_family='dig', save_faiss_index=False,

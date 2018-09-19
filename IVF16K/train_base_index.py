@@ -3,6 +3,19 @@ import sys
 import faiss
 import numpy as np
 from time import time
+from optparse import OptionParser
+# <editor-fold desc="Parse Options">
+cwd = os.path.abspath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+tmp_emb_dir = os.path.join(cwd, '../data/vectorized_sage_news/new_2018-08-from07to13')
+tmp_index_dir = os.path.join(cwd, '../saved_indexes/IVF16K_indexes')
+
+arg_parser = OptionParser()
+arg_parser.add_option('-i', '--input_npz_dir', default=tmp_emb_dir)
+arg_parser.add_option('-o', '--output_index_dir', default=tmp_index_dir)
+arg_parser.add_option('-b', '--base_empty_index', default='emptyTrainedIVF16384.index')
+arg_parser.add_option('-n', '--n_training', type='int', default=100)
+args = arg_parser.parse_args()
+# </editor-fold>
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
@@ -11,22 +24,30 @@ from digtextsimilaritysearch.vectorizer.sentence_vectorizer \
     import SentenceVectorizer
 
 
+"""
+Script for training a base IVF index for later use.
+
+Options:
+    -i  Full path to .npz directory
+    -o  Full path to index directory
+    -b  Name of empty index to be trained
+    -n  Number of .npz files to train on
+"""
+
+
 t_start = time()
 
 # Set up paths
-cwd = os.getcwd()
-print('cwd: {}'.format(cwd))
-parent_dir = 'dig-text-similarity-search'
-assert cwd.endswith(parent_dir), 'Aborted...\n\nPlease run in {}'.format(parent_dir)
-
-n_train = int(sys.argv[1]) if len(sys.argv) > 1 else 100
-emb_dir = os.path.join(cwd, 'data/vectorized_sage_news/new_2018-08-from07to13')
-training_path = os.path.join(emb_dir, 'training_set{}.npz'.format(n_train))
-
-index_dir = os.path.join(cwd, 'saved_indexes/IVF16K_indexes')
+emb_dir = args.input_npz_dir
+assert os.path.isdir(emb_dir), 'Full path does not exist: {}'.format(emb_dir)
+index_dir = args.output_index_dir
 if not os.path.isdir(index_dir):
     os.mkdir(index_dir)
-trained_base_index = os.path.join(index_dir, 'emptyTrainedIVF16384.index')
+trained_base_index = os.path.join(index_dir, args.base_empty_index)
+
+n_train = args.n_training
+training_path = os.path.join(emb_dir, 'training_set{}.npz'.format(n_train))
+
 
 # Init
 t_init0 = time()

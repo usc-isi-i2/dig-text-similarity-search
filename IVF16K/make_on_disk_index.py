@@ -11,6 +11,8 @@ arg_parser = OptionParser()
 arg_parser.add_option('-i', '--input_npz_dir', default=tmp_emb_dir)
 arg_parser.add_option('-o', '--output_index_dir', default=tmp_index_dir)
 arg_parser.add_option('-b', '--base_empty_index', default='emptyTrainedIVF16384.index')
+arg_parser.add_option('-m', '--merged_ivf_data', default='mergedIVF16384.ivfdata')
+arg_parser.add_option('-p', '--populated_index', default='populatedIVF16384.index')
 arg_parser.add_option('-e', '--build_from_existing', action='store_true', default=False)
 args = arg_parser.parse_args()
 # </editor-fold>
@@ -42,6 +44,8 @@ Options:
     -i  Full path to .npz directory
     -o  Full path to index directory
     -b  Name of pre-trained, base index (empty)
+    -m  Name of on-disk, searchable IVF data (this is what is searched)
+    -p  Name of populated index file (this is linked to IVF data file)
     -e  Builds on-disk index from existing subindexes (default False)
 """
 
@@ -116,8 +120,8 @@ else:
                   '\n'.format(sum(timestamps[1:])/len(timestamps[1:])))
 
 # Merge
-merged_ivfs = os.path.join(index_dir, 'mergedIVF16384.ivfdata')
-deployable_index = os.path.join(index_dir, 'populatedIVF16384.index')
+merged_ivfs = os.path.join(index_dir, args.merged_ivf_data)
+deployable_index = os.path.join(index_dir, args.populated_index)
 ntotal = dp.build_index_on_disk(merged_ivfs_path=merged_ivfs,
                                 merged_index_path=deployable_index)
 t_end = time()

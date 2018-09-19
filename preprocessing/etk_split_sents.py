@@ -12,7 +12,7 @@ param_parser.add_option('-s', '--split_dir', dest='split_news_dir',
                         default='/lfs1/dig_text_sim/split_news/')
 param_parser.add_option('-r', '--report_intvl', dest='report_interval',
                         type='int', default=1000)
-param_parser.add_option('-o', '--openblas', dest='set_openblas', default=True)
+param_parser.add_option('-o', action='store_false', dest='set_openblas', default=True)
 (opts, args) = param_parser.parse_args()
 # </editor-fold>
 # <editor-fold desc="Set OpenBLAS num threads">

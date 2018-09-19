@@ -1,14 +1,30 @@
 import os
 import json
-# import spacy
 from time import time
 from optparse import OptionParser
-# <editor-fold desc="Set OpenBLAS n_threads=2">
-
-# Set Thread Budget
-os.environ['OPENBLAS_NUM_THREADS'] = '2'
-print('OpenBLAS n_threads: {}'.format(os.environ['OPENBLAS_NUM_THREADS']))
-
+# <editor-fold desc="Parse Params">
+param_parser = OptionParser()
+param_parser.add_option('-i', '--input', dest='input_file',
+                        help="Specify input file with '-i filename.jl'")
+param_parser.add_option('-d', '--raw_dir', dest='raw_news_dir',
+                        default='/lfs1/dig_text_sim/raw_news/')
+param_parser.add_option('-s', '--split_dir', dest='split_news_dir',
+                        default='/lfs1/dig_text_sim/split_news/')
+param_parser.add_option('-b', '--batch', dest='batch_size',
+                        type='int', default=16)
+param_parser.add_option('-m', '--minibatch', dest='minibatch_size',
+                        type='int', default=4)
+param_parser.add_option('-t', '--threads', dest='n_threads',
+                        type='int', default=4)
+param_parser.add_option('-r', '--report_intvl', dest='report_interval',
+                        type='int', default=1000)
+param_parser.add_option('-o', action='store_false', dest='set_openblas', default=True)
+(opts, args) = param_parser.parse_args()
+# </editor-fold>
+# <editor-fold desc="Set OpenBLAS num threads">
+if opts.set_openblas:
+    os.environ['OPENBLAS_NUM_THREADS'] = '2'
+    print('OpenBLAS n_threads: {}'.format(os.environ['OPENBLAS_NUM_THREADS']))
 # </editor-fold>
 import spacy
 
@@ -68,24 +84,6 @@ def add_doc(split_doc_gen, output_file, rep_invtl=1000):
                       '\n'.format(sum(time_stamps) / (ii + 1)))
             ii += 1
 
-
-# Parse Params
-param_parser = OptionParser()
-param_parser.add_option('-i', '--input', dest='input_file',
-                        help="Specify input file with '-i filename.jl'")
-param_parser.add_option('-d', '--raw_dir', dest='raw_news_dir',
-                        default='/lfs1/dig_text_sim/raw_news/')
-param_parser.add_option('-s', '--split_dir', dest='split_news_dir',
-                        default='/lfs1/dig_text_sim/split_news/')
-param_parser.add_option('-b', '--batch', dest='batch_size',
-                        type='int', default=16)
-param_parser.add_option('-m', '--minibatch', dest='minibatch_size',
-                        type='int', default=4)
-param_parser.add_option('-t', '--threads', dest='n_threads',
-                        type='int', default=4)
-param_parser.add_option('-r', '--report_intvl', dest='report_interval',
-                        type='int', default=1000)
-(opts, args) = param_parser.parse_args()
 
 # Dir Paths
 daily_news_dir = opts.raw_news_dir

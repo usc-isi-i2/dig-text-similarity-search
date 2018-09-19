@@ -25,6 +25,7 @@ ids_query_str = """{
 if __name__ == '__main__':
     option_parser = OptionParser()
     option_parser.add_option('-q', '--query', dest='query')
+    option_parser.add_option('-a', '--query_file', dest='query_file')
     option_parser.add_option('-o', '--output', dest='output', default='/tmp/evaluation.csv')
     option_parser.add_option('-f', '--faiss', dest='faiss', help='path to faiss index', default=faiss_path)
     option_parser.add_option('-t', '--table', dest='table', help='faiss id to sentence id mapping table', default=table)
@@ -40,6 +41,7 @@ if __name__ == '__main__':
     es_url = opts.es
     es_index = opts.index
     k = opts.k
+    query_file = opts.query_file
 
     fi = FaissIndexer(faiss)
     sentence_vectorizer = SentenceVectorizer()
@@ -47,32 +49,38 @@ if __name__ == '__main__':
 
     dp = DocumentProcessor(fi, sentence_vectorizer, es_adapter, table_name=table)
 
-    start_time = time()
-    results = dp.query_text(ifp, k=k)
-    time_taken = time() - start_time
+    if query_file:
+        ifps = open(query_file).readlines()
+    else:
+        ifps = [ifp]
 
-    doc_ids = [x['doc_id'] for x in results]
-    ids_query = json.loads(ids_query_str)
-    ids_query['query']['ids']['values'] = doc_ids
+    for ifp in ifps:
+        start_time = time()
+        results = dp.query_text(ifp, k=k)
+        time_taken = time() - start_time
 
-    es_response = requests.post('{}/_search'.format(es_url), json=ids_query)
+        doc_ids = [x['doc_id'] for x in results]
+        ids_query = json.loads(ids_query_str)
+        ids_query['query']['ids']['values'] = doc_ids
 
-    es_results = es_response.json()['hits']['hits']
+        es_response = requests.post('{}/_search'.format(es_url), json=ids_query)
 
-    doc_dict = {}
-    for hit in es_results:
-        doc_dict[hit['_id']] = hit['_source']['knowledge_graph']['description'][0]['value']
+        es_results = es_response.json()['hits']['hits']
 
-    evaluation_list = list()
+        doc_dict = {}
+        for hit in es_results:
+            doc_dict[hit['_id']] = hit['_source']['knowledge_graph']['description'][0]['value']
 
-    for result in results:
-        doc_id = result['doc_id']
-        if doc_id in doc_dict:
-            evaluation_list.append(
-                (ifp, doc_id, doc_dict[doc_id], result['sentence_id'], result['sentence'], result['score'],
-                 str(time_taken), -1))
+        evaluation_list = list()
 
-    df = pd.DataFrame(data=evaluation_list,
-                      columns=['ifp', 'doc_id', 'doc_text', 'sentence_id', 'sentence_text', 'score', 'query_time',
-                               'relevance'])
-    df.to_csv(output, index=False)
+        for result in results:
+            doc_id = result['doc_id']
+            if doc_id in doc_dict:
+                evaluation_list.append(
+                    (ifp, doc_id, doc_dict[doc_id], result['sentence_id'], result['sentence'], result['score'],
+                     str(time_taken), -1))
+
+        df = pd.DataFrame(data=evaluation_list,
+                          columns=['ifp', 'doc_id', 'doc_text', 'sentence_id', 'sentence_text', 'score', 'query_time',
+                                   'relevance'])
+        df.to_csv(output, index=False, mode='a')

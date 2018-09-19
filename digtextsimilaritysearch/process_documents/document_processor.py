@@ -86,8 +86,8 @@ class DocumentProcessor(object):
                 # TODO: rerank by docs with multiple sentence hits
         return similar_docs
 
-    def index_documents(self, cdr_docs=None, load_vectors=False, column_family='dig', save_faiss_index=False,
-                        batch_mode=False, batch_size=1000):
+    def index_documents(self, cdr_docs=None, load_vectors=False, column_family='dig',
+                        save_faiss_index=False, batch_mode=False, batch_size=1000):
 
         vectors = None
         sentence_tuples = None
@@ -124,7 +124,7 @@ class DocumentProcessor(object):
             if batch_mode:
                 self.insert_bulk_records(record_batches, self.table_name, batch_size)
             if save_faiss_index:
-                print('saving faiss index')
+                print('Saving faiss index...')
                 self.indexer.save_index(self.index_save_path)
         else:
             print('Either provide cdr docs or file path to load vectors')

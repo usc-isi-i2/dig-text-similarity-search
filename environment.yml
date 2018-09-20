@@ -16,3 +16,5 @@ dependencies:
     - requests
     - tensorflow
     - pandas
+    - ipykernel
+    - jupyter

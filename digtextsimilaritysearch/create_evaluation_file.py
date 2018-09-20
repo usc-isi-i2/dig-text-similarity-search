@@ -55,7 +55,7 @@ if __name__ == '__main__':
         ifps = [ifp]
 
     evaluation_list = list()
-    
+
     for ifp in ifps:
         start_time = time()
         results = dp.query_text(ifp, k=k)

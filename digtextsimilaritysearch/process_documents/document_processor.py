@@ -76,7 +76,7 @@ class DocumentProcessor(object):
             doc_id, sent_id = divmod(faiss_id, 10000)
             print(doc_id)
             print(sent_id)
-            sentence_info = self.storage_adapter.get_record(doc_id, self.table_name)
+            sentence_info = self.storage_adapter.get_record(str(doc_id), self.table_name)
             print(sentence_info)
             sentences = sentence_info['split_sentences']
             if sentences:
@@ -84,10 +84,10 @@ class DocumentProcessor(object):
                 # if isinstance(sentence_info, list) and len(sentence_info) >= 1:
                 #     sentence_info = sentence_info[0]
                 out = dict()
-                out['doc_id'] = doc_id
+                out['doc_id'] = str(doc_id)
                 out['score'] = float(score)
                 out['sentence'] = sentences[sent_id]
-                out['sentence_id'] = sent_id
+                out['sentence_id'] = str(sent_id)
                 similar_docs.append(out)
                 # TODO: rerank by docs with multiple sentence hits
         return similar_docs

@@ -73,7 +73,9 @@ class DocumentProcessor(object):
         scores, faiss_ids = self.indexer.search(query_vector, k)
 
         for score, faiss_id in zip(scores[0], faiss_ids[0]):
-            sentence_info = self.storage_adapter.get_record(str(faiss_id/1000), self.table_name)
+            thing = str(int(np.floor(faiss_id/10000)))
+            print(thing)
+            sentence_info = self.storage_adapter.get_record(thing, self.table_name)
             if sentence_info:
                 if isinstance(sentence_info, list) and len(sentence_info) >= 1:
                     sentence_info = sentence_info[0]

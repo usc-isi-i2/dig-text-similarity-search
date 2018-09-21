@@ -98,7 +98,7 @@ for i, q in enumerate(queries, start=1):
     all_results.append(results)
     t_diff = time() - t_0
     time_stamps.append(t_diff)
-    print('Query {} completed in {:0.4f}s'.format(i, t_diff))
+    print('Query {} completed in {:0.4f}s\n'.format(i, t_diff))
 
 
 # Check time for batch search

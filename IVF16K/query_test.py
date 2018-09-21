@@ -12,6 +12,7 @@ arg_parser.add_option('-o', '--output_index_dir', default=tmp_index_dir)
 arg_parser.add_option('-l', '--logstash_path', default=tmp_logstash_path)
 arg_parser.add_option('-t', '--table', default='dig-text-similarity-search-IVF16K')
 arg_parser.add_option('-p', '--populated_index', default='populatedIVF16384.index')
+arg_parser.add_option('-e', '--es_endpoint')
 (args, _) = arg_parser.parse_args()
 # </editor-fold>
 
@@ -36,6 +37,7 @@ Options:
     -l  Full path to logstash file for ESAdapter
     -t  Table name used by DocumentProcessor
     -p  Name of populated index
+    -e  Url to Elasticsearch index
 """
 
 
@@ -52,8 +54,8 @@ idx = DeployIVF(path_to_deployable_index=deployable)
 sv = SentenceVectorizer()
 
 # TODO: Update to new ESAdapter w/o logstash
-logstash_path = args.logstash_path
-es = ESAdapter(logstash_file_path=logstash_path)
+es_endpoint = args.es_endpoint
+es = ESAdapter(es_endpoint=es_endpoint)
 
 table = args.table
 dp = DocumentProcessor(indexer=idx, vectorizer=sv,
@@ -96,7 +98,7 @@ for i, q in enumerate(queries, start=1):
     all_results.append(results)
     t_diff = time() - t_0
     time_stamps.append(t_diff)
-    print('Query {} completed in {:0.4f}s'.format(i, t_diff))
+    print('Query {} completed in {:0.4f}s\n'.format(i, t_diff))
 
 
 # Check time for batch search
@@ -121,13 +123,13 @@ for i, (q, rs, t) in enumerate(zip(queries, all_results, time_stamps), start=1):
             doc_ids = set()
             for r in rs:
                 if j <= k_report and r['doc_id'] not in doc_ids:
-                    j += 1
                     doc_ids.add(r['doc_id'])
                     f.write('  Result: {}\n'.format(j))
                     f.write('  Difference Score: {:0.5f}\n'.format(r['score']))
                     f.write('  Text: {}\n'.format(r['sentence'].replace('\n', ' ')))
                     f.write('  Document ID: {}\n'.format(r['doc_id']))
                     f.write('  Link to cdr_doc: {}{} \n\n'.format(base_url, r['doc_id']))
+                    j += 1
 
     except FileExistsError:
         print('File already exists: {}'.format(file_path))

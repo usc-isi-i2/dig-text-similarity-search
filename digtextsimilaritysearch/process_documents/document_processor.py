@@ -1,5 +1,5 @@
 import numpy as np
-from time import sleep
+from time import sleep, time
 
 _SENTENCE_ID = 'sentence_id'
 _SENTENCE_TEXT = 'sentence_text'
@@ -69,20 +69,41 @@ class DocumentProcessor(object):
         similar_docs = list()
         if not isinstance(str_query, list):
             str_query = [str_query]
+        t_0 = time()
         query_vector = self.vectorizer.make_vectors(str_query)
+        t_1 = time()
         scores, faiss_ids = self.indexer.search(query_vector, k)
+        t_vector = t_1 - t_0
+        t_search = time() - t_1
+        print('  TF vectorization time: {:0.6f}s'.format(t_vector))
+        print('  Faiss search time: {:0.6f}s'.format(t_search))
 
+        unique_sentences = set()
         for score, faiss_id in zip(scores[0], faiss_ids[0]):
-            sentence_info = self.storage_adapter.get_record(str(faiss_id), self.table_name)
+            doc_id, sent_id = divmod(faiss_id, 10000)
+            t_start = time()
+            sentence_info = self.storage_adapter.get_record(str(doc_id), self.table_name)
+            t_end = time()
+            t_es = t_end - t_start
+            if isinstance(sentence_info, list) and len(sentence_info) >= 1:
+                sentence_info = sentence_info[0]
             if sentence_info:
-                if isinstance(sentence_info, list) and len(sentence_info) >= 1:
-                    sentence_info = sentence_info[0]
                 out = dict()
-                out['doc_id'] = sentence_info[_SENTENCE_ID].split('_')[0]
+                out['doc_id'] = str(doc_id)
                 out['score'] = float(score)
-                out['sentence'] = sentence_info[_SENTENCE_TEXT]
-                out['sentence_id'] = sentence_info[_SENTENCE_ID]
-                similar_docs.append(out)
+                out['sentence_id'] = str(sent_id)
+                out['vectorizer_time_taken'] = t_vector
+                out['faiss_query_time'] = t_search
+                out['es_query_time'] = t_es
+                if sent_id == 0:
+                    out['sentence'] = sentence_info['lexisnexis']['doc_title']
+                else:
+                    out['sentence'] = sentence_info['split_sentences'][sent_id-1]
+                if out['sentence'] not in unique_sentences:
+                    similar_docs.append(out)
+                    unique_sentences.add(str(out['sentence']))
+                else:
+                    pass
                 # TODO: rerank by docs with multiple sentence hits
         return similar_docs
 

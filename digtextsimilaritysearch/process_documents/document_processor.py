@@ -78,6 +78,7 @@ class DocumentProcessor(object):
         print('  TF vectorization time: {:0.6f}s'.format(t_vector))
         print('  Faiss search time: {:0.6f}s'.format(t_search))
 
+        unique_sentences = set()
         for score, faiss_id in zip(scores[0], faiss_ids[0]):
             doc_id, sent_id = divmod(faiss_id, 10000)
             sentence_info = self.storage_adapter.get_record(str(doc_id), self.table_name)
@@ -92,7 +93,11 @@ class DocumentProcessor(object):
                     out['sentence'] = sentence_info['lexisnexis']['doc_title']
                 else:
                     out['sentence'] = sentence_info['split_sentences'][sent_id-1]
-                similar_docs.append(out)
+                if out['sentence'] not in unique_sentences:
+                    similar_docs.append(out)
+                    unique_sentences.add(str(out['sentence']))
+                else:
+                    pass
                 # TODO: rerank by docs with multiple sentence hits
         return similar_docs
 

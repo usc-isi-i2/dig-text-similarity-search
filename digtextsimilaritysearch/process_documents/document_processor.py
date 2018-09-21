@@ -1,5 +1,5 @@
 import numpy as np
-from time import sleep
+from time import sleep, time
 
 _SENTENCE_ID = 'sentence_id'
 _SENTENCE_TEXT = 'sentence_text'
@@ -70,7 +70,10 @@ class DocumentProcessor(object):
         if not isinstance(str_query, list):
             str_query = [str_query]
         query_vector = self.vectorizer.make_vectors(str_query)
+        t_0 = time()
         scores, faiss_ids = self.indexer.search(query_vector, k)
+        t_search = time() - t_0
+        print('Faiss search time: {:0.6f}s'.format(t_search))
 
         for score, faiss_id in zip(scores[0], faiss_ids[0]):
             doc_id, sent_id = divmod(faiss_id, 10000)

@@ -81,7 +81,10 @@ class DocumentProcessor(object):
         unique_sentences = set()
         for score, faiss_id in zip(scores[0], faiss_ids[0]):
             doc_id, sent_id = divmod(faiss_id, 10000)
+            t_start = time()
             sentence_info = self.storage_adapter.get_record(str(doc_id), self.table_name)
+            t_end = time()
+            t_es = t_end - t_start
             if isinstance(sentence_info, list) and len(sentence_info) >= 1:
                 sentence_info = sentence_info[0]
             if sentence_info:
@@ -89,6 +92,9 @@ class DocumentProcessor(object):
                 out['doc_id'] = str(doc_id)
                 out['score'] = float(score)
                 out['sentence_id'] = str(sent_id)
+                out['vectorizer_time_taken'] = t_vector
+                out['faiss_query_time'] = t_search
+                out['es_query_time'] = t_es
                 if sent_id == 0:
                     out['sentence'] = sentence_info['lexisnexis']['doc_title']
                 else:

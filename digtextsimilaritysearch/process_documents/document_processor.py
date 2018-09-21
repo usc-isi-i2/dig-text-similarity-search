@@ -77,10 +77,7 @@ class DocumentProcessor(object):
 
         for score, faiss_id in zip(scores[0], faiss_ids[0]):
             doc_id, sent_id = divmod(faiss_id, 10000)
-            print(doc_id)
-            print(sent_id)
             sentence_info = self.storage_adapter.get_record(str(doc_id), self.table_name)
-            print(sentence_info)
             if isinstance(sentence_info, list) and len(sentence_info) >= 1:
                 sentence_info = sentence_info[0]
             if sentence_info:

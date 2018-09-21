@@ -73,17 +73,21 @@ class DocumentProcessor(object):
         scores, faiss_ids = self.indexer.search(query_vector, k)
 
         for score, faiss_id in zip(scores[0], faiss_ids[0]):
-            thing = str(int(np.floor(faiss_id/10000)))
-            print(thing)
-            sentence_info = self.storage_adapter.get_record(thing, self.table_name)
-            if sentence_info:
-                if isinstance(sentence_info, list) and len(sentence_info) >= 1:
-                    sentence_info = sentence_info[0]
+            doc_id, sent_id = divmod(faiss_id, 10000)
+            print(doc_id)
+            print(sent_id)
+            sentence_info = self.storage_adapter.get_record(doc_id, self.table_name)
+            print(sentence_info)
+            sentences = sentence_info['split_sentences']
+            if sentences:
+                assert isinstance(sentences, list), 'not a list'
+                # if isinstance(sentence_info, list) and len(sentence_info) >= 1:
+                #     sentence_info = sentence_info[0]
                 out = dict()
-                out['doc_id'] = sentence_info[_SENTENCE_ID].split('_')[0]
+                out['doc_id'] = doc_id
                 out['score'] = float(score)
-                out['sentence'] = sentence_info[_SENTENCE_TEXT]
-                out['sentence_id'] = sentence_info[_SENTENCE_ID]
+                out['sentence'] = sentences[sent_id]
+                out['sentence_id'] = sent_id
                 similar_docs.append(out)
                 # TODO: rerank by docs with multiple sentence hits
         return similar_docs

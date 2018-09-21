@@ -12,6 +12,7 @@ arg_parser.add_option('-o', '--output_index_dir', default=tmp_index_dir)
 arg_parser.add_option('-l', '--logstash_path', default=tmp_logstash_path)
 arg_parser.add_option('-t', '--table', default='dig-text-similarity-search-IVF16K')
 arg_parser.add_option('-p', '--populated_index', default='populatedIVF16384.index')
+arg_parser.add_option('-e', '--es_endpoint')
 (args, _) = arg_parser.parse_args()
 # </editor-fold>
 
@@ -36,6 +37,7 @@ Options:
     -l  Full path to logstash file for ESAdapter
     -t  Table name used by DocumentProcessor
     -p  Name of populated index
+    -e  Url to Elasticsearch index
 """
 
 
@@ -52,8 +54,8 @@ idx = DeployIVF(path_to_deployable_index=deployable)
 sv = SentenceVectorizer()
 
 # TODO: Update to new ESAdapter w/o logstash
-logstash_path = args.logstash_path
-es = ESAdapter(logstash_file_path=logstash_path)
+es_endpoint = args.es_endpoint
+es = ESAdapter(es_endpoint=es_endpoint)
 
 table = args.table
 dp = DocumentProcessor(indexer=idx, vectorizer=sv,

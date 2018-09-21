@@ -34,6 +34,7 @@ class ESAdapter(KeyValueStorage):
         r = None
         try:
             r = requests.post(url, data=json.dumps(query))
+            print(r.json())
         except Exception as e:
             print('Exception: {} occurred while calling elasticsearch'.format(str(e)))
 
@@ -41,6 +42,7 @@ class ESAdapter(KeyValueStorage):
         if r and r.status_code == 200:
             for hit in r.json()['hits']['hits']:
                 sources.append(hit['_source'])
+        print(sources)
         return sources
 
     def create_table(self, table_name):

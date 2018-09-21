@@ -80,14 +80,15 @@ class DocumentProcessor(object):
             print(sentence_info)
             if isinstance(sentence_info, list) and len(sentence_info) >= 1:
                 sentence_info = sentence_info[0]
-            sentences = sentence_info['split_sentences']
-            if sentences:
-                assert isinstance(sentences, list), 'not a list'
+            if sentence_info:
                 out = dict()
                 out['doc_id'] = str(doc_id)
                 out['score'] = float(score)
-                out['sentence'] = sentences[sent_id]
                 out['sentence_id'] = str(sent_id)
+                if sent_id == 0:
+                    out['sentence'] = sentence_info['lexisnexis']['doc_title']
+                else:
+                    out['sentence'] = sentence_info['split_sentences'][sent_id-1]
                 similar_docs.append(out)
                 # TODO: rerank by docs with multiple sentence hits
         return similar_docs

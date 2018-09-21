@@ -123,13 +123,13 @@ for i, (q, rs, t) in enumerate(zip(queries, all_results, time_stamps), start=1):
             doc_ids = set()
             for r in rs:
                 if j <= k_report and r['doc_id'] not in doc_ids:
-                    j += 1
                     doc_ids.add(r['doc_id'])
                     f.write('  Result: {}\n'.format(j))
                     f.write('  Difference Score: {:0.5f}\n'.format(r['score']))
                     f.write('  Text: {}\n'.format(r['sentence'].replace('\n', ' ')))
                     f.write('  Document ID: {}\n'.format(r['doc_id']))
                     f.write('  Link to cdr_doc: {}{} \n\n'.format(base_url, r['doc_id']))
+                    j += 1
 
     except FileExistsError:
         print('File already exists: {}'.format(file_path))

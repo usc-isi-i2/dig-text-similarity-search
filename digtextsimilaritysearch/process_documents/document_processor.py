@@ -78,11 +78,11 @@ class DocumentProcessor(object):
             print(sent_id)
             sentence_info = self.storage_adapter.get_record(str(doc_id), self.table_name)
             print(sentence_info)
+            if isinstance(sentence_info, list) and len(sentence_info) >= 1:
+                sentence_info = sentence_info[0]
             sentences = sentence_info['split_sentences']
             if sentences:
                 assert isinstance(sentences, list), 'not a list'
-                # if isinstance(sentence_info, list) and len(sentence_info) >= 1:
-                #     sentence_info = sentence_info[0]
                 out = dict()
                 out['doc_id'] = str(doc_id)
                 out['score'] = float(score)

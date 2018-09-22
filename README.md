@@ -6,6 +6,7 @@
 ```
 conda env create .
 source activate dig_text_similarity
+ipython kernel install --user --name=dig_text_similarity
 ```
 
 #### Run Unit Tests

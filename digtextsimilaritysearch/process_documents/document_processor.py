@@ -72,7 +72,7 @@ class DocumentProcessor(object):
         t_0 = time()
         query_vector = self.vectorizer.make_vectors(str_query)
         t_1 = time()
-        scores, faiss_ids = self.indexer.search(query_vector, k)
+        scores, faiss_ids = self.indexer.search(query_vector, k*5)
         t_vector = t_1 - t_0
         t_search = time() - t_1
         print('  TF vectorization time: {:0.6f}s'.format(t_vector))
@@ -80,6 +80,8 @@ class DocumentProcessor(object):
 
         unique_sentences = set()
         for score, faiss_id in zip(scores[0], faiss_ids[0]):
+            if len(similar_docs) >= k:
+                break
             doc_id, sent_id = divmod(faiss_id, 10000)
             t_start = time()
             sentence_info = self.storage_adapter.get_record(str(doc_id), self.table_name)

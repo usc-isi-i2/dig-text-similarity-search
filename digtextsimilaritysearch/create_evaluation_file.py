@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
     for ifp in ifps:
         start_time = time()
-        results = dp.query_text(ifp, k=k)
+        results = dp.query_text(ifp, k=k*10)
         time_taken = time() - start_time
         doc_ids = [x['doc_id'] for x in results]
         ids_query = json.loads(ids_query_str)
@@ -73,6 +73,7 @@ if __name__ == '__main__':
             # doc_dict[hit['_id']] = hit['_source']['knowledge_graph']['description'][0]['value']
             doc_dict[hit['_id']] = hit['_source']['lexisnexis']['doc_description']
 
+        results = results[:k]
         for result in results:
             doc_id = result['doc_id']
             if doc_id in doc_dict:

@@ -1,5 +1,6 @@
 from vectorizer.sentence_vectorizer import SentenceVectorizer
-from indexer.faiss_indexer import FaissIndexer
+# from indexer.faiss_indexer import FaissIndexer
+from indexer.IVF_disk_index_handler import DeployIVF
 from storage.es_adapter import ESAdapter
 from process_documents.document_processor import DocumentProcessor
 
@@ -43,9 +44,10 @@ if __name__ == '__main__':
     k = opts.k
     query_file = opts.query_file
 
-    fi = FaissIndexer(faiss)
+    # fi = FaissIndexer(faiss)
+    fi = DeployIVF(faiss)
     sentence_vectorizer = SentenceVectorizer()
-    es_adapter = ESAdapter()
+    es_adapter = ESAdapter(es_endpoint='http://sage-dev-internal.isi.edu:9200')
 
     dp = DocumentProcessor(fi, sentence_vectorizer, es_adapter, table_name=table)
 
@@ -60,18 +62,16 @@ if __name__ == '__main__':
         start_time = time()
         results = dp.query_text(ifp, k=k)
         time_taken = time() - start_time
-
         doc_ids = [x['doc_id'] for x in results]
         ids_query = json.loads(ids_query_str)
         ids_query['query']['ids']['values'] = doc_ids
-
         es_response = requests.post('{}/_search'.format(es_url), json=ids_query)
 
         es_results = es_response.json()['hits']['hits']
-
         doc_dict = {}
         for hit in es_results:
-            doc_dict[hit['_id']] = hit['_source']['knowledge_graph']['description'][0]['value']
+            # doc_dict[hit['_id']] = hit['_source']['knowledge_graph']['description'][0]['value']
+            doc_dict[hit['_id']] = hit['_source']['lexisnexis']['doc_description']
 
         for result in results:
             doc_id = result['doc_id']

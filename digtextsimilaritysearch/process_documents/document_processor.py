@@ -65,7 +65,16 @@ class DocumentProcessor(object):
                                          file_path=self.vector_save_path)
         return vectors
 
-    def query_text(self, str_query, k=3):
+    def query_text(self, str_query, k=3, fetch_docs=False):
+        """
+
+        :param str_query: The actual text for querying.
+        :param k: number of results required
+        :param fetch_docs: whether or not to fetch actual documents and sentences and send them back in the response json
+        :return: a list of top k results where each result is a sentence that matched and its id, score, doc id etc.
+        If fetch_docs is True, we call elasticsearch and retrieve the text of the documents that matched and also the sentence
+        that matched as well. If it is set to false, we only return the ids and the scores of the sentence and document.
+        """
         similar_docs = list()
         if not isinstance(str_query, list):
             str_query = [str_query]
@@ -77,30 +86,33 @@ class DocumentProcessor(object):
         t_search = time() - t_1
         print('  TF vectorization time: {:0.6f}s'.format(t_vector))
         print('  Faiss search time: {:0.6f}s'.format(t_search))
-
+        t_es = 0
         unique_sentences = set()
         for score, faiss_id in zip(scores[0], faiss_ids[0]):
             if len(similar_docs) >= k:
                 break
             doc_id, sent_id = divmod(faiss_id, 10000)
-            t_start = time()
-            sentence_info = self.storage_adapter.get_record(str(doc_id), self.table_name)
-            t_end = time()
-            t_es = t_end - t_start
+            sentence_info = None
+            if fetch_docs:
+                t_start = time()
+                sentence_info = self.storage_adapter.get_record(str(doc_id), self.table_name)
+                t_end = time()
+                t_es = t_end - t_start
             if isinstance(sentence_info, list) and len(sentence_info) >= 1:
                 sentence_info = sentence_info[0]
-            if sentence_info:
-                out = dict()
-                out['doc_id'] = str(doc_id)
-                out['score'] = float(score)
-                out['sentence_id'] = str(sent_id)
-                out['vectorizer_time_taken'] = t_vector
-                out['faiss_query_time'] = t_search
+            out = dict()
+            out['doc_id'] = str(doc_id)
+            out['score'] = float(score)
+            out['sentence_id'] = str(sent_id)
+            out['vectorizer_time_taken'] = t_vector
+            out['faiss_query_time'] = t_search
+            if sentence_info and fetch_docs:
                 out['es_query_time'] = t_es
                 if sent_id == 0:
                     out['sentence'] = sentence_info['lexisnexis']['doc_title']
                 else:
                     out['sentence'] = sentence_info['split_sentences'][sent_id-1]
+                #
                 if out['sentence'] not in unique_sentences:
                     similar_docs.append(out)
                     unique_sentences.add(str(out['sentence']))

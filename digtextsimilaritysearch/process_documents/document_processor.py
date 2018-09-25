@@ -65,7 +65,7 @@ class DocumentProcessor(object):
                                          file_path=self.vector_save_path)
         return vectors
 
-    def query_text(self, str_query, k=3, fetch_docs=False):
+    def query_text(self, str_query, k=3, fetch_sentences=False):
         """
 
         :param str_query: The actual text for querying.
@@ -93,7 +93,7 @@ class DocumentProcessor(object):
                 break
             doc_id, sent_id = divmod(faiss_id, 10000)
             sentence_info = None
-            if fetch_docs:
+            if fetch_sentences:
                 t_start = time()
                 sentence_info = self.storage_adapter.get_record(str(doc_id), self.table_name)
                 t_end = time()
@@ -106,7 +106,7 @@ class DocumentProcessor(object):
             out['sentence_id'] = str(sent_id)
             out['vectorizer_time_taken'] = t_vector
             out['faiss_query_time'] = t_search
-            if sentence_info and fetch_docs:
+            if sentence_info and fetch_sentences:
                 out['es_query_time'] = t_es
                 if sent_id == 0:
                     out['sentence'] = sentence_info['lexisnexis']['doc_title']

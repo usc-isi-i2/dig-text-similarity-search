@@ -70,7 +70,7 @@ class DocumentProcessor(object):
 
         :param str_query: The actual text for querying.
         :param k: number of results required
-        :param fetch_docs: whether or not to fetch actual documents and sentences and send them back in the response json
+        :param fetch_sentences: whether or not to fetch actual sentence text and send them back in the response json
         :return: a list of top k results where each result is a sentence that matched and its id, score, doc id etc.
         If fetch_docs is True, we call elasticsearch and retrieve the text of the documents that matched and find the sentence
         that matched. If it is set to false, we only return the ids and the scores of the sentence and document.

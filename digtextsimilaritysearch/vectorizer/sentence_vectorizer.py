@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import tensorflow as tf
 import tensorflow_hub as hub
@@ -7,6 +8,14 @@ from typing import List
 class SentenceVectorizer(object):
 
     def __init__(self, path_to_model=None):
+
+        model_dir = os.path.join(os.path.dirname(__file__), 'model/')
+        model_loc = '1fb57c3ffe1a38479233ee9853ddd7a8ac8a8c47'
+        model_loc = os.path.join(model_dir, model_loc)
+        if not path_to_model and os.path.isdir(model_loc):
+            path_to_model = model_loc
+        elif not path_to_model and os.path.isdir(model_dir):
+            os.environ['TFHUB_CACHE_DIR'] = model_dir
 
         if not path_to_model:
             path_to_model = 'https://tfhub.dev/google/universal-sentence-encoder/2'

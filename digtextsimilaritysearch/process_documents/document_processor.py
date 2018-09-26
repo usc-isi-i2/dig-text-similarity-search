@@ -99,8 +99,9 @@ class DocumentProcessor(object):
                 sentence_info = self.storage_adapter.get_record(str(doc_id), self.table_name)
                 t_end = time()
                 t_es = t_end - t_start
-            if isinstance(sentence_info, list) and len(sentence_info) >= 1:
-                sentence_info = sentence_info[0]
+                if isinstance(sentence_info, list) and len(sentence_info) >= 1:
+                    sentence_info = sentence_info[0]
+
             out = dict()
             out['score'] = float(score)
             out['sentence_id'] = str(sent_id)

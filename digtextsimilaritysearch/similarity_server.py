@@ -4,10 +4,9 @@ from flask import request
 from flask_cors import CORS
 import json
 
-from indexer.faiss_indexer import FaissIndexer
+from indexer.IVF_disk_index_handler import DeployIVF
 from process_documents.document_processor import DocumentProcessor
 from vectorizer.sentence_vectorizer import SentenceVectorizer
-# from storage.hbase_adapter import HBaseAdapter
 from storage.es_adapter import ESAdapter
 from config import config
 
@@ -18,16 +17,13 @@ print('Initializing Batch Vectorizer')
 query_vectorizer = SentenceVectorizer()
 
 print('Initializing Faiss Indexer')
-faiss_indexer = FaissIndexer(path_to_index_file=config['faiss_index_path'])
-
-# print('Initializing Hbase Adapter')
-# hbase_adapter = HBaseAdapter(config['hbase_server'])
+faiss_indexer = DeployIVF(path_to_index_file=config['faiss_index_path'])
 
 print('Initializing ES Adapter')
-es_adapter = ESAdapter()
+es_adapter = ESAdapter(es_endpoint='http://mydig-sage-internal.isi.edu/es')
 
 print('Initializing Document Processor')
-dp = DocumentProcessor(faiss_indexer, query_vectorizer, es_adapter)
+dp = DocumentProcessor(faiss_indexer, query_vectorizer, es_adapter, table_name='sage-news-2')
 
 
 @app.route("/")
@@ -38,7 +34,7 @@ def hello():
 @app.route("/search", methods=['GET'])
 def text_similarity_search():
     query = request.args.get("query", None)
-    k = request.args.get("k", 3)
+    k = request.args.get("k", 10)
 
     if not query:
         return jsonify({"message": "The service is not able to process null request"}), 400

@@ -6,6 +6,7 @@
 ```
 conda env create .
 source activate dig_text_similarity
+ipython kernel install --user --name=dig_text_similarity
 ```
 
 #### Run Unit Tests
@@ -20,18 +21,10 @@ source deactivate
 ```
 
 
-## HBase
-#### Run hbase docker (for test purposes only):
-`To persist data, use the -v option`
-```
-docker pull dajobe/hbase
-docker run -d -p 9090:9090 -p 2181:2181 -v /path/to/hbase_storage:/data dajobe/hbase
-```
+## Storage Adapter
+Module for linking faiss_ids to content. 
 
-#### Connect to docker hbase using the hbase_adapter code in this repo:
-```
-hb = HBaseAdapter('localhost')
-```
+(HBase has been depreciated)
 
 
 ## Installing TensorFlow from Source (for CPU)

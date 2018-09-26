@@ -18,58 +18,100 @@ class HBaseAdapter(KeyValueStorage):
     </property>
     """
 
-    def __init__(self, host, **kwargs):
+    def __init__(self, host, size=10, **kwargs):
         KeyValueStorage.__init__(self)
-        self._conn = happybase.Connection(host=host, timeout=6000000, **kwargs)
+        self._conn_host = host
+        self._conn_size = size
+        self._timeout = 6000000
+        self._transport = 'buffered'
+        self._conn_kwargs = kwargs
+        self._conn_pool = happybase.ConnectionPool(size=self._conn_size,
+                                                   host=self._conn_host,
+                                                   timeout=self._timeout,
+                                                   transport=self._transport,
+                                                   **self._conn_kwargs)
+
         self._tables = {}
+
+    def establish_conn_pool(self):
+        self._conn_pool = happybase.ConnectionPool(size=self._conn_size,
+                                                   host=self._conn_host,
+                                                   timeout=self._timeout,
+                                                   transport=self._transport,
+                                                   **self._conn_kwargs)
 
     def __del__(self):
         try:
-            self._conn.close()
-        except:
-            pass
+            with self._conn_pool.connection() as _conn:
+                _conn.close()
+        except Exception as e:
+            print('Exception: {}, while closing connection pool'.format(e))
 
     def tables(self):
-        return self._conn.client.getTableNames()
+        try:
+            with self._conn_pool.connection() as _conn:
+                return _conn.client.getTableNames()
+        except Exception as e:
+            print('Exception: {}, while getting table names'.format(e))
 
     def create_table(self, table_name, family_name='dig'):
         if not bytes(table_name, encoding='utf-8') in self.tables():
-            self._conn.create_table(table_name, {family_name: dict()})
+            try:
+                with self._conn_pool.connection() as _conn:
+                    _conn.create_table(table_name, {family_name: dict()})
+            except Exception as e:
+                print('Exception: {}, while creating table: {}'.format(e, table_name))
 
-    def get_record(self, record_id, table_name, column_names=[_SENTENCE_ID, _SENTENCE_TEXT], column_family='dig'):
+    def get_record(self, record_id, table_name,
+                   column_names=(_SENTENCE_ID, _SENTENCE_TEXT),
+                   column_family='dig'):
         try:
-            record = self.get_table(table_name).row(record_id)
-            if record:
-                result = {}
-                for column_name in column_names:
-                    fam_col = '{}:{}'.format(column_family, column_name).encode('utf-8')
-                    result[column_name] = record.get(fam_col, '').decode('utf-8')
-                return result
+            with self._conn_pool.connection() as _conn:
+                record = self.get_table(table_name).row(record_id)
+                if record:
+                    result = {}
+                    for column_name in column_names:
+                        fam_col = '{}:{}'.format(column_family, column_name).encode('utf-8')
+                        result[column_name] = record.get(fam_col, '').decode('utf-8')
+                    return result
         except Exception as e:
-            print('Exception: {}, while retrieving record: {}, from table: {}'.format(e, record_id, table_name))
+            print('Exception: {}, while retrieving record: {}, '
+                  'from table: {}'.format(e, record_id, table_name))
 
         return None
 
     def get_table(self, table_name):
-        try:
-            if table_name not in self._tables:
-                self._tables[table_name] = self._conn.table(table_name)
-            return self._tables[table_name]
-        except Exception as e:
-            print('Exception:{}, while retrieving table: {}'.format(e, table_name))
-        return None
+        if table_name not in self._tables:
+            try:
+                with self._conn_pool.connection() as _conn:
+                    self._tables[table_name] = _conn.table(table_name)
+            except Exception as e:
+                print('Exception:{}, while retrieving table: {}'.format(e, table_name))
+                return None
+        return self._tables[table_name]
 
     def insert_record_value(self, record_id, value, table_name, column_family, column_name):
-        table = self.get_table(table_name)
-        if table:
-            return table.put(record_id, {'{}:{}'.format(column_family, column_name): value})
-        raise Exception('table: {} not found'.format(table_name))
+        try:
+            with self._conn_pool.connection() as _conn:
+                table = self.get_table(table_name)
+                if table:
+                    return table.put(record_id, {'{}:{}'.format(column_family, column_name): value})
+                raise Exception('Table: {} not found'.format(table_name))
+        except Exception as e:
+            print('Exception: {}, while writing record (id: {}, val: {}) '
+                  'in table: {} (col_fam: {}, col_name: {})'
+                  ''.format(e, record_id, value, table_name, column_family, column_name))
 
     def insert_record(self, record_id, record, table_name):
-        table = self.get_table(table_name)
-        if table:
-            return table.put(record_id, record)
-        raise Exception('table: {} not found'.format(table_name))
+        try:
+            with self._conn_pool.connection() as _conn:
+                table = self.get_table(table_name)
+                if table:
+                    return table.put(record_id, record)
+                raise Exception('Table: {} not found'.format(table_name))
+        except Exception as e:
+            print('Exception: {}, while writing record (id: {}, rec: {}) '
+                  'to table: {}'.format(e, record_id, record, table_name))
 
     def insert_records_batch(self, records, table_name):
         """
@@ -78,25 +120,37 @@ class HBaseAdapter(KeyValueStorage):
         :param table_name: table in hbase where records will be shipped to
         :return: exception in case of failure
         """
-        table = self.get_table(table_name)
-        batch = table.batch()
-        for record in records:
-            batch.put(record[0], record[1])
-        batch.send()
+        try:
+            with self._conn_pool.connection() as _conn:
+                table = self.get_table(table_name)
+                batch = table.batch()
+                for record in records:
+                    batch.put(record[0], record[1])
+                batch.send()
+        except Exception as e:
+            print('Exception: {}, while writing batch of records '
+                  'to table: {}'.format(e, table_name))
+            self.establish_conn_pool()
+            self.insert_records_batch(records, table_name)
 
     def delete_table(self, table_name):
         try:
-            self._conn.delete_table(table_name, disable=True)
-        except:
-            pass
+            with self._conn_pool.connection() as _conn:
+                _conn.delete_table(table_name, disable=True)
+        except Exception as e:
+            print('Exception: {}, while deleting table: {}'.format(e, table_name))
 
     def __iter__(self, table_name):
         return self.__next__(table_name)
 
     def __next__(self, table_name):
         table = self.get_table(table_name)
-        if table:
-            for key, data in table.scan(filter=b'FirstKeyOnlyFilter()'):
-                yield {key: data}
-        else:
-            raise Exception('table: {} not found'.format(table_name))
+        try:
+            with self._conn_pool.connection() as _conn:
+                if table:
+                    for key, data in table.scan(filter=b'FirstKeyOnlyFilter()'):
+                        yield {key: data}
+                else:
+                    raise Exception('Table: {} not found'.format(table_name))
+        except Exception as e:
+            print('Exception: {}, while scanning table: {}'.format(e, table_name))

@@ -94,6 +94,7 @@ class DocumentProcessor(object):
             doc_id, sent_id = divmod(faiss_id, 10000)
             sentence_info = None
             if fetch_sentences:
+                assert self.storage_adapter.es_endpoint is not None, "Es endpoint cannot be none"
                 t_start = time()
                 sentence_info = self.storage_adapter.get_record(str(doc_id), self.table_name)
                 t_end = time()
@@ -101,18 +102,17 @@ class DocumentProcessor(object):
             if isinstance(sentence_info, list) and len(sentence_info) >= 1:
                 sentence_info = sentence_info[0]
             out = dict()
-            out['doc_id'] = str(doc_id)
             out['score'] = float(score)
             out['sentence_id'] = str(sent_id)
-            out['vectorizer_time_taken'] = t_vector
-            out['faiss_query_time'] = t_search
             if sentence_info and fetch_sentences:
+                out['doc_id'] = str(doc_id)
                 out['es_query_time'] = t_es
+                out['vectorizer_time_taken'] = t_vector
+                out['faiss_query_time'] = t_search
                 if sent_id == 0:
                     out['sentence'] = sentence_info['lexisnexis']['doc_title']
                 else:
                     out['sentence'] = sentence_info['split_sentences'][sent_id-1]
-                #
                 if out['sentence'] not in unique_sentences:
                     similar_docs.append(out)
                     unique_sentences.add(str(out['sentence']))

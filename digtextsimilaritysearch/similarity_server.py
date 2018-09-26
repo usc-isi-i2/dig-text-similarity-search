@@ -23,7 +23,7 @@ print('Initializing ES Adapter')
 es_adapter = ESAdapter(es_endpoint='http://mydig-sage-internal.isi.edu/es')
 
 print('Initializing Document Processor')
-dp = DocumentProcessor(faiss_indexer, query_vectorizer, es_adapter, table_name='sage-news-2')
+dp = DocumentProcessor(faiss_indexer, query_vectorizer, None, table_name='sage-news-2')
 
 
 @app.route("/")

@@ -104,7 +104,7 @@ class DocumentProcessor(object):
 
             out = dict()
             out['score'] = float(score)
-            out['sentence_id'] = str(sent_id)
+            out['sentence_id'] = str(faiss_id)
             if sentence_info and fetch_sentences:
                 out['doc_id'] = str(doc_id)
                 out['es_query_time'] = t_es

@@ -120,6 +120,8 @@ class DocumentProcessor(object):
                 else:
                     pass
                 # TODO: rerank by docs with multiple sentence hits
+            else:
+                similar_docs.append(out)
         return similar_docs
 
     def index_documents(self, cdr_docs=None, load_vectors=False, column_family='dig',

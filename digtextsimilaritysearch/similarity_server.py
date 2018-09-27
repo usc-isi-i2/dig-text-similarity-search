@@ -17,7 +17,7 @@ print('Initializing Batch Vectorizer')
 query_vectorizer = SentenceVectorizer()
 
 print('Initializing Faiss Indexer')
-faiss_indexer = DeployIVF(path_to_index_file=config['faiss_index_path'])
+faiss_indexer = DeployIVF(path_to_deployable_index=config['faiss_index_path'])
 
 print('Initializing ES Adapter')
 es_adapter = ESAdapter(es_endpoint='http://mydig-sage-internal.isi.edu/es')

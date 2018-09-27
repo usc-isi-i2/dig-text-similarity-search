@@ -87,6 +87,7 @@ class DocumentProcessor(object):
         print('  TF vectorization time: {:0.6f}s'.format(t_vector))
         print('  Faiss search time: {:0.6f}s'.format(t_search))
         t_es = 0
+        unique_scores = set()
         unique_sentences = set()
         for score, faiss_id in zip(scores[0], faiss_ids[0]):
             if len(similar_docs) >= k:
@@ -120,8 +121,9 @@ class DocumentProcessor(object):
                 else:
                     pass
                 # TODO: rerank by docs with multiple sentence hits
-            else:
+            elif score not in unique_scores:
                 similar_docs.append(out)
+                unique_scores.add(score)
         return similar_docs
 
     def index_documents(self, cdr_docs=None, load_vectors=False, column_family='dig',

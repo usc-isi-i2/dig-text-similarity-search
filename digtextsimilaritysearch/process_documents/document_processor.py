@@ -82,9 +82,12 @@ class DocumentProcessor(object):
             str_query = [str_query]
         t_0 = time()
         query_vector = self.vectorizer.make_vectors(str_query)
+        t_vector = time() - t_0
+
+        if isinstance(query_vector, list):
+            query_vector = query_vector[0]
         t_1 = time()
         scores, faiss_ids = self.indexer.search(query_vector, k*5)
-        t_vector = t_1 - t_0
         t_search = time() - t_1
         print('  TF vectorization time: {:0.6f}s'.format(t_vector))
         print('  Faiss search time: {:0.6f}s'.format(t_search))

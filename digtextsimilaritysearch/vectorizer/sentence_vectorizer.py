@@ -52,7 +52,7 @@ class SentenceVectorizer(object):
                     batch, sentences = list(sentences[:batch_size]), list(sentences[batch_size:])
                     batched_tensors.append(tf.constant(batch, dtype=tf.string))
 
-                dataset = tf.data.Dataset.from_tensor_slices(batched_tensors)  # .prefetch(10)
+                dataset = tf.data.Dataset.from_tensor_slices(batched_tensors)
                 dataset = dataset.make_one_shot_iterator()
 
                 make_embeddings = self.model(dataset.get_next())

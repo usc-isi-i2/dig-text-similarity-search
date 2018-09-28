@@ -17,13 +17,13 @@ print('Initializing Batch Vectorizer')
 query_vectorizer = SentenceVectorizer()
 
 print('Initializing Faiss Indexer')
-faiss_indexer = DeployIVF(path_to_index_file=config['faiss_index_path'])
+faiss_indexer = DeployIVF(path_to_deployable_index=config['faiss_index_path'])
 
 print('Initializing ES Adapter')
 es_adapter = ESAdapter(es_endpoint='http://mydig-sage-internal.isi.edu/es')
 
 print('Initializing Document Processor')
-dp = DocumentProcessor(faiss_indexer, query_vectorizer, es_adapter, table_name='sage-news-2')
+dp = DocumentProcessor(faiss_indexer, query_vectorizer, None, table_name='sage-news-2')
 
 
 @app.route("/")

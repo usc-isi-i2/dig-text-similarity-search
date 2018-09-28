@@ -1,7 +1,7 @@
 config = {
-    "faiss_index_path": "../data/testing/faiss_new_sample_index.index",
+    "faiss_index_path": "/lfs1/dig/7-day-faiss-index/7-day-populatedIVF16K.index",
     "hbase_server": "localhost",
     "host": "0.0.0.0",
-    "port": "5555"
+    "port": "5954"
 
 }

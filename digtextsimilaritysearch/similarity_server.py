@@ -20,10 +20,10 @@ print('Initializing Faiss Indexer')
 faiss_indexer = DeployIVF(path_to_deployable_index=config['faiss_index_path'])
 
 print('Initializing ES Adapter')
-es_adapter = ESAdapter(es_endpoint='http://mydig-sage-internal.isi.edu/es')
+es_adapter = ESAdapter(es_endpoint=config['es_endpoint'])
 
 print('Initializing Document Processor')
-dp = DocumentProcessor(faiss_indexer, query_vectorizer, None, table_name='sage-news-2')
+dp = DocumentProcessor(faiss_indexer, query_vectorizer, None, table_name=config['es_index'])
 
 
 @app.route("/")

@@ -116,7 +116,7 @@ class SentenceVectorizer(object):
     @staticmethod
     def save_with_ids(file_path, embeddings, sentences, sent_ids):
         if not isinstance(embeddings, np.ndarray):
-            embeddings = np.array(embeddings, dtype=np.float32)
+            embeddings = np.vstack(embeddings).astype(np.float32)
         if not isinstance(sentences, np.ndarray):
             sentences = np.array(sentences, dtype=np.str)
         if not isinstance(sent_ids, np.ndarray):

@@ -1,5 +1,4 @@
-import numpy as np
-from time import sleep, time
+from time import time, sleep
 
 _SENTENCE_ID = 'sentence_id'
 _SENTENCE_TEXT = 'sentence_text'
@@ -67,28 +66,36 @@ class DocumentProcessor(object):
 
     def query_text(self, str_query, k=3, fetch_sentences=False):
         """
-
         :param str_query: The actual text for querying.
-        :param k: number of results required
-        :param fetch_sentences: whether or not to fetch actual sentence text and send them back in the response json
-        :return: a list of top k results where each result is a sentence that matched and its id, score, doc id etc.
-        If fetch_docs is True, we call elasticsearch and retrieve the text of the documents that matched and find the sentence
-        that matched. If it is set to false, we only return the ids and the scores of the sentence and document.
+        :param k: Number of results required
+        :param fetch_sentences: Bool to fetch actual sentence text from the storage adapter
+            and send them back in the response json
+
+        :return: List of top k results, where each result corresponds to a sentence that matched the query
+            - If fetch_docs is True, we call elasticsearch and retrieve the text of the documents that matched
+            - If it is set to False, we only return the ids and the scores of the sentence and document
+            Default: [ {'score': float32, 'sent_id': str(int64)} ]
         """
+
         similar_docs = list()
         if not isinstance(str_query, list):
             str_query = [str_query]
         t_0 = time()
         query_vector = self.vectorizer.make_vectors(str_query)
+        t_vector = time() - t_0
+
+        if isinstance(query_vector, list):
+            query_vector = query_vector[0]
         t_1 = time()
         scores, faiss_ids = self.indexer.search(query_vector, k*5)
-        t_vector = t_1 - t_0
         t_search = time() - t_1
         print('  TF vectorization time: {:0.6f}s'.format(t_vector))
         print('  Faiss search time: {:0.6f}s'.format(t_search))
         t_es = 0
         unique_scores = set()
         unique_sentences = set()
+
+        # TODO: rerank by docs with multiple sentence hits
         for score, faiss_id in zip(scores[0], faiss_ids[0]):
             if len(similar_docs) >= k:
                 break
@@ -106,6 +113,7 @@ class DocumentProcessor(object):
             out = dict()
             out['score'] = float(score)
             out['sentence_id'] = str(faiss_id)
+
             if sentence_info and fetch_sentences:
                 out['doc_id'] = str(doc_id)
                 out['es_query_time'] = t_es
@@ -115,15 +123,21 @@ class DocumentProcessor(object):
                     out['sentence'] = sentence_info['lexisnexis']['doc_title']
                 else:
                     out['sentence'] = sentence_info['split_sentences'][sent_id-1]
-                if out['sentence'] not in unique_sentences:
+
+                if out['sentence'] not in unique_sentences \
+                        and score not in unique_scores:
                     similar_docs.append(out)
                     unique_sentences.add(str(out['sentence']))
+                    unique_scores.add(score)
                 else:
                     pass
-                # TODO: rerank by docs with multiple sentence hits
+
             elif score not in unique_scores:
                 similar_docs.append(out)
                 unique_scores.add(score)
+            else:
+                pass
+
         return similar_docs
 
     def index_documents(self, cdr_docs=None, load_vectors=False, column_family='dig',
@@ -182,7 +196,7 @@ class DocumentProcessor(object):
 
     def add_to_db(self, sentence_tuples, faiss_ids, column_family='dig', batch_mode=False):
         # ASSUMPTION: vector ids are in the same order as the initial sentence order
-        records = []
+        records = list()
         for s, f in zip(sentence_tuples, faiss_ids):
             data = dict()
             data[_SENTENCE_ID] = s[0]
@@ -197,16 +211,15 @@ class DocumentProcessor(object):
         if batch_mode:
             self.storage_adapter.insert_records_batch(self.table_name, records)
 
-    def index_docs_on_disk(self, offset, path_to_npz, path_to_invlist=None):
+    def index_docs_on_disk(self, path_to_npz, path_to_invlist=None):
         if not path_to_invlist:
             path_to_invlist = 'invl_' + path_to_npz.replace('.npz', '.index')
 
         if self.index_builder:
-            vectors, sent_tups = self.vectorizer.load_vectors(path_to_npz)
-            # faiss_ids = self.index_builder.generate_faiss_ids(path_to_npz, vectors, sent_tups)
-            faiss_ids = np.arange(start=0, stop=len(vectors), dtype=np.int64) + offset
-            self.index_builder.generate_invlist(path_to_invlist, faiss_ids, vectors)
-            self.add_to_db(sent_tups, faiss_ids)
+            vectors, sentences, sent_ids = self.vectorizer.load_with_ids(path_to_npz)
+            assert sent_ids.shape[0] == vectors.shape[0], \
+                'Found {} sent_ids and {} vectors'.format(sent_ids.shape[0], vectors.shape[0])
+            self.index_builder.generate_invlist(path_to_invlist, sent_ids, vectors)
         else:
             raise Exception('Cannot index on disk without an index_builder')
 

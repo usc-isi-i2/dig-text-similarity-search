@@ -41,16 +41,31 @@ class SentenceVectorizer(object):
         print('Closing TF Session...')
         self.session.close()
 
-    def make_vectors(self, sentences) -> List[tf.Tensor]:
+    def make_vectors(self, sentences, batch_size=512) -> List[tf.Tensor]:
+        embeddings = list()
+        batched_tensors = list()
+        if not isinstance(sentences, list):
+            sentences = [sentences]
         with self.graph.as_default():
-            batched_tensors = list()
-            batched_tensors.append(tf.constant(sentences, dtype=tf.string))
+            if len(sentences) > batch_size:
+                while len(sentences) >= batch_size:
+                    batch, sentences = list(sentences[:batch_size]), list(sentences[batch_size:])
+                    batched_tensors.append(tf.constant(batch, dtype=tf.string))
 
-            dataset = tf.data.Dataset.from_tensor_slices(batched_tensors).make_one_shot_iterator()
+                dataset = tf.data.Dataset.from_tensor_slices(batched_tensors)
+                dataset = dataset.make_one_shot_iterator()
 
-            make_embeddings = self.model(dataset.get_next())
+                make_embeddings = self.model(dataset.get_next())
 
-            embeddings = self.session.run(make_embeddings)
+                while True:
+                    try:
+                        embeddings.append(self.session.run(make_embeddings))
+                    except tf.errors.OutOfRangeError:
+                        break
+
+            if len(sentences):
+                basic_batch = self.model(sentences)
+                embeddings.append(self.session.run(basic_batch))
 
         return embeddings
 
@@ -96,3 +111,31 @@ class SentenceVectorizer(object):
         sentences = loaded['sentences']
 
         return embeddings, sentences
+
+    # TODO: Depreciate save_vectors
+    @staticmethod
+    def save_with_ids(file_path, embeddings, sentences, sent_ids):
+        if not isinstance(embeddings, np.ndarray):
+            embeddings = np.array(embeddings, dtype=np.float32)
+        if not isinstance(sentences, np.ndarray):
+            sentences = np.array(sentences, dtype=np.str)
+        if not isinstance(sent_ids, np.ndarray):
+            try:
+                sent_ids = np.array(sent_ids, dtype=np.int64)
+            except ValueError:
+                print(sent_ids)
+
+        np.savez_compressed(file=file_path, sent_ids=sent_ids,
+                            embeddings=embeddings, sentences=sentences)
+
+    # TODO: Depreciate load_vectors
+    @staticmethod
+    def load_with_ids(file_path):
+        if not file_path.endswith('.npz'):
+            file_path += '.npz'
+
+        loaded = np.load(file=file_path, mmap_mode='r')
+        embeddings = loaded['embeddings']
+        sentences = loaded['sentences']
+        sent_ids = loaded['sent_ids']
+        return embeddings, sentences, sent_ids

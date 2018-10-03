@@ -16,7 +16,7 @@ latest_doc_id = int(open(latest_doc_id_file_path).readlines()[0])
 news_output_path = 'some_other_path'
 
 todays_date = str(datetime.date.today())
-news_output_file = open('{}/{}'.format(news_output_path, todays_date), mode='a', encoding='utf-8')
+news_output_file = open('{}/{}.jl'.format(news_output_path, todays_date), mode='a', encoding='utf-8')
 
 producer = KafkaProducer(
     bootstrap_servers=broker_list,
@@ -48,7 +48,7 @@ def handler(signum, frame):
     except:
         pass
 
-    news_output_file = open('{}/{}'.format(news_output_path, str(datetime.date.today())), mode='a', encoding='utf-8')
+    news_output_file = open('{}/{}.jl'.format(news_output_path, str(datetime.date.today())), mode='a', encoding='utf-8')
 
     signal.alarm(timeout)
 

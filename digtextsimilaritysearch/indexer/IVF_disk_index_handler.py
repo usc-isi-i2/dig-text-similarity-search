@@ -30,6 +30,8 @@ class DiskBuilderIVF(BaseIndex):
         self.invlist_paths = list()
 
     def index_embeddings(self, embeddings: np.array, faiss_ids: np.array):
+        assert embeddings.shape[0] == faiss_ids.shape[0]
+        faiss_ids = np.reshape(faiss_ids, (faiss_ids.shape[0],))
         self.index.add_with_ids(embeddings, faiss_ids)
 
     def load_empty(self):

@@ -87,3 +87,4 @@ if __name__ == '__main__':
                       columns=['ifp', 'doc_id', 'doc_text', 'sentence_id', 'sentence_text', 'score', 'query_time',
                                'relevance'])
     df.to_csv(output, index=False)
+

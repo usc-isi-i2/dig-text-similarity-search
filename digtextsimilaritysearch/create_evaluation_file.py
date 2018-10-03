@@ -29,7 +29,7 @@ if __name__ == '__main__':
     option_parser.add_option('-a', '--query_file', dest='query_file')
     option_parser.add_option('-o', '--output', dest='output', default='/tmp/evaluation.csv')
     option_parser.add_option('-f', '--faiss', dest='faiss', help='path to faiss index', default=faiss_path)
-    option_parser.add_option('-t', '--table', dest='table', help='faiss id to sentence id mapping table', default=table)
+    # option_parser.add_option('-t', '--table', dest='table', help='faiss id to sentence id mapping table', default=table)
     option_parser.add_option('-e', '--es', dest='es', default=es_url)
     option_parser.add_option('-i', '--index', dest='index', default=es_index)
     option_parser.add_option('-k', '--knearest', dest='k', default=10)
@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
     for ifp in ifps:
         start_time = time()
-        results = dp.query_text(ifp, k=k)
+        results = dp.query_text(ifp, k=k, fetch_sentences=True)
         time_taken = time() - start_time
         doc_ids = [x['doc_id'] for x in results]
         ids_query = json.loads(ids_query_str)

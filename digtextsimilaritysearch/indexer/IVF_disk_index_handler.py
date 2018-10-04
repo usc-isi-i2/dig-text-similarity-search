@@ -16,7 +16,7 @@ class DeployIVF(BaseIndex):
 
     def index_embeddings(self, embeddings: np.array, faiss_ids: np.array):
         print('WARNING: Cannot add to index')
-        print('   Hint: Use the DiskBuilderIVF class for adding to index')
+        print('   Hint: Use the DiskBuilderIVF class for adding to an index')
 
 
 class DeployShards(BaseIndex):
@@ -24,8 +24,9 @@ class DeployShards(BaseIndex):
     For deploying multiple, pre-made IVF indexes as shards
         (intended for on-disk indexes that do not fit in memory)
 
-    :param paths_to_shards: List containing full paths to multiple IVF
-        indexes to be merged as shards
+    Note: The index shards must be true partitions with no overlapping ids
+
+    :param paths_to_shards: List of paths to faiss index shards
     :param nprobe: Number of clusters to visit during search
         (speed accuracy trade-off)
     """
@@ -47,9 +48,9 @@ class DeployShards(BaseIndex):
 
     @staticmethod
     def load_shard(path_to_shard: str, nprobe: int = 32):
-        index_shard = faiss.read_index(path_to_shard)
-        index_shard.nprobe = nprobe
-        return index_shard
+        shard = faiss.read_index(path_to_shard)
+        shard.nprobe = nprobe
+        return shard
 
     def add_shard(self, new_shard_path: str):
         if new_shard_path in self.paths_to_shards:
@@ -62,7 +63,8 @@ class DeployShards(BaseIndex):
 
     def index_embeddings(self, embeddings: np.array, faiss_ids: np.array):
         print('WARNING: Cannot add to index shards')
-        print('   Hint: Use the DiskBuilderIVF class for adding to index')
+        print('   Hint: Use the DiskBuilderIVF class for adding to an index '
+              'or self.add_shard(path) to deploy a new shard')
 
 
 class DiskBuilderIVF(BaseIndex):

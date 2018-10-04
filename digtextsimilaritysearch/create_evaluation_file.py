@@ -1,6 +1,5 @@
 from vectorizer.sentence_vectorizer import SentenceVectorizer
-# from indexer.faiss_indexer import FaissIndexer
-from indexer.IVF_disk_index_handler import DeployIVF
+from indexer.IVF_disk_index_handler import DeployShards
 from storage.es_adapter import ESAdapter
 from process_documents.document_processor import DocumentProcessor
 
@@ -29,7 +28,6 @@ if __name__ == '__main__':
     option_parser.add_option('-a', '--query_file', dest='query_file')
     option_parser.add_option('-o', '--output', dest='output', default='/tmp/evaluation.csv')
     option_parser.add_option('-f', '--faiss', dest='faiss', help='path to faiss index', default=faiss_path)
-    option_parser.add_option('-t', '--table', dest='table', help='faiss id to sentence id mapping table', default=table)
     option_parser.add_option('-e', '--es', dest='es', default=es_url)
     option_parser.add_option('-i', '--index', dest='index', default=es_index)
     option_parser.add_option('-k', '--knearest', dest='k', default=10)
@@ -38,18 +36,17 @@ if __name__ == '__main__':
     ifp = opts.query
     output = opts.output
     faiss = opts.faiss
-    table = opts.table
     es_url = opts.es
     es_index = opts.index
     k = opts.k
     query_file = opts.query_file
 
-    # fi = FaissIndexer(faiss)
-    fi = DeployIVF(faiss, nprobe=128)
+    faiss_indices = opts.faiss.split(',')
+    fi = DeployShards(faiss_indices, nprobe=128)
     sentence_vectorizer = SentenceVectorizer()
     es_adapter = ESAdapter(es_endpoint='http://sage-dev-internal.isi.edu:9200')
 
-    dp = DocumentProcessor(fi, sentence_vectorizer, es_adapter, table_name=table)
+    dp = DocumentProcessor(fi, sentence_vectorizer, es_adapter, table_name=es_index)
 
     if query_file:
         ifps = open(query_file).readlines()

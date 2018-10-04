@@ -14,10 +14,12 @@ base_index_dir = os.path.abspath(os.path.join(cwd, '../saved_indexes/IVF16K_inde
                                                    'emptyTrainedIVF16384.index'))
 options = OptionParser()
 options.add_option('-i', '--input_dir')
+options.add_option('-o', '--output_dir')
 options.add_option('-p', '--progress_file', default=prog_file_path)
 options.add_option('-b', '--base_index_path', default=base_index_dir)
 options.add_option('-m', '--m_per_batch', type='int', default=250000)
 options.add_option('-r', '--report', action='store_true', default=False)
+options.add_option('-d', '--delete_tmp_files', action='store_true', default=False)
 (opts, _) = options.parse_args()
 # </editor-fold>
 
@@ -25,10 +27,12 @@ options.add_option('-r', '--report', action='store_true', default=False)
 """
 Options:
     -i  Path to raw news dir
+    -o  Path to dir for writing merged, on-disk faiss index shard
     -p  File to keep track of news that has already been processed
     -b  Path to empty, pre-trained faiss index
     -m  Minimum number of sentences/vectors per .npz/.index (default 250000)
     -r  Bool to toggle prints
+    -d  Bool to delete intermediate .npz/.index files
 """
 
 
@@ -36,8 +40,8 @@ Options:
 def aggregate_docs(file_path, b_size=250000):
     batched_text = list()
     batched_ids = list()
-    with open(file_path, 'r') as f:
-        for doc in f:
+    with open(file_path, 'r') as jl:
+        for doc in jl:
             document = json.loads(doc)
 
             content = document['lexisnexis']['doc_description']
@@ -66,6 +70,17 @@ def aggregate_docs(file_path, b_size=250000):
 
     batched_ids = np.vstack(batched_ids).astype(np.int64)
     yield batched_text, batched_ids
+
+
+def check_unique(path, i=0):
+    if os.path.exists(path):
+        print('Warning: File already exists  {}'.format(path))
+        path = path.split('.')
+        path = path[0] + '_{}.'.format(i) + path[-1]
+        print('         Testing new path  {}'.format(path))
+        i += 1
+        check_unique(path=path, i=i)
+    return path
 
 
 # Track progress
@@ -111,7 +126,7 @@ dp = DocumentProcessor(indexer=None, index_builder=idx_bdr,
 
 # Preprocessing
 def main():
-    for raw_jl in files_to_process:
+    for raw_jl in files_to_process[:1]:     # Only preprocesses one news.jl
         t_start = time()
         doc_batch_gen = aggregate_docs(file_path=raw_jl, b_size=opts.m_per_batch)
         for i, (batched_sents, batched_ids) in enumerate(doc_batch_gen):
@@ -122,19 +137,37 @@ def main():
             # Save to .npz
             npz = str(raw_jl.split('/')[-1]).replace('.jl', '_{:03d}.npz'.format(i))
             npz_path = os.path.join(npz_dir, npz)
+            npz_path = check_unique(path=npz_path)
             dp.vectorizer.save_with_ids(file_path=npz_path, embeddings=batched_embs,
                                         sentences=batched_sents, sent_ids=batched_ids)
 
             # Make faiss subindex
             subidx = 'subidx_' + str(npz.split('/')[-1]).replace('.npz', '.index')
             subidx_path = os.path.join(subidx_dir, subidx)
+            subidx_path = check_unique(path=subidx_path)
             dp.index_docs_on_disk(path_to_npz=npz_path, path_to_invlist=subidx_path)
 
             if opts.report:
-                m, s = divmod(time() - t_start, 60)
+                mp, sp = divmod(time() - t_start, 60)
                 print('  Completed doc batch: {:3d}          '
-                      '  Time:{:3d}m{:0.2f}s'.format(i, int(m), s))
+                      '  Time: {:3d}m{:0.2f}s'.format(i, int(mp), sp))
 
+        # Merge
+        t_merge = time()
+        merged_ivfs = date_today + '_mergedIVF16K.ivfdata'
+        merged_ivfs = os.path.join(opts.output_dir, merged_ivfs)
+        merged_ivfs = check_unique(path=merged_ivfs)
+        merged_index = date_today + '_populatedIVF16K.index'
+        merged_index = os.path.join(opts.output_dir, merged_index)
+        merged_index = check_unique(path=merged_index)
+        dp.build_index_on_disk(merged_ivfs_path=merged_ivfs,
+                               merged_index_path=merged_index)
+
+        if opts.report:
+            mm, sm = divmod(time() - t_merge, 60)
+            print('\n  Merged subindexes in: {:3d}m{:0.2f}s'.format(int(mm), sm))
+
+        # Record progress
         with open(opts.progress_file, 'a') as p:
             p.write(raw_jl + '\n')
 

@@ -83,6 +83,13 @@ def check_unique(path, i=0):
     return path
 
 
+def clear(tmp_dir_path):
+    for (tmp_dir, _, tmp_files) in os.walk(tmp_dir_path):
+        for file in tmp_files:
+            os.remove(os.path.join(tmp_dir, file))
+    os.rmdir(tmp_dir_path)
+
+
 # Track progress
 preprocessed_news = list()
 if os.path.exists(opts.progress_file):
@@ -170,6 +177,10 @@ def main():
         # Record progress
         with open(opts.progress_file, 'a') as p:
             p.write(raw_jl + '\n')
+
+        if opts.delete_tmp_files:
+            clear(npz_dir)
+            clear(subidx_dir)
 
 
 if __name__ == '__main__':

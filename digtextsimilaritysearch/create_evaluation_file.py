@@ -60,8 +60,11 @@ if __name__ == '__main__':
 
     for ifp in ifps:
         start_time = time()
-        results = dp.query_text(ifp, k=k)
+        results = dp.query_text(ifp, k=k, fetch_sentences=True)
         time_taken = time() - start_time
+        for r in results:
+            d,s = divmod(int(r['sentence_id']), 10000)
+            r['doc_id'] = str(d)
         doc_ids = [x['doc_id'] for x in results]
         ids_query = json.loads(ids_query_str)
         ids_query['query']['ids']['values'] = doc_ids
@@ -84,3 +87,4 @@ if __name__ == '__main__':
                       columns=['ifp', 'doc_id', 'doc_text', 'sentence_id', 'sentence_text', 'score', 'query_time',
                                'relevance'])
     df.to_csv(output, index=False)
+

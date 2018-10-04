@@ -15,8 +15,56 @@ class DeployIVF(BaseIndex):
         self.index.nprobe = nprobe
 
     def index_embeddings(self, embeddings: np.array, faiss_ids: np.array):
-        # self.index.add_with_ids(embeddings, faiss_ids)
-        print('Use the DiskBuilderIVF class for adding to index')
+        print('WARNING: Cannot add to index')
+        print('   Hint: Use the DiskBuilderIVF class for adding to an index')
+
+
+class DeployShards(BaseIndex):
+    """
+    For deploying multiple, pre-made IVF indexes as shards
+        (intended for on-disk indexes that do not fit in memory)
+
+    Note: The index shards must be true partitions with no overlapping ids
+
+    :param paths_to_shards: List of paths to faiss index shards
+    :param nprobe: Number of clusters to visit during search
+        (speed accuracy trade-off)
+    """
+    def __init__(self, paths_to_shards: List[str], nprobe: int = 32):
+        BaseIndex.__init__(self)
+        self.paths_to_shards = paths_to_shards
+        self.nprobe = nprobe
+
+        # Load shards
+        shards = list()
+        for shard_path in self.paths_to_shards:
+            shard = self.load_shard(path_to_shard=shard_path, nprobe=self.nprobe)
+            shards.append(shard)
+
+        # Merge shards
+        self.index = faiss.IndexShards(512, threaded=True, successive_ids=False)
+        for shard in shards:
+            self.index.add_shard(shard)
+
+    @staticmethod
+    def load_shard(path_to_shard: str, nprobe: int = 32):
+        shard = faiss.read_index(path_to_shard)
+        shard.nprobe = nprobe
+        return shard
+
+    def add_shard(self, new_shard_path: str):
+        if new_shard_path in self.paths_to_shards:
+            print('WARNING: This shard is already online')
+            print('         Aborting...')
+            return
+        self.paths_to_shards.append(new_shard_path)
+        shard = self.load_shard(path_to_shard=new_shard_path, nprobe=self.nprobe)
+        self.index.add_shard(shard)
+
+    def index_embeddings(self, embeddings: np.array, faiss_ids: np.array):
+        print('WARNING: Cannot add to index shards')
+        print('   Hint: Use the DiskBuilderIVF class for adding to an index '
+              'or self.add_shard(path) to deploy a new shard')
 
 
 class DiskBuilderIVF(BaseIndex):

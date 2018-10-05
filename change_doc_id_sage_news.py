@@ -35,8 +35,7 @@ consumer = KafkaConsumer(
 )
 
 
-# Register an handler for the timeout
-def handler(signum, frame):
+def flush_out_stuff():
     global latest_doc_id_file_path
     global news_output_path
     global latest_doc_id
@@ -49,6 +48,11 @@ def handler(signum, frame):
         pass
 
     news_output_file = open('{}/{}.jl'.format(news_output_path, str(datetime.date.today())), mode='a', encoding='utf-8')
+
+
+# Register an handler for the timeout
+def handler(signum, frame):
+    flush_out_stuff()
 
     signal.alarm(timeout)
 
@@ -63,15 +67,19 @@ def read_message(consumer):
     global latest_doc_id
     global news_output_file
     for msg in consumer:
-        doc = json.loads(msg.value.decode('utf-8'))
-        doc['doc_id'] = str(latest_doc_id + 1)
-        latest_doc_id += 1
-        doc['type'] = 'sage_news_v2'
-        doc_str = json.dumps(doc)
+        try:
+            doc = json.loads(msg.value.decode('utf-8'))
+            doc['doc_id'] = str(latest_doc_id + 1)
+            latest_doc_id += 1
+            doc['type'] = 'sage_news_v2'
+            doc_str = json.dumps(doc)
 
-        r = producer.send('sage_news_v2_out', doc_str)
-        r.get(timeout=60)
-        news_output_file.write(doc_str + '\n')
+            r = producer.send('sage_news_v2_out', doc_str)
+            r.get(timeout=60)
+            news_output_file.write(doc_str + '\n')
+        except:
+            flush_out_stuff()
+            pass
 
 
 read_message(consumer)

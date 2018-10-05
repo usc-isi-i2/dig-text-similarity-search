@@ -13,7 +13,7 @@ args = {
 
 latest_doc_id_file_path = 'latest_doc_id_value.txt'
 latest_doc_id = int(open(latest_doc_id_file_path).readlines()[0])
-news_output_path = 'some_other_path'
+news_output_path = '/data/sage_news_backup'
 
 todays_date = str(datetime.date.today())
 news_output_file = open('{}/{}.jl'.format(news_output_path, todays_date), mode='a', encoding='utf-8')
@@ -27,7 +27,7 @@ producer = KafkaProducer(
 timeout = 3600
 
 consumer = KafkaConsumer(
-    'sage_news_v2_in',
+    'sage_news_v2_out',
     bootstrap_servers=broker_list,
     group_id='doc_id_manipulation',
     auto_offset_reset='earliest',
@@ -56,7 +56,7 @@ def handler(signum, frame):
 # Register the signal function handler
 signal.signal(signal.SIGALRM, handler)
 
-signal.alarm(3600)
+signal.alarm(timeout)
 
 
 def read_message(consumer):

@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import datetime
 import numpy as np
@@ -108,12 +109,19 @@ files_to_process = list()
 for f in raw_news:
     if f not in preprocessed_news:
         files_to_process.append(f)
+file_to_process = files_to_process.sort(reverse=True)[:1]   # Only preprocesses one news.jl
 
 
 # Init paths
 input_dir = opts.input_dir
 date_today = str(datetime.date.today())
-daily_dir = os.path.join(input_dir, date_today)
+if date_today in file_to_process[0]:
+    date = date_today
+else:
+    seed = str('\d{4}[-/]\d{2}[-/]\d{2}')
+    date = re.search(seed, file_to_process[0]).group()
+
+daily_dir = os.path.join(input_dir, date)
 npz_dir = os.path.join(daily_dir, 'npzs')
 subidx_dir = os.path.join(daily_dir, 'subindexes')
 if not os.path.isdir(daily_dir):
@@ -133,7 +141,10 @@ dp = DocumentProcessor(indexer=None, index_builder=idx_bdr,
 
 # Preprocessing
 def main():
-    for raw_jl in files_to_process[:1]:     # Only preprocesses one news.jl
+    for raw_jl in file_to_process:
+        if opts.report:
+            print('\nProcessing: {}\n'.format(raw_jl))
+
         t_start = time()
         doc_batch_gen = aggregate_docs(file_path=raw_jl, b_size=opts.m_per_batch)
         for i, (batched_sents, batched_ids) in enumerate(doc_batch_gen):
@@ -161,12 +172,16 @@ def main():
 
         # Merge
         t_merge = time()
-        merged_ivfs = date_today + '_mergedIVF16K.ivfdata'
+        merged_ivfs = date + '_mergedIVF16K.ivfdata'
         merged_ivfs = os.path.join(opts.output_dir, merged_ivfs)
         merged_ivfs = check_unique(path=merged_ivfs)
-        merged_index = date_today + '_populatedIVF16K.index'
+
+        merged_index = date + '_populatedIVF16K.index'
         merged_index = os.path.join(opts.output_dir, merged_index)
         merged_index = check_unique(path=merged_index)
+
+        if opts.report:
+            print('\n  Merging {} on-disk'.format(merged_index.split('/')[-1]))
         dp.build_index_on_disk(merged_ivfs_path=merged_ivfs,
                                merged_index_path=merged_index)
 

@@ -39,6 +39,17 @@ Options:
 
 # Funcs
 def aggregate_docs(file_path, b_size=250000):
+    doc_count = 0
+    line_count = 0
+    with open(file_path, 'r') as jl:
+        for doc in jl:
+            doc_count += 1
+            line_count += len(json.loads(doc)['split_sentences']) + 1
+    print('* Found {} lines in {} documents\n'
+          '* {} batches will be processed\n'
+          ''.format(line_count, doc_count,
+                    divmod(line_count, b_size)[0] + 1))
+
     batched_text = list()
     batched_ids = list()
     with open(file_path, 'r') as jl:
@@ -75,10 +86,10 @@ def aggregate_docs(file_path, b_size=250000):
 
 def check_unique(path, i=0):
     if os.path.exists(path):
-        print('Warning: File already exists  {}'.format(path))
+        print('\nWarning: File already exists  {}'.format(path))
         path = path.split('.')
         path = path[0] + '_{}.'.format(i) + path[-1]
-        print('         Testing new path  {}'.format(path))
+        print('         Testing new path  {}\n'.format(path))
         i += 1
         check_unique(path=path, i=i)
     return path
@@ -109,7 +120,8 @@ files_to_process = list()
 for f in raw_news:
     if f not in preprocessed_news:
         files_to_process.append(f)
-file_to_process = files_to_process.sort(reverse=True)[:1]   # Only preprocesses one news.jl
+files_to_process.sort(reverse=True)
+file_to_process = files_to_process[:1]   # Only preprocesses one news.jl
 
 
 # Init paths
@@ -143,7 +155,7 @@ dp = DocumentProcessor(indexer=None, index_builder=idx_bdr,
 def main():
     for raw_jl in file_to_process:
         if opts.report:
-            print('\nProcessing: {}\n'.format(raw_jl))
+            print('\nProcessing: {}'.format(raw_jl))
 
         t_start = time()
         doc_batch_gen = aggregate_docs(file_path=raw_jl, b_size=opts.m_per_batch)
@@ -160,7 +172,7 @@ def main():
                                         sentences=batched_sents, sent_ids=batched_ids)
 
             # Make faiss subindex
-            subidx = 'subidx_' + str(npz.split('/')[-1]).replace('.npz', '.index')
+            subidx = 'subidx_' + str(npz_path.split('/')[-1]).replace('.npz', '.index')
             subidx_path = os.path.join(subidx_dir, subidx)
             subidx_path = check_unique(path=subidx_path)
             dp.index_docs_on_disk(path_to_npz=npz_path, path_to_invlist=subidx_path)

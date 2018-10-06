@@ -162,7 +162,8 @@ def main():
         for i, (batched_sents, batched_ids) in enumerate(doc_batch_gen):
 
             # Vectorize
-            batched_embs = dp.vectorizer.make_vectors(batched_sents)
+            batched_embs = next(dp.vectorizer.make_vectors(batched_sents,
+                                                           yield_vectors=True))
 
             # Save to .npz
             npz = str(raw_jl.split('/')[-1]).replace('.jl', '_{:03d}.npz'.format(i))

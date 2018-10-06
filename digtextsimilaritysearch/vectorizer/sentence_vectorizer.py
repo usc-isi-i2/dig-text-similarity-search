@@ -26,8 +26,8 @@ class SentenceVectorizer(object):
             self.model = hub.Module(path_to_model)
         print('Done loading model')
 
+        print('Initializing TF Session...')
         self.session = None
-
         self.start_session()
 
     def start_session(self):
@@ -37,7 +37,6 @@ class SentenceVectorizer(object):
 
         self.session = tf.Session(config=config)
 
-        print('Initializing TF Session...')
         with self.graph.as_default():
             self.session.run([tf.global_variables_initializer(), tf.tables_initializer()])
 
@@ -45,7 +44,7 @@ class SentenceVectorizer(object):
         print('Closing TF Session...')
         self.session.close()
 
-    def make_vectors(self, sentences, batch_size=512) -> List[tf.Tensor]:
+    def make_vectors(self, sentences, batch_size=512, yield_vectors=False) -> List[tf.Tensor]:
         embeddings = list()
         batched_tensors = list()
         if not isinstance(sentences, list):
@@ -71,7 +70,12 @@ class SentenceVectorizer(object):
                 basic_batch = self.model(sentences)
                 embeddings.append(self.session.run(basic_batch))
 
-        return embeddings
+        if yield_vectors:       # Reset's tf.Session for increased batch performance
+            yield embeddings
+            self.session.close()
+            self.start_session()
+        else:
+            return embeddings
 
     @staticmethod
     def save_vectors(embeddings: List[tf.Tensor], sentences: List[object], file_path):

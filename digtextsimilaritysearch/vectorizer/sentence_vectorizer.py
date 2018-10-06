@@ -31,7 +31,11 @@ class SentenceVectorizer(object):
         self.start_session()
 
     def start_session(self):
-        self.session = tf.Session()
+        config = tf.ConfigProto(device_count={'CPU': 8},
+                                intra_op_parallelism_threads=8,
+                                inter_op_parallelism_threads=8)
+
+        self.session = tf.Session(config=config)
 
         print('Initializing TF Session...')
         with self.graph.as_default():

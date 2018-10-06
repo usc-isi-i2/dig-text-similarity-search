@@ -69,14 +69,16 @@ def read_message(consumer):
     for msg in consumer:
         try:
             doc = json.loads(msg.value.decode('utf-8'))
-            doc['doc_id'] = str(latest_doc_id + 1)
-            latest_doc_id += 1
-            doc['type'] = 'sage_news_v2'
-            doc_str = json.dumps(doc)
+            # infinite loop alert
+            if doc.get('type','') != 'sage_news_v2':
+                doc['doc_id'] = str(latest_doc_id + 1)
+                latest_doc_id += 1
+                doc['type'] = 'sage_news_v2'
+                doc_str = json.dumps(doc)
 
-            r = producer.send('sage_news_v2_out', doc_str)
-            r.get(timeout=60)
-            news_output_file.write(doc_str + '\n')
+                r = producer.send('sage_news_v2_out', doc_str)
+                r.get(timeout=60)
+                news_output_file.write(doc_str + '\n')
         except:
             flush_out_stuff()
             pass

@@ -119,7 +119,7 @@ class SentenceVectorizer(object):
 
     # TODO: Depreciate save_vectors
     @staticmethod
-    def save_with_ids(file_path, embeddings, sentences, sent_ids):
+    def save_with_ids(file_path, embeddings, sentences, sent_ids, compressed=True):
         if not isinstance(embeddings, np.ndarray):
             embeddings = np.vstack(embeddings).astype(np.float32)
         if not isinstance(sentences, np.ndarray):
@@ -130,8 +130,12 @@ class SentenceVectorizer(object):
             except ValueError:
                 print(sent_ids)
 
-        np.savez_compressed(file=file_path, sent_ids=sent_ids,
-                            embeddings=embeddings, sentences=sentences)
+        if compressed:
+            np.savez_compressed(file=file_path, sent_ids=sent_ids,
+                                embeddings=embeddings, sentences=sentences)
+        else:
+            np.savez(file=file_path, sent_ids=sent_ids,
+                     embeddings=embeddings, sentences=sentences)
 
     # TODO: Depreciate load_vectors
     @staticmethod

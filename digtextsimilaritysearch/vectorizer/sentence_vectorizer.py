@@ -12,39 +12,43 @@ class SentenceVectorizer(object):
         model_dir = os.path.join(os.path.dirname(__file__), 'model/')
         model_loc = '1fb57c3ffe1a38479233ee9853ddd7a8ac8a8c47'
         model_loc = os.path.join(model_dir, model_loc)
-        if not path_to_model and os.path.isdir(model_loc):
-            path_to_model = model_loc
-        elif not path_to_model and os.path.isdir(model_dir):
+        self.path_to_model = path_to_model
+        if not self.path_to_model and os.path.isdir(model_loc):
+            self.path_to_model = model_loc
+        elif not self.path_to_model and os.path.isdir(model_dir):
             os.environ['TFHUB_CACHE_DIR'] = model_dir
 
-        if not path_to_model:
-            path_to_model = 'https://tfhub.dev/google/universal-sentence-encoder/2'
+        if not self.path_to_model:
+            self.path_to_model = 'https://tfhub.dev/google/universal-sentence-encoder/2'
 
-        self.graph = tf.get_default_graph()
-        print('Loading model: {}'.format(path_to_model))
-        with self.graph.as_default():
-            self.model = hub.Module(path_to_model)
-        print('Done loading model')
+        self.graph = None
+        self.model = None
+        print('  * Loading model: {}'.format(self.path_to_model))
+        self.define_graph()
+        print('  * Done loading model')
 
-        print('Initializing TF Session...')
         self.session = None
+        print('  * Initializing TF Session...')
         self.start_session()
 
+    def define_graph(self):
+        self.graph = tf.get_default_graph()
+        with self.graph.as_default():
+            self.model = hub.Module(self.path_to_model)
+
     def start_session(self):
-        config = tf.ConfigProto(device_count={'CPU': 8},
-                                intra_op_parallelism_threads=8,
-                                inter_op_parallelism_threads=8)
-
-        self.session = tf.Session(config=config)
-
+        self.session = tf.Session()
         with self.graph.as_default():
             self.session.run([tf.global_variables_initializer(), tf.tables_initializer()])
+        print('  * TF Session initialized')
 
     def close_session(self):
-        print('Closing TF Session...')
         self.session.close()
+        tf.reset_default_graph()
+        self.define_graph()
+        print('  * TF Session closed')
 
-    def make_vectors(self, sentences, batch_size=512, yield_vectors=False) -> List[tf.Tensor]:
+    def make_vectors(self, sentences, batch_size=512) -> List[tf.Tensor]:
         embeddings = list()
         batched_tensors = list()
         if not isinstance(sentences, list):
@@ -70,12 +74,7 @@ class SentenceVectorizer(object):
                 basic_batch = self.model(sentences)
                 embeddings.append(self.session.run(basic_batch))
 
-        if yield_vectors:       # Reset's tf.Session for increased batch performance
-            yield embeddings
-            self.session.close()
-            self.start_session()
-        else:
-            return embeddings
+        return embeddings
 
     @staticmethod
     def save_vectors(embeddings: List[tf.Tensor], sentences: List[object], file_path):

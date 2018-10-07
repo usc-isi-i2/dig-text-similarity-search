@@ -18,9 +18,11 @@ options.add_option('-i', '--input_dir')
 options.add_option('-o', '--output_dir')
 options.add_option('-p', '--progress_file', default=prog_file_path)
 options.add_option('-b', '--base_index_path', default=base_index_dir)
-options.add_option('-m', '--m_per_batch', type='int', default=250000)
+options.add_option('-m', '--m_per_batch', type='int', default=512*128)
 options.add_option('-r', '--report', action='store_true', default=False)
 options.add_option('-d', '--delete_tmp_files', action='store_true', default=False)
+options.add_option('-c', '--compress', action='store_true', default=False)
+options.add_option('-s', '--skip', type='int', default=0)
 (opts, _) = options.parse_args()
 # </editor-fold>
 
@@ -31,14 +33,20 @@ Options:
     -o  Path to dir for writing merged, on-disk faiss index shard
     -p  File to keep track of news that has already been processed
     -b  Path to empty, pre-trained faiss index
-    -m  Minimum number of sentences/vectors per .npz/.index (default 250000)
+    -m  Minimum number of sentences/vectors per .npz/.index (default 512*128)
     -r  Bool to toggle prints
     -d  Bool to delete intermediate .npz/.index files
+    -c  Bool to compress .npz files (compression takes longer) 
+
+    -s  Development param: If preprocessing was interrupted after several 
+            .npz/sub.index files were created, but before the on-disk shard was merged, 
+            use -s <int:n_files_to_reuse> to reuse existing intermediate files. 
+            Note: Do NOT reuse partially created intermediate files
 """
 
 
 # Funcs
-def aggregate_docs(file_path, b_size=250000):
+def aggregate_docs(file_path, b_size=512*128):
     if opts.report:
         doc_count = 0
         line_count = 0
@@ -175,74 +183,91 @@ def main():
             if opts.report:
                 print('  Starting doc batch:  {:3d}'.format(i))
 
-            # Vectorize
-            batched_embs = dp.vectorizer.make_vectors(batched_sents)
-            t_vect = time()
-            if opts.report:
-                print('  * Vectorized in {:.2f}s'.format(t_vect - t_0))
-
-            # Save to .npz
             npz = str(raw_jl.split('/')[-1]).replace('.jl', '_{:03d}.npz'.format(i))
             npz_path = os.path.join(npz_dir, npz)
-            npz_path = check_unique(path=npz_path)
-            dp.vectorizer.save_with_ids(file_path=npz_path, embeddings=batched_embs,
-                                        sentences=batched_sents, sent_ids=batched_ids)
-            t_npz = time()
-            if opts.report:
-                print('  * Saved .npz in {:.2f}s'.format(t_npz - t_vect))
-
-            # Clear graph
-            del batched_embs, batched_sents, batched_ids
-            dp.vectorizer.close_session()
-            t_reset = time()
-            if opts.report:
-                print('  * Graph cleared in {:.2f}s'.format(t_reset - t_npz))
-
-            # Make faiss subindex
             subidx = 'subidx_' + str(npz_path.split('/')[-1]).replace('.npz', '.index')
             subidx_path = os.path.join(subidx_dir, subidx)
-            subidx_path = check_unique(path=subidx_path)
-            dp.index_docs_on_disk(path_to_npz=npz_path, path_to_invlist=subidx_path)
-            t_subidx = time()
-            if opts.report:
-                print('  * Subindexed in {:.2f}s'.format(t_subidx - t_reset))
 
-            dp.vectorizer.start_session()
-            if opts.report:
-                print('  * Session restarted in {:.2f}s'.format(time() - t_subidx))
+            if i < opts.skip:
+                assert os.path.exists(subidx_path), \
+                    'Warning: File does not exist: {} \nAborting...'.format(subidx_path)
+                dp.index_builder.extend_invlist_paths([subidx_path])
+            else:
+                # Vectorize
+                batched_embs = dp.vectorizer.make_vectors(batched_sents)
+                t_vect = time()
+                if opts.report:
+                    print('  * Vectorized in {:5.2f}s'.format(t_vect - t_0))
+
+                # Save to .npz
+                npz_path = check_unique(path=npz_path)
+                dp.vectorizer.save_with_ids(file_path=npz_path, embeddings=batched_embs,
+                                            sentences=batched_sents, sent_ids=batched_ids,
+                                            compressed=opts.compress)
+                t_npz = time()
+                if opts.report:
+                    print('  * Saved .npz in {:5.2f}s'.format(t_npz - t_vect))
+
+                # Clear graph
+                del batched_embs, batched_sents, batched_ids
+                dp.vectorizer.close_session()
+                t_reset = time()
+                if opts.report:
+                    print('  * Cleared TF in {:5.2f}s'.format(t_reset - t_npz))
+
+                # Make faiss subindex
+                subidx_path = check_unique(path=subidx_path)
+                dp.index_docs_on_disk(path_to_npz=npz_path, path_to_invlist=subidx_path)
+                t_subidx = time()
+                if opts.report:
+                    print('  * Subindexed in {:5.2f}s'.format(t_subidx - t_reset))
+
+                dp.vectorizer.start_session()
+                if opts.report:
+                    print('  * Started TF in {:5.2f}s'.format(time() - t_subidx))
 
             if opts.report:
                 mp, sp = divmod(time() - t_start, 60)
                 print('  Completed doc batch: {:3d}              '
                       '  Total time passed: {:3d}m{:0.2f}s\n'.format(i, int(mp), sp))
 
+        # Clear .npz files before merge
+        if opts.delete_tmp_files:
+            clear(npz_dir)
+            if opts.report:
+                print('  Cleared .npz files')
+
         # Merge
         t_merge = time()
         merged_ivfs = date + '_mergedIVF16K.ivfdata'
         merged_ivfs = os.path.join(opts.output_dir, merged_ivfs)
         merged_ivfs = check_unique(path=merged_ivfs)
-
         merged_index = date + '_populatedIVF16K.index'
         merged_index = os.path.join(opts.output_dir, merged_index)
         merged_index = check_unique(path=merged_index)
-
         if opts.report:
             print('\n  Merging {} on-disk'.format(merged_index.split('/')[-1]))
+
         dp.build_index_on_disk(merged_ivfs_path=merged_ivfs,
                                merged_index_path=merged_index)
 
         if opts.report:
             mm, sm = divmod(time() - t_merge, 60)
-            print('\n  Merged subindexes in: {:3d}m{:0.2f}s'.format(int(mm), sm))
+            print('  Merged subindexes in: {:3d}m{:0.2f}s'.format(int(mm), sm))
 
         # Record progress
         with open(opts.progress_file, 'a') as p:
             p.write(raw_jl + '\n')
 
+        # Clear sub.index files after merge
         if opts.delete_tmp_files:
-            clear(npz_dir)
             clear(subidx_dir)
+            if opts.report:
+                print('\n  Cleared sub.index files')
 
 
 if __name__ == '__main__':
-    main()
+    if len(file_to_process):
+        main()
+    else:
+        print('Nothing to process.')

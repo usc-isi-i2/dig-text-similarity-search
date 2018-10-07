@@ -23,12 +23,12 @@ class SentenceVectorizer(object):
 
         self.graph = None
         self.model = None
-        print('  * Loading model: {}'.format(self.path_to_model))
+        print('Loading model: {}'.format(self.path_to_model))
         self.define_graph()
-        print('  * Done loading model')
+        print('Done loading model')
 
         self.session = None
-        print('  * Initializing TF Session...')
+        print('Initializing TF Session...')
         self.start_session()
 
     def define_graph(self):
@@ -40,13 +40,11 @@ class SentenceVectorizer(object):
         self.session = tf.Session()
         with self.graph.as_default():
             self.session.run([tf.global_variables_initializer(), tf.tables_initializer()])
-        print('  * TF Session initialized')
 
     def close_session(self):
         self.session.close()
         tf.reset_default_graph()
         self.define_graph()
-        print('  * TF Session closed')
 
     def make_vectors(self, sentences, batch_size=512) -> List[tf.Tensor]:
         embeddings = list()

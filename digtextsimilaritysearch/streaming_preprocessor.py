@@ -39,16 +39,17 @@ Options:
 
 # Funcs
 def aggregate_docs(file_path, b_size=250000):
-    doc_count = 0
-    line_count = 0
-    with open(file_path, 'r') as jl:
-        for doc in jl:
-            doc_count += 1
-            line_count += len(json.loads(doc)['split_sentences']) + 1
-    print('* Found {} lines in {} documents\n'
-          '* {} batches will be processed\n'
-          ''.format(line_count, doc_count,
-                    divmod(line_count, b_size)[0] + 1))
+    if opts.report:
+        doc_count = 0
+        line_count = 0
+        with open(file_path, 'r') as jl:
+            for doc in jl:
+                doc_count += 1
+                line_count += len(json.loads(doc)['split_sentences']) + 1
+        print('* Found {} lines in {} documents\n'
+              '* {} batches will be processed\n'
+              ''.format(line_count, doc_count,
+                        divmod(line_count, b_size)[0] + 1))
 
     batched_text = list()
     batched_ids = list()
@@ -107,21 +108,31 @@ preprocessed_news = list()
 if os.path.exists(opts.progress_file):
     with open(opts.progress_file, 'r') as f:
         for line in f:
-            preprocessed_news.append(str(line))
+            preprocessed_news.append(str(line).replace('\n', ''))
+            if opts.report:
+                print('* Processed:  {}'.format(str(line).replace('\n', '')))
+preprocessed_news.sort(reverse=True)
 
 raw_news = list()
 for (dir_path, _, file_list) in os.walk(opts.input_dir):
     for f in file_list:
         if f.endswith('.jl'):
-            raw_news.append(os.path.join(dir_path, f))
+            raw_news.append(str(os.path.join(dir_path, f)))
+            if opts.report:
+                print('* Raw news:   {}'.format(str(os.path.join(dir_path, f))))
     break
+raw_news.sort(reverse=True)
 
 files_to_process = list()
 for f in raw_news:
     if f not in preprocessed_news:
-        files_to_process.append(f)
+        files_to_process.append(str(f))
+        if opts.report:
+            print('* Candidates: {}'.format(str(f)))
 files_to_process.sort(reverse=True)
 file_to_process = files_to_process[:1]   # Only preprocesses one news.jl
+if opts.report:
+    print('Will process: {}\n'.format(file_to_process[0]))
 
 
 # Init paths
@@ -160,10 +171,15 @@ def main():
         t_start = time()
         doc_batch_gen = aggregate_docs(file_path=raw_jl, b_size=opts.m_per_batch)
         for i, (batched_sents, batched_ids) in enumerate(doc_batch_gen):
+            t_0 = time()
+            if opts.report:
+                print('  Starting doc batch:  {:3d}'.format(i))
 
             # Vectorize
-            batched_embs = next(dp.vectorizer.make_vectors(batched_sents,
-                                                           yield_vectors=True))
+            batched_embs = dp.vectorizer.make_vectors(batched_sents)
+            t_vect = time()
+            if opts.report:
+                print('  * Vectorized in {:.2f}s'.format(t_vect - t_0))
 
             # Save to .npz
             npz = str(raw_jl.split('/')[-1]).replace('.jl', '_{:03d}.npz'.format(i))
@@ -171,17 +187,34 @@ def main():
             npz_path = check_unique(path=npz_path)
             dp.vectorizer.save_with_ids(file_path=npz_path, embeddings=batched_embs,
                                         sentences=batched_sents, sent_ids=batched_ids)
+            t_npz = time()
+            if opts.report:
+                print('  * Saved .npz in {:.2f}s'.format(t_npz - t_vect))
+
+            # Clear graph
+            del batched_embs, batched_sents, batched_ids
+            dp.vectorizer.close_session()
+            t_reset = time()
+            if opts.report:
+                print('  * Graph cleared in {:.2f}s'.format(t_reset - t_npz))
 
             # Make faiss subindex
             subidx = 'subidx_' + str(npz_path.split('/')[-1]).replace('.npz', '.index')
             subidx_path = os.path.join(subidx_dir, subidx)
             subidx_path = check_unique(path=subidx_path)
             dp.index_docs_on_disk(path_to_npz=npz_path, path_to_invlist=subidx_path)
+            t_subidx = time()
+            if opts.report:
+                print('  * Subindexed in {:.2f}s'.format(t_subidx - t_reset))
+
+            dp.vectorizer.start_session()
+            if opts.report:
+                print('  * Session restarted in {:.2f}s'.format(time() - t_subidx))
 
             if opts.report:
                 mp, sp = divmod(time() - t_start, 60)
-                print('  Completed doc batch: {:3d}          '
-                      '  Time: {:3d}m{:0.2f}s'.format(i, int(mp), sp))
+                print('  Completed doc batch: {:3d}              '
+                      '  Total time passed: {:3d}m{:0.2f}s\n'.format(i, int(mp), sp))
 
         # Merge
         t_merge = time()

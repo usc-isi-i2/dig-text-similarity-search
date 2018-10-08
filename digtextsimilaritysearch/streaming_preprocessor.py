@@ -182,7 +182,7 @@ def main():
         for i, (batched_sents, batched_ids) in enumerate(doc_batch_gen):
             t_0 = time()
             if opts.report:
-                print('  Starting doc batch:  {:3d}'.format(i))
+                print('  Starting doc batch:  {:3d}'.format(i+1))
 
             npz = str(raw_jl.split('/')[-1]).replace('.jl', '_{:03d}.npz'.format(i))
             npz_path = os.path.join(npz_dir, npz)
@@ -198,7 +198,7 @@ def main():
                 batched_embs = dp.vectorizer.make_vectors(batched_sents)
                 t_vect = time()
                 if opts.report:
-                    print('  * Vectorized in {:5.2f}s'.format(t_vect - t_0))
+                    print('  * Vectorized in {:6.2f}s'.format(t_vect - t_0))
 
                 # Save to .npz
                 npz_path = check_unique(path=npz_path)
@@ -207,30 +207,30 @@ def main():
                                             compressed=opts.compress)
                 t_npz = time()
                 if opts.report:
-                    print('  * Saved .npz in {:5.2f}s'.format(t_npz - t_vect))
+                    print('  * Saved .npz in {:6.2f}s'.format(t_npz - t_vect))
 
                 # Clear graph
                 del batched_embs, batched_sents, batched_ids
                 dp.vectorizer.close_session()
                 t_reset = time()
                 if opts.report:
-                    print('  * Cleared TF in {:5.2f}s'.format(t_reset - t_npz))
+                    print('  * Cleared TF in {:6.2f}s'.format(t_reset - t_npz))
 
                 # Make faiss subindex
                 subidx_path = check_unique(path=subidx_path)
                 dp.index_docs_on_disk(path_to_npz=npz_path, path_to_invlist=subidx_path)
                 t_subidx = time()
                 if opts.report:
-                    print('  * Subindexed in {:5.2f}s'.format(t_subidx - t_reset))
+                    print('  * Subindexed in {:6.2f}s'.format(t_subidx - t_reset))
 
                 dp.vectorizer.start_session()
                 if opts.report:
-                    print('  * Started TF in {:5.2f}s'.format(time() - t_subidx))
+                    print('  * Started TF in {:6.2f}s'.format(time() - t_subidx))
 
             if opts.report:
                 mp, sp = divmod(time() - t_start, 60)
                 print('  Completed doc batch: {:3d}              '
-                      '  Total time passed: {:3d}m{:0.2f}s\n'.format(i, int(mp), sp))
+                      '  Total time passed: {:3d}m{:0.2f}s\n'.format(i+1, int(mp), sp))
 
         # Clear .npz files before merge
         if opts.delete_tmp_files:

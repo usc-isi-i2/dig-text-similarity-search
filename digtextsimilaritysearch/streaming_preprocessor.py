@@ -41,7 +41,7 @@ Options:
     -s  Development param: If preprocessing was interrupted after several 
             .npz/sub.index files were created, but before the on-disk shard was merged, 
             use -s <int:n_files_to_reuse> to reuse existing intermediate files. 
-            Note: Do NOT reuse partially created intermediate files
+        Note: Do NOT reuse partially created intermediate files
 """
 
 
@@ -66,7 +66,8 @@ def aggregate_docs(file_path, b_size=512*128):
             document = json.loads(doc)
 
             content = document['lexisnexis']['doc_description']
-            if content and not content == '' and not content == 'DELETED_STORY':
+            if content and not content == '' and not content == 'DELETED_STORY' \
+                    and 'split_sentences' in document and len(document['split_sentences']):
                 text = list()
                 text.append(document['lexisnexis']['doc_title'])
                 text.extend(document['split_sentences'])

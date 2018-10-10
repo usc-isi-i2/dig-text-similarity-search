@@ -12,34 +12,39 @@ class SentenceVectorizer(object):
         model_dir = os.path.join(os.path.dirname(__file__), 'model/')
         model_loc = '1fb57c3ffe1a38479233ee9853ddd7a8ac8a8c47'
         model_loc = os.path.join(model_dir, model_loc)
-        if not path_to_model and os.path.isdir(model_loc):
-            path_to_model = model_loc
-        elif not path_to_model and os.path.isdir(model_dir):
+        self.path_to_model = path_to_model
+        if not self.path_to_model and os.path.isdir(model_loc):
+            self.path_to_model = model_loc
+        elif not self.path_to_model and os.path.isdir(model_dir):
             os.environ['TFHUB_CACHE_DIR'] = model_dir
 
-        if not path_to_model:
-            path_to_model = 'https://tfhub.dev/google/universal-sentence-encoder/2'
+        if not self.path_to_model:
+            self.path_to_model = 'https://tfhub.dev/google/universal-sentence-encoder/2'
 
-        self.graph = tf.get_default_graph()
-        print('Loading model: {}'.format(path_to_model))
-        with self.graph.as_default():
-            self.model = hub.Module(path_to_model)
+        self.graph = None
+        self.model = None
+        print('Loading model: {}'.format(self.path_to_model))
+        self.define_graph()
         print('Done loading model')
 
         self.session = None
-
+        print('Initializing TF Session...')
         self.start_session()
+
+    def define_graph(self):
+        self.graph = tf.get_default_graph()
+        with self.graph.as_default():
+            self.model = hub.Module(self.path_to_model)
 
     def start_session(self):
         self.session = tf.Session()
-
-        print('Initializing TF Session...')
         with self.graph.as_default():
             self.session.run([tf.global_variables_initializer(), tf.tables_initializer()])
 
     def close_session(self):
-        print('Closing TF Session...')
         self.session.close()
+        tf.reset_default_graph()
+        self.define_graph()
 
     def make_vectors(self, sentences, batch_size=512) -> List[tf.Tensor]:
         embeddings = list()
@@ -114,7 +119,7 @@ class SentenceVectorizer(object):
 
     # TODO: Depreciate save_vectors
     @staticmethod
-    def save_with_ids(file_path, embeddings, sentences, sent_ids):
+    def save_with_ids(file_path, embeddings, sentences, sent_ids, compressed=True):
         if not isinstance(embeddings, np.ndarray):
             embeddings = np.vstack(embeddings).astype(np.float32)
         if not isinstance(sentences, np.ndarray):
@@ -125,8 +130,12 @@ class SentenceVectorizer(object):
             except ValueError:
                 print(sent_ids)
 
-        np.savez_compressed(file=file_path, sent_ids=sent_ids,
-                            embeddings=embeddings, sentences=sentences)
+        if compressed:
+            np.savez_compressed(file=file_path, sent_ids=sent_ids,
+                                embeddings=embeddings, sentences=sentences)
+        else:
+            np.savez(file=file_path, sent_ids=sent_ids,
+                     embeddings=embeddings, sentences=sentences)
 
     # TODO: Depreciate load_vectors
     @staticmethod

@@ -2,6 +2,8 @@ from __future__ import unicode_literals
 from flask import Flask, jsonify
 from flask import request
 from flask_cors import CORS
+
+import os
 import json
 
 from indexer.IVF_disk_index_handler import DeployShards
@@ -23,7 +25,8 @@ print('Initializing ES Adapter')
 es_adapter = ESAdapter(es_endpoint=config['es_endpoint'])
 
 print('Initializing Document Processor')
-dp = DocumentProcessor(faiss_indexer, query_vectorizer, None, table_name=config['es_index'])
+dp = DocumentProcessor(indexer=faiss_indexer, vectorizer=query_vectorizer,
+                       storage_adapter=None, table_name=config['es_index'])
 
 
 @app.route("/")
@@ -45,6 +48,20 @@ def text_similarity_search():
         return jsonify({"message": str(e)}), 500
 
     return json.dumps(results), 200
+
+
+@app.route("/add", methods=['GET'])
+def add_shard():
+    shard_path = request.args.get("path", None)
+    if not os.path.exists(shard_path):
+        return jsonify({"message": "Path does not exist: {}".format(shard_path)}), 404
+    elif not shard_path.endswith(".index"):
+        return jsonify({"message": "Path does not lead to a faiss index"}), 404
+
+    try:
+        dp.indexer.add_shard(shard_path)
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
 
 
 def main():

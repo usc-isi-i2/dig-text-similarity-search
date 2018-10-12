@@ -50,16 +50,15 @@ def text_similarity_search():
     return json.dumps(results), 200
 
 
-@app.route("/add", methods=['GET'])
+@app.route("/faiss", methods=['PUT'])
 def add_shard():
     shard_path = request.args.get("path", None)
     if not os.path.exists(shard_path):
         return jsonify({"message": "Path does not exist: {}".format(shard_path)}), 404
-    elif not shard_path.endswith(".index"):
-        return jsonify({"message": "Path does not lead to a faiss index"}), 404
 
     try:
         dp.indexer.add_shard(shard_path)
+        return jsonify({'message': 'successfully added shard to faiss index'}), 201
     except Exception as e:
         return jsonify({"message": str(e)}), 500
 

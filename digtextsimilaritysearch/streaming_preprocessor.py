@@ -8,6 +8,7 @@ from optparse import OptionParser
 from indexer.IVF_disk_index_handler import DiskBuilderIVF
 from vectorizer.sentence_vectorizer import SentenceVectorizer
 from process_documents.document_processor import DocumentProcessor
+from add_shard_similarity_service import add_shard
 # <editor-fold desc="Parse Command Line Options">
 cwd = os.path.abspath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 prog_file_path = os.path.join(cwd, 'progress.txt')
@@ -22,6 +23,7 @@ options.add_option('-m', '--m_per_batch', type='int', default=512*128)
 options.add_option('-r', '--report', action='store_true', default=False)
 options.add_option('-d', '--delete_tmp_files', action='store_true', default=False)
 options.add_option('-c', '--compress', action='store_true', default=False)
+options.add_option('-a', '--add_shard', action='store_true', default=False)
 options.add_option('-s', '--skip', type='int', default=0)
 (opts, _) = options.parse_args()
 # </editor-fold>
@@ -37,6 +39,7 @@ Options:
     -r  Bool to toggle prints
     -d  Bool to delete intermediate .npz/.index files
     -c  Bool to compress .npz files (compression takes longer) 
+    -a  Bool to automatically add the created shard to the similarity server
 
     -s  Development param: If preprocessing was interrupted after several 
             .npz/sub.index files were created, but before the on-disk shard was merged, 
@@ -265,6 +268,12 @@ def main():
             clear(subidx_dir)
             if opts.report:
                 print('\n  Cleared sub.index files')
+
+        if opts.add_shard:
+            try:
+                add_shard(path=merged_index)
+            except Exception as e:
+                print('Shard was not added because an exception occurred: {}'.format(e))
 
 
 if __name__ == '__main__':

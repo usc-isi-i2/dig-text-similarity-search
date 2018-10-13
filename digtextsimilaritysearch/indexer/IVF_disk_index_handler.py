@@ -97,6 +97,7 @@ class DiskBuilderIVF(BaseIndex):
         self.index_embeddings(embeddings, faiss_ids)
         self.invlist_paths.append(invlist_path)
         self.save_index(invlist_path)
+        del self.index
         self.index = None
 
     def n_invlists(self):

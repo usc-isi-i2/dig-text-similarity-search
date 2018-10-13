@@ -9,7 +9,7 @@ options.add_option('-u', '--url', default='http://localhost:5954/faiss')
 
 def add_shard(path=None, url='http://localhost:5954/faiss'):
     payload = {'path': path}
-    r = requests.get(url, params=payload)
+    r = requests.put(url, params=payload)
     print(r.text)
 
 

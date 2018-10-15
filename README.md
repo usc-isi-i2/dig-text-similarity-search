@@ -7,17 +7,18 @@ using sentence vectors rather than key words.
 
 
 #### Basic Recipe:
-```
 1) Prepare text corpus as sentences with int ids
-2) Vectorize sentences with Google's Universal Sentence Encoder*
-3) Put vectors into a searchable Faiss index
+2) Vectorize sentences with Google's [Universal Sentence Encoder](https://tfhub.dev/google/universal-sentence-encoder/2)
+3) Put vectors into a searchable [Faiss index](https://github.com/facebookresearch/faiss)
 4) Search with vectorized query
+
+
+#### To get started:
+Create an on-disk searchable faiss index with:
 ```
-
-##### Universal Sentence Encoder*: 
-Model: https://tfhub.dev/google/universal-sentence-encoder/2
-
-Paper: https://arxiv.org/abs/1803.11175
+source activate dig_text_similarity
+python preprocessing/streaming_preprocessor.py -i data/example/ -o saved_indexes/ -r -d
+```
 
 
 ## Virtual Environment

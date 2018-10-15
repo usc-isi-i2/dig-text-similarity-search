@@ -9,7 +9,7 @@ class SentenceVectorizer(object):
 
     def __init__(self, path_to_model=None):
 
-        model_dir = os.path.join(os.path.dirname(__file__), 'model/')
+        model_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'model/'))
         model_loc = '1fb57c3ffe1a38479233ee9853ddd7a8ac8a8c47'
         model_loc = os.path.join(model_dir, model_loc)
         self.path_to_model = path_to_model

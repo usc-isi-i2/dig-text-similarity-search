@@ -1,5 +1,25 @@
 # dig-text-similarity-search
 
+## Overview
+#### Text Search without Keywords:
+This is a search engine for ranking news articles from LexisNexis 
+using sentence vectors rather than key words. 
+
+
+#### Basic Recipe:
+1) Prepare text corpus as sentences with int ids
+2) Vectorize sentences with Google's [Universal Sentence Encoder](https://tfhub.dev/google/universal-sentence-encoder/2)
+3) Put vectors into a searchable [Faiss index](https://github.com/facebookresearch/faiss)
+4) Search with vectorized query
+
+
+#### To get started:
+Create an on-disk searchable faiss index with:
+```
+source activate dig_text_similarity
+python preprocessing/streaming_preprocessor.py -i data/example/ -o saved_indexes/ -r -d
+```
+
 
 ## Virtual Environment
 #### Initialize:
@@ -9,22 +29,10 @@ source activate dig_text_similarity
 ipython kernel install --user --name=dig_text_similarity
 ```
 
-#### Run Unit Tests
-Ensure hbase is running (see below: Run hbase docker)
-```
-python -W ignore -m unittest discover
-```
-
 #### Deactivate:
 ```
 source deactivate
 ```
-
-
-## Storage Adapter
-Module for linking faiss_ids to content. 
-
-(HBase has been depreciated)
 
 
 ## Installing TensorFlow from Source (for CPU)

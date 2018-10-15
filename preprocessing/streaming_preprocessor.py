@@ -1,14 +1,22 @@
 import os
 import re
+import sys
 import json
 import datetime
 import requests
 import numpy as np
 from time import time
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+
+from digtextsimilaritysearch.indexer.IVF_disk_index_handler \
+    import DiskBuilderIVF
+from digtextsimilaritysearch.vectorizer.sentence_vectorizer \
+    import SentenceVectorizer
+from digtextsimilaritysearch.process_documents.document_processor \
+    import DocumentProcessor
 from optparse import OptionParser
-from indexer.IVF_disk_index_handler import DiskBuilderIVF
-from vectorizer.sentence_vectorizer import SentenceVectorizer
-from process_documents.document_processor import DocumentProcessor
 # <editor-fold desc="Parse Command Line Options">
 cwd = os.path.abspath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 prog_file_path = os.path.join(cwd, 'progress.txt')

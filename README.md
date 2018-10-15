@@ -7,12 +7,14 @@ using sentence vectors rather than key words.
 
 
 #### Basic Recipe:
+```
 1) Prepare text corpus as sentences with int ids
 2) Vectorize sentences with Google's Universal Sentence Encoder*
 3) Put vectors into a searchable Faiss index
 4) Search with vectorized query
+```
 
-#### Universal Sentence Encoder*: 
+##### Universal Sentence Encoder*: 
 Model: https://tfhub.dev/google/universal-sentence-encoder/2
 
 Paper: https://arxiv.org/abs/1803.11175

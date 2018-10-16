@@ -28,6 +28,15 @@ conda env create .
 source activate dig_text_similarity
 ipython kernel install --user --name=dig_text_similarity
 ```
+```
+Note:
+While using this as a pypi package, you may need too perform the following additonal steps:
+conda install faiss-cpu -c pytorch
+
+
+Also Python venv will not work as a substitute for conda env as there are some conda specific dependencies like faiss-cpu.
+So please create virtual environments only using the above method.
+```
 
 #### Deactivate:
 ```

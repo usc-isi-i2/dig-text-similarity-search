@@ -11,11 +11,11 @@ with open('requirements.txt', 'r') as f:
             install_requires.append(re)
 
 setuptools.setup(
-    name="dig-text-similarity",
+    name="dig-text-similarity-search",
     version="1.0.0",
     author="Amandeep Singh",
     author_email="amandeep.s.saggu@gmail.com",
-    description="similarity server using faiss indices",
+    description="Library to build vectorized text search using faiss indices",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/usc-isi-i2/dig-text-similarity-search",

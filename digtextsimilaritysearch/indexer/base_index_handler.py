@@ -5,6 +5,7 @@ import numpy as np
 class BaseIndex(object):
     def __init__(self):
         self.index = None
+        self.dynamic = False
 
     def index_embeddings(self, embeddings: np.array, faiss_ids: np.array):
         raise NotImplementedError

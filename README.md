@@ -14,7 +14,7 @@ using sentence vectors rather than key words.
 
 
 #### To get started:
-Create an on-disk searchable faiss index with:
+Create an on-disk searchable faiss index [with](https://github.com/usc-isi-i2/dig-text-similarity-search/blob/master/preprocessing/streaming_preprocessor.py):
 ```
 source activate dig_text_similarity
 python preprocessing/streaming_preprocessor.py -i data/example/ -o saved_indexes/ -r -d

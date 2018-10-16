@@ -7,10 +7,17 @@ import os
 import json
 
 from indexer.IVF_disk_index_handler import DeployShards
+from indexer.IVF_disk_index_handler import DeployDynamicShards
 from process_documents.document_processor import DocumentProcessor
 from vectorizer.sentence_vectorizer import SentenceVectorizer
 from storage.es_adapter import ESAdapter
 from config import config
+
+from optparse import OptionParser
+options = OptionParser()
+options.add_option('-d', '--dynamic', action='store_true', default=False)
+(args, _) = options.parse_args()
+
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
@@ -19,7 +26,10 @@ print('Initializing Batch Vectorizer')
 query_vectorizer = SentenceVectorizer()
 
 print('Initializing Faiss Indexer')
-faiss_indexer = DeployShards(paths_to_shards=config['faiss_index_path'])
+if args.dynamic:
+    faiss_indexer = DeployDynamicShards(config['faiss_index_path'])
+else:
+    faiss_indexer = DeployShards(config['faiss_index_path'])
 
 print('Initializing ES Adapter')
 es_adapter = ESAdapter(es_endpoint=config['es_endpoint'])

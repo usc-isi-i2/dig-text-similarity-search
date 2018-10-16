@@ -1,4 +1,4 @@
-name: dig
+name: dig_text_similarity
 channels:
   - conda-forge
   - defaults

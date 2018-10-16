@@ -15,8 +15,8 @@ class DeployIVF(BaseIndex):
         self.index.nprobe = nprobe
 
     def index_embeddings(self, embeddings: np.array, faiss_ids: np.array):
-        print('WARNING: Cannot add to index')
-        print('   Hint: Use the DiskBuilderIVF class for adding to an index')
+        print('WARNING: Cannot add to index! \n'
+              '   Hint: Use the DiskBuilderIVF class for adding to an index')
 
 
 class DeployShards(BaseIndex):
@@ -54,16 +54,81 @@ class DeployShards(BaseIndex):
 
     def add_shard(self, new_shard_path: str):
         if new_shard_path in self.paths_to_shards:
-            print('WARNING: This shard is already online')
-            print('         Aborting...')
+            print('WARNING: This shard is already online! \n'
+                  '         Aborting...')
             return
         self.paths_to_shards.append(new_shard_path)
         shard = self.load_shard(path_to_shard=new_shard_path, nprobe=self.nprobe)
         self.index.add_shard(shard)
 
     def index_embeddings(self, embeddings: np.array, faiss_ids: np.array):
-        print('WARNING: Cannot add to index shards')
-        print('   Hint: Use the DiskBuilderIVF class for adding to an index '
+        print('WARNING: Cannot add to index shards! \n'
+              '   Hint: Use the DiskBuilderIVF class for adding to an index '
+              'or self.add_shard(path) to deploy a new shard')
+
+
+class DeployDynamicShards(BaseIndex):
+    """
+    For deploying multiple, pre-made IVF indexes as shards dynamically,
+    i.e. index shards are merged at query time.
+        (intended for on-disk indexes that do not fit in memory)
+
+    Note: The index shards must be true partitions with no overlapping ids
+
+    :param paths_to_shards: List of paths to faiss index shards
+    :param nprobe: Number of clusters to visit during search
+        (speed accuracy trade-off)
+    """
+    def __init__(self, paths_to_shards: List[str], nprobe: int = 32):
+        BaseIndex.__init__(self)
+        self.paths_to_shards = paths_to_shards
+        self.nprobe = nprobe
+        self.dynamic = True
+
+        # Load shards
+        self.shards = list()
+        for shard_path in self.paths_to_shards:
+            shard_key, shard = self.load_shard(path_to_shard=shard_path, nprobe=self.nprobe)
+            self.shards.append((shard_key, shard))
+        self.shards.sort(key=lambda sk: sk[0], reverse=True)
+
+    @staticmethod
+    def load_shard(path_to_shard: str, nprobe: int = 32):
+        shard_key = path_to_shard.split('/')[-1]
+        shard = faiss.read_index(path_to_shard)
+        shard.nprobe = nprobe
+        return shard_key, shard
+
+    def add_shard(self, new_shard_path: str):
+        if new_shard_path in self.paths_to_shards:
+            print('WARNING: This shard is already online! \n'
+                  '         Aborting...')
+            return
+        self.paths_to_shards.append(new_shard_path)
+        shard_key, shard = self.load_shard(path_to_shard=new_shard_path, nprobe=self.nprobe)
+        self.shards.append((shard_key, shard))
+        self.shards.sort(key=lambda sk: sk[0], reverse=True)
+
+    def merge(self, s: int = 0, e: int = -1):
+        for shard_tup in self.shards[s:e]:
+            self.index.add_shard(shard_tup[1])
+
+    def search(self, query_vector: np.array, k: int, start: int = 0, end: int = -1):
+        self.index = faiss.IndexShards(512, threaded=True, successive_ids=False)
+        self.merge(s=start, e=end)
+        return next(self.yield_search(query_vector, k=k))
+
+    def yield_search(self, query_vector: np.array, k: int):
+        """
+        Resets self.index in background after yielding search results.
+        """
+        yield self.index.search(query_vector, k=k)
+        del self.index
+        self.index = None
+
+    def index_embeddings(self, embeddings: np.array, faiss_ids: np.array):
+        print('WARNING: Cannot add to index shards! \n'
+              '   Hint: Use the DiskBuilderIVF class for adding to an index '
               'or self.add_shard(path) to deploy a new shard')
 
 

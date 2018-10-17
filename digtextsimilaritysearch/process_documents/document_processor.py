@@ -1,3 +1,4 @@
+import numpy as np
 from time import time, sleep
 
 _SENTENCE_ID = 'sentence_id'
@@ -84,8 +85,17 @@ class DocumentProcessor(object):
         query_vector = self.vectorizer.make_vectors(str_query)
         t_vector = time() - t_0
 
-        if isinstance(query_vector, list):
-            query_vector = query_vector[0]
+        print('Response type: {}'.format(type(query_vector)))
+        print('Response data: {}'.format(query_vector))
+
+        # if isinstance(query_vector, list):
+        #     query_vector = query_vector[0]
+        if not isinstance(query_vector, np.ndarray):
+            query_vector = np.asarray(query_vector, dtype=np.float32)
+
+        print('QV type: {}'.format(type(query_vector)))
+        print('QV shape: {}'.format(query_vector.shape))
+
         t_1 = time()
         scores, faiss_ids = self.indexer.search(query_vector, k*5)
         t_search = time() - t_1

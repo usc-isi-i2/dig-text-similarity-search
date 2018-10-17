@@ -24,8 +24,7 @@ class QueryVectorizer(object):
         response = requests.post(self.url, data=payload)
         response.raise_for_status()
 
-        output = response.json()['outputs']
-        return np.array(output, dtype=np.float32)
+        return response.json()['outputs']
 
 
 class SentenceVectorizer(object):

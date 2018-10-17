@@ -1,8 +1,29 @@
 import os
+import requests
 import numpy as np
 import tensorflow as tf
 import tensorflow_hub as hub
 from typing import List
+
+
+class QueryVectorizer(object):
+
+    def __init__(self, url=None):
+        if not url:
+            url = 'http://localhost:8501/v1/models/USE-liteQuery-v1:predict'
+        self.url = url
+
+    def make_vectors(self, query):
+        if not isinstance(query, list):
+            query = [query]
+
+        payload = '{"inputs": {"text": ["{}"]}}'.format(query[0])
+
+        response = requests.post(self.url, data=payload)
+        response.raise_for_status()
+
+        output = response.json()['outputs']
+        return np.array(output, dtype=np.float32)
 
 
 class SentenceVectorizer(object):

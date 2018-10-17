@@ -1,4 +1,5 @@
 import os
+import json
 import requests
 import numpy as np
 import tensorflow as tf
@@ -17,7 +18,8 @@ class QueryVectorizer(object):
         if not isinstance(query, list):
             query = [query]
 
-        payload = '{"inputs": {"text": ["%s"]}}' % query[0]
+        payload = {"inputs": {"text": query}}
+        payload = json.dumps(payload)
 
         response = requests.post(self.url, data=payload)
         response.raise_for_status()

@@ -17,7 +17,7 @@ class QueryVectorizer(object):
         if not isinstance(query, list):
             query = [query]
 
-        payload = '{"inputs": {"text": ["{}"]}}'.format(query[0])
+        payload = '{"inputs": {"text": ["%s"]}}' % query[0]
 
         response = requests.post(self.url, data=payload)
         response.raise_for_status()

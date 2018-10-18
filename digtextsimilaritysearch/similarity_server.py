@@ -6,7 +6,7 @@ from flask_cors import CORS
 import os
 import json
 
-from indexer.IVF_disk_index_handler import DeployIVF  # Shards
+from indexer.IVF_disk_index_handler import DeployIVF  # Shards does not work ATM
 from process_documents.document_processor import DocumentProcessor
 from vectorizer.sentence_vectorizer import QueryVectorizer
 from storage.es_adapter import ESAdapter
@@ -19,7 +19,7 @@ print('Initializing Batch Vectorizer')
 query_vectorizer = QueryVectorizer()
 
 print('Initializing Faiss Indexer')
-faiss_indexer = DeployIVF(config['faiss_index_path'][1])
+faiss_indexer = DeployIVF(config['faiss_index_path'][0])
 
 print('Initializing ES Adapter')
 es_adapter = ESAdapter(es_endpoint=config['es_endpoint'])

@@ -167,9 +167,12 @@ else:
     seed = str('\d{4}[-/]\d{2}[-/]\d{2}')
     date = re.search(seed, file_to_process[0]).group()
 
-daily_dir = os.path.join(input_dir, date)
+intermediate_dir = os.path.abspath(os.path.join(input_dir, '../intermediate_files/'))
+daily_dir = os.path.join(intermediate_dir, date)
 npz_dir = os.path.join(daily_dir, 'npzs')
 subidx_dir = os.path.join(daily_dir, 'subindexes')
+if not os.path.isdir(intermediate_dir):
+    os.mkdir(intermediate_dir)
 if not os.path.isdir(daily_dir):
     os.mkdir(daily_dir)
 if not os.path.isdir(npz_dir):

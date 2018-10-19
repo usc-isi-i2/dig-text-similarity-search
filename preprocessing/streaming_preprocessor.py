@@ -82,12 +82,19 @@ Options:
 def check_docs(file_path, b_size=512*128):
     doc_count = 0
     line_count = 0
+    junk_count = 0
     with open(file_path, 'r') as jl:
         for doc in jl:
-            doc_count += 1
-            line_count += len(json.loads(doc)['split_sentences']) + 1
+            document = json.loads(doc)
+            content = document['lexisnexis']['doc_description']
+            if content and not content == '' and not content == 'DELETED_STORY' \
+                    and 'split_sentences' in document and len(document['split_sentences']):
+                doc_count += 1
+                line_count += len(document['split_sentences']) + 1
+            else:
+                junk_count += 1
     n_batches = divmod(line_count, b_size)[0] + 1
-    return line_count, doc_count, n_batches
+    return doc_count, line_count, junk_count, n_batches
 
 
 def aggregate_docs(file_path, b_size=512*128):
@@ -96,7 +103,6 @@ def aggregate_docs(file_path, b_size=512*128):
     with open(file_path, 'r') as jl:
         for doc in jl:
             document = json.loads(doc)
-
             content = document['lexisnexis']['doc_description']
             if content and not content == '' and not content == 'DELETED_STORY' \
                     and 'split_sentences' in document and len(document['split_sentences']):
@@ -213,12 +219,13 @@ def main():
         if opts.report:
             print('\nProcessing: {}'.format(raw_jl))
 
-        line_count, doc_count, n_batches = check_docs(file_path=raw_jl,
-                                                      b_size=opts.m_per_batch)
+        doc_count, line_count, junk, n_batches = check_docs(file_path=raw_jl,
+                                                            b_size=opts.m_per_batch)
         if opts.report:
-            print('* Found {} lines in {} documents\n'
-                  '* {} batches will be processed\n'
-                  ''.format(line_count, doc_count, n_batches))
+            print('* Found {} good documents with {} total sentences\n'
+                  '* Will skip {} junk documents\n'
+                  '* Processing {} batches\n'
+                  ''.format(doc_count, line_count, junk, n_batches))
 
         t_start = time()
         doc_batch_gen = aggregate_docs(file_path=raw_jl, b_size=opts.m_per_batch)

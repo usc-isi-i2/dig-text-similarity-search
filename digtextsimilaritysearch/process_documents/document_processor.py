@@ -227,6 +227,14 @@ class DocumentProcessor(object):
         else:
             raise Exception('Cannot index on disk without an index_builder')
 
+    def index_embeddings_on_disk(self, embeddings, sent_ids, path_to_invlist):
+        if self.index_builder:
+            assert sent_ids.shape[0] == embeddings.shape[0], \
+                'Found {} sent_ids and {} vectors'.format(sent_ids.shape[0], vectors.shape[0])
+            self.index_builder.generate_invlist(path_to_invlist, sent_ids, embeddings)
+        else:
+            raise Exception('Cannot index on disk without an index_builder')
+
     def build_index_on_disk(self, merged_ivfs_path, merged_index_path) -> int:
         if self.index_builder:
             ntotal = self.index_builder.build_disk_index(merged_ivfs_path, merged_index_path)

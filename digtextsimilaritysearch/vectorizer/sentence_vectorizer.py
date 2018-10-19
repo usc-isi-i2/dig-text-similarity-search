@@ -27,6 +27,26 @@ class QueryVectorizer(object):
         return response.json()['outputs']
 
 
+class BatchVectorizer(object):
+
+    def __init__(self, url=None):
+        if not url:
+            url = 'http://localhost:8501/v1/models/USE-liteBatch-v2:predict'
+        self.url = url
+
+    def make_vectors(self, query):
+        if not isinstance(query, list):
+            query = [query]
+
+        payload = {"inputs": {"text": query}}
+        payload = json.dumps(payload)
+
+        response = requests.post(self.url, data=payload)
+        response.raise_for_status()
+
+        return response.json()['outputs']
+
+
 class SentenceVectorizer(object):
 
     def __init__(self, path_to_model=None):

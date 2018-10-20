@@ -7,11 +7,11 @@ import tensorflow_hub as hub
 from typing import List
 
 
-class QueryVectorizer(object):
+class DockerVectorizer(object):
 
     def __init__(self, url=None):
         if not url:
-            url = 'http://localhost:8501/v1/models/USE-liteQuery-v2:predict'
+            url = 'http://localhost:8501/v1/models/USE-lite-v2:predict'
         self.url = url
 
     def make_vectors(self, query):

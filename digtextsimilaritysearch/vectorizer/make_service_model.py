@@ -3,10 +3,7 @@ import tensorflow as tf
 import tensorflow_hub as hub
 from optparse import OptionParser
 # <editor-fold desc="Parse Command Line Options">
-# Model type and version
 options = OptionParser()
-options.add_option('-b', '--batch', action='store_true', default=False)
-options.add_option('-q', '--query', action='store_true', default=False)
 options.add_option('-v', '--version', default='001')
 (opts, _) = options.parse_args()
 # </editor-fold>
@@ -18,14 +15,10 @@ Makes file to run Universal Sentence Encoder with docker
 To run docker:
     $ docker pull tensorflow/serving
     $ docker run -p 8501:8501 \ 
-        --mount type=bind,source={/path/to/model_name/},target=/models/{model_name} \ 
-        -e MODEL_NAME={model_name} -t tensorflow/serving
-
-    ( Replace {model_name} with USE-liteBatch-v2 or USE-liteQuery-v2 )
+        --mount type=bind,source={/path/to}/USE-lite-v2/,target=/models/USE-lite-v2 \ 
+        -e MODEL_NAME=USE-lite-v2 -t tensorflow/serving
 
 Options:
-    -b Flag to make Batch model for preprocessing
-    -q Flag to make Query model for online service
     -v Version number of model (highest version number will be deployed)
 """
 
@@ -37,27 +30,17 @@ if os.path.isdir(model_dir):
 else:
     model_link = 'https://tfhub.dev/google/universal-sentence-encoder/2'
 
-# Specify model name and input shape
-model_name = None
-model_shape = None
-if opts.batch:
-    model_name = 'USE-liteBatch-v2'
-    model_shape = [None]
-elif opts.query:
-    model_name = 'USE-liteQuery-v2'
-    model_shape = (1,)
-assert not model_name, 'Please specify model type: Batch (-b) or Query (-q)'
-
-# Model specifics
+# Model type and version
 MODEL_LINK = model_link
-MODEL_NAME = model_name
+MODEL_NAME = 'USE-lite-v2'
 VERSION = opts.version
-SERVE_PATH = './service_models/{}/{}'.format(MODEL_NAME, VERSION)
+SERVE_PATH = os.path.join(os.path.dirname(__file__),
+                          './service_models/{}/{}'.format(MODEL_NAME, VERSION))
 
 # Build graph
 with tf.Graph().as_default():
     module = hub.Module(MODEL_LINK, name=MODEL_NAME)
-    text = tf.placeholder(tf.string, shape=model_shape, name='text')
+    text = tf.placeholder(tf.string, shape=[None], name='text')
     embedding = module(text)
 
     init_op = tf.group([tf.global_variables_initializer(),

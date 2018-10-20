@@ -41,7 +41,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from digtextsimilaritysearch.indexer.IVF_disk_index_handler \
     import DiskBuilderIVF
 from digtextsimilaritysearch.vectorizer.sentence_vectorizer \
-    import SentenceVectorizer
+    import DockerVectorizer
 from digtextsimilaritysearch.process_documents.document_processor \
     import DocumentProcessor
 
@@ -57,8 +57,8 @@ First make Batch service model:
 Then run docker:
     $ docker pull tensorflow/serving
     $ docker run -p 8501:8501 \ 
-        --mount type=bind,source={/path/to}/USE-liteBatch-v2/,target=/models/USE-liteBatch-v2 \ 
-        -e MODEL_NAME=USE-liteBatch-v2 -t tensorflow/serving
+        --mount type=bind,source={/path/to}/USE-lite-v2/,target=/models/USE-lite-v2 \ 
+        -e MODEL_NAME=USE-lite-v2 -t tensorflow/serving
 
 
 Options:
@@ -216,9 +216,9 @@ if not os.path.isdir(subidx_dir):
 
 # Init DocumentProcessor
 idx_bdr = DiskBuilderIVF(path_to_empty_index=opts.base_index_path)
-sv = SentenceVectorizer()
+dv = DockerVectorizer()
 dp = DocumentProcessor(indexer=None, index_builder=idx_bdr,
-                       vectorizer=sv, storage_adapter=None)
+                       vectorizer=dv, storage_adapter=None)
 
 
 # Preprocessing
@@ -256,13 +256,16 @@ def main():
                 if opts.report:
                     print('  * Vectorized in {:6.2f}s'.format(t_vect - t_0))
 
+                # Numpify outputs
+                batched_embs = np.asarray(batched_embs, dtype=np.float32)
+
                 # Make faiss subindex
                 subidx_path = check_unique(path=subidx_path)
                 dp.index_embeddings_on_disk(embeddings=batched_embs, sent_ids=batched_ids,
                                             path_to_invlist=subidx_path)
                 t_subidx = time()
                 if opts.report:
-                    print('  * Subindexed in {:6.2f}s'.format(t_subidx - t_reset))
+                    print('  * Subindexed in {:6.2f}s'.format(t_subidx - t_vect))
 
             if opts.report:
                 mp, sp = divmod(time() - t_start, 60)

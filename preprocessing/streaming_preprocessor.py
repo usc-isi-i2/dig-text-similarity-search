@@ -1,4 +1,33 @@
 import os
+from optparse import OptionParser
+# <editor-fold desc="Parse Command Line Options">
+cwd = os.path.abspath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+prog_file_path = os.path.join(cwd, 'progress.txt')
+base_index_dir = os.path.abspath(os.path.join(cwd, '../saved_indexes/IVF16K_indexes/'
+                                                   'emptyTrainedIVF16384.index'))
+options = OptionParser()
+options.add_option('-i', '--input_dir')
+options.add_option('-o', '--output_dir')
+options.add_option('-t', '--num_threads')
+options.add_option('-p', '--progress_file', default=prog_file_path)
+options.add_option('-b', '--base_index_path', default=base_index_dir)
+options.add_option('-m', '--m_per_batch', type='int', default=512*128)
+options.add_option('-r', '--report', action='store_true', default=False)
+options.add_option('-d', '--delete_tmp_files', action='store_true', default=False)
+options.add_option('-c', '--compress', action='store_true', default=False)
+options.add_option('-a', '--add_shard', action='store_true', default=False)
+options.add_option('-u', '--url', default='http://localhost:5954/faiss')
+options.add_option('-s', '--skip', type='int', default=0)
+(opts, _) = options.parse_args()
+# </editor-fold>
+
+if opts.num_threads:
+    print('\nRestricting numpy to {} thread(s)\n'.format(opts.num_threads))
+    os.environ['OPENBLAS_NUM_THREADS'] = opts.num_threads
+    os.environ['NUMEXPR_NUM_THREADS'] = opts.num_threads
+    os.environ['MKL_NUM_THREADS'] = opts.num_threads
+    os.environ['OMP_NUM_THREADS'] = opts.num_threads
+
 import re
 import sys
 import json
@@ -16,69 +45,64 @@ from digtextsimilaritysearch.vectorizer.sentence_vectorizer \
     import SentenceVectorizer
 from digtextsimilaritysearch.process_documents.document_processor \
     import DocumentProcessor
-from optparse import OptionParser
-# <editor-fold desc="Parse Command Line Options">
-cwd = os.path.abspath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-prog_file_path = os.path.join(cwd, 'progress.txt')
-base_index_dir = os.path.abspath(os.path.join(cwd, '../saved_indexes/IVF16K_indexes/'
-                                                   'emptyTrainedIVF16384.index'))
-options = OptionParser()
-options.add_option('-i', '--input_dir')
-options.add_option('-o', '--output_dir')
-options.add_option('-p', '--progress_file', default=prog_file_path)
-options.add_option('-b', '--base_index_path', default=base_index_dir)
-options.add_option('-m', '--m_per_batch', type='int', default=512*128)
-options.add_option('-r', '--report', action='store_true', default=False)
-options.add_option('-d', '--delete_tmp_files', action='store_true', default=False)
-options.add_option('-c', '--compress', action='store_true', default=False)
-options.add_option('-a', '--add_shard', action='store_true', default=False)
-options.add_option('-u', '--url', default='http://localhost:5954/faiss')
-options.add_option('-s', '--skip', type='int', default=0)
-(opts, _) = options.parse_args()
-# </editor-fold>
 
 
 """
 Options:
     -i  Path to raw news dir
     -o  Path to dir for writing merged, on-disk faiss index shard
-    -p  File to keep track of news that has already been processed
-    -b  Path to empty, pre-trained faiss index
-    -m  Minimum number of sentences/vectors per .npz/.index (default 512*128)
-    -r  Bool to toggle prints
-    -d  Bool to delete intermediate .npz/.index files
-    -c  Bool to compress .npz files (compression takes longer) 
-    -a  Bool to automatically add the created shard to the similarity server
-    -u  If -a is True, -u can be used to specify the url to put() the new index to
-        Note: url must end with '/faiss'
+    -t  Option to set thread budget for numpy to reduce CPU resource consumption 
+            Useful if other tasks are running 
+    -p  File to keep track of news that has already been processed 
+            (default progress.txt)
+    -b  Path to empty, pre-trained faiss index 
+            (default ../saved_indexes/IVF16K_indexes/emptyTrainedIVF16384.index)
+    -m  Minimum number of sentences/vectors per .npz/.index 
+            (default 512*128)
+    -r  Bool to toggle prints 
+            (default False)
+    -d  Bool to delete intermediate .npz/.index files 
+            (default False)
+    -c  Bool to compress .npz files, which takes longer 
+            (default False) 
+    -a  Bool to automatically add the created shard to the similarity server 
+            (default False)
+    -u  If -a is True, -u can be used to specify where to put() the new index 
+            (default http://localhost:5954/faiss')
+            * Note: url must end with '/faiss'
 
     -s  Development param: If preprocessing was interrupted after several 
             .npz/sub.index files were created, but before the on-disk shard was merged, 
             use -s <int:n_files_to_reuse> to reuse existing intermediate files. 
-        Note: Do NOT reuse partially created intermediate files
+            * Note: Do NOT reuse partially created intermediate files
 """
 
 
 # Funcs
-def aggregate_docs(file_path, b_size=512*128):
-    if opts.report:
-        doc_count = 0
-        line_count = 0
-        with open(file_path, 'r') as jl:
-            for doc in jl:
+def check_docs(file_path, b_size=512*128):
+    doc_count = 0
+    line_count = 0
+    junk_count = 0
+    with open(file_path, 'r') as jl:
+        for doc in jl:
+            document = json.loads(doc)
+            content = document['lexisnexis']['doc_description']
+            if content and not content == '' and not content == 'DELETED_STORY' \
+                    and 'split_sentences' in document and len(document['split_sentences']):
                 doc_count += 1
-                line_count += len(json.loads(doc)['split_sentences']) + 1
-        print('* Found {} lines in {} documents\n'
-              '* {} batches will be processed\n'
-              ''.format(line_count, doc_count,
-                        divmod(line_count, b_size)[0] + 1))
+                line_count += len(document['split_sentences']) + 1
+            else:
+                junk_count += 1
+    n_batches = divmod(line_count, b_size)[0] + 1
+    return doc_count, line_count, junk_count, n_batches
 
+
+def aggregate_docs(file_path, b_size=512*128):
     batched_text = list()
     batched_ids = list()
     with open(file_path, 'r') as jl:
         for doc in jl:
             document = json.loads(doc)
-
             content = document['lexisnexis']['doc_description']
             if content and not content == '' and not content == 'DELETED_STORY' \
                     and 'split_sentences' in document and len(document['split_sentences']):
@@ -152,6 +176,7 @@ for f in raw_news:
         files_to_process.append(str(f))
         if opts.report:
             print('* Candidates: {}'.format(str(f)))
+assert len(files_to_process), 'No new files to process! \nAborting...'
 files_to_process.sort(reverse=True)
 file_to_process = files_to_process[:1]   # Only preprocesses one news.jl
 if opts.report:
@@ -193,6 +218,14 @@ def main():
     for raw_jl in file_to_process:
         if opts.report:
             print('\nProcessing: {}'.format(raw_jl))
+
+        doc_count, line_count, junk, n_batches = check_docs(file_path=raw_jl,
+                                                            b_size=opts.m_per_batch)
+        if opts.report:
+            print('* Found {} good documents with {} total sentences\n'
+                  '* Will skip {} junk documents\n'
+                  '* Processing {} batches\n'
+                  ''.format(doc_count, line_count, junk, n_batches))
 
         t_start = time()
         doc_batch_gen = aggregate_docs(file_path=raw_jl, b_size=opts.m_per_batch)
@@ -240,14 +273,17 @@ def main():
                 if opts.report:
                     print('  * Subindexed in {:6.2f}s'.format(t_subidx - t_reset))
 
-                dp.vectorizer.start_session()
-                if opts.report:
-                    print('  * Started TF in {:6.2f}s'.format(time() - t_subidx))
+                # Restart TF session if necessary
+                if i < n_batches - 1:
+                    dp.vectorizer.start_session()
+                    if opts.report:
+                        print('  * Started TF in {:6.2f}s'.format(time() - t_subidx))
 
             if opts.report:
                 mp, sp = divmod(time() - t_start, 60)
-                print('  Completed doc batch: {:3d}              '
-                      '  Total time passed: {:3d}m{:0.2f}s\n'.format(i+1, int(mp), sp))
+                print('  Completed doc batch: {:3d}/{}      '
+                      '  Total time passed: {:3d}m{:0.2f}s\n'
+                      ''.format(i+1, n_batches, int(mp), sp))
 
         # Clear .npz files before merge
         if opts.delete_tmp_files:

@@ -1,3 +1,4 @@
+import numpy as np
 from time import time, sleep
 
 _SENTENCE_ID = 'sentence_id'
@@ -83,13 +84,16 @@ class DocumentProcessor(object):
         t_0 = time()
         query_vector = self.vectorizer.make_vectors(str_query)
         t_vector = time() - t_0
+        print('  TF vectorization time: {:0.6f}s'.format(t_vector))
 
-        if isinstance(query_vector, list):
+        if isinstance(query_vector[0], np.ndarray):
             query_vector = query_vector[0]
+        if not isinstance(query_vector, np.ndarray):
+            query_vector = np.asarray(query_vector, dtype=np.float32)
+
         t_1 = time()
         scores, faiss_ids = self.indexer.search(query_vector, k*5)
         t_search = time() - t_1
-        print('  TF vectorization time: {:0.6f}s'.format(t_vector))
         print('  Faiss search time: {:0.6f}s'.format(t_search))
         t_es = 0
         unique_scores = set()

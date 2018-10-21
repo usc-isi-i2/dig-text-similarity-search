@@ -8,7 +8,7 @@ import json
 
 from indexer.IVF_disk_index_handler import DeployShards
 from process_documents.document_processor import DocumentProcessor
-from vectorizer.sentence_vectorizer import QueryVectorizer
+from vectorizer.sentence_vectorizer import DockerVectorizer
 from storage.es_adapter import ESAdapter
 from config import config
 
@@ -16,7 +16,7 @@ app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
 print('Initializing Batch Vectorizer')
-query_vectorizer = QueryVectorizer()
+query_vectorizer = DockerVectorizer()
 
 print('Initializing Faiss Indexer')
 faiss_indexer = DeployShards(config['faiss_index_path'])

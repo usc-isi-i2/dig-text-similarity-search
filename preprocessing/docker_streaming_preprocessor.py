@@ -48,20 +48,22 @@ from digtextsimilaritysearch.process_documents.document_processor \
 """
 Requires USE-liteBatch-v2 running in docker for vectorization
 
-First make Batch service model:
-    (from dig-text-similarity-search/)
+First make service model:
+    $ ./prep_service_model.sh
+    OR
     $ source activate dig_text_similarity
-    $ python digtextsimilaritysearch/vectorizer/make_service_model
+    $ python make_service_model.py
 
 Then run docker:
+    $ ./run_service_model.sh
+    OR
     $ docker pull tensorflow/serving
     $ docker run -p 8501:8501 \ 
         --mount type=bind,source={/path/to}/USE-lite-v2/,target=/models/USE-lite-v2 \ 
         -e MODEL_NAME=USE-lite-v2 -t tensorflow/serving
         
 To run this script:
-    (from dig-text-similarity-search/)
-    $ python preprocessing/docker_streaming_preprocessor.py \ 
+    $ python docker_streaming_preprocessor.py \ 
         -i {/path/to/split/sents.jl} -o {/path/to/write/shard.index} -r -d
 
 

@@ -48,6 +48,11 @@ from digtextsimilaritysearch.process_documents.document_processor \
 
 
 """
+To run this script:
+    (from dig-text-similarity-search/)
+    $ python preprocessing/docker_streaming_preprocessor.py \ 
+        -i {/path/to/split/sents.jl} -o {/path/to/write/shard.index} -r -d
+
 Options:
     -i  Path to raw news dir
     -o  Path to dir for writing merged, on-disk faiss index shard

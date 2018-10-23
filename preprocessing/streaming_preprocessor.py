@@ -250,34 +250,35 @@ def main():
                 if opts.report:
                     print('  * Vectorized in {:6.2f}s'.format(t_vect - t_0))
 
-                # Save to .npz
-                npz_path = check_unique(path=npz_path)
-                dp.vectorizer.save_with_ids(file_path=npz_path, embeddings=batched_embs,
-                                            sentences=batched_sents, sent_ids=batched_ids,
-                                            compressed=opts.compress)
-                t_npz = time()
+                # # Save to .npz
+                # npz_path = check_unique(path=npz_path)
+                # dp.vectorizer.save_with_ids(file_path=npz_path, embeddings=batched_embs,
+                #                             sentences=batched_sents, sent_ids=batched_ids,
+                #                             compressed=opts.compress)
+                # t_npz = time()
+                # if opts.report:
+                #     print('  * Saved .npz in {:6.2f}s'.format(t_npz - t_vect))
+
+                # Make faiss subindex
+                subidx_path = check_unique(path=subidx_path)
+                dp.index_embeddings_on_disk(embeddings=batched_embs, sent_ids=batched_ids,
+                                            path_to_invlist=subidx_path)
+                t_subidx = time()
                 if opts.report:
-                    print('  * Saved .npz in {:6.2f}s'.format(t_npz - t_vect))
+                    print('  * Subindexed in {:6.2f}s'.format(t_subidx - t_vect))
 
                 # Clear graph
                 del batched_embs, batched_sents, batched_ids
                 dp.vectorizer.close_session()
                 t_reset = time()
                 if opts.report:
-                    print('  * Cleared TF in {:6.2f}s'.format(t_reset - t_npz))
-
-                # Make faiss subindex
-                subidx_path = check_unique(path=subidx_path)
-                dp.index_docs_on_disk(path_to_npz=npz_path, path_to_invlist=subidx_path)
-                t_subidx = time()
-                if opts.report:
-                    print('  * Subindexed in {:6.2f}s'.format(t_subidx - t_reset))
+                    print('  * Cleared TF in {:6.2f}s'.format(t_reset - t_subidx))
 
                 # Restart TF session if necessary
                 if i < n_batches - 1:
                     dp.vectorizer.start_session()
                     if opts.report:
-                        print('  * Started TF in {:6.2f}s'.format(time() - t_subidx))
+                        print('  * Started TF in {:6.2f}s'.format(time() - t_reset))
 
             if opts.report:
                 mp, sp = divmod(time() - t_start, 60)

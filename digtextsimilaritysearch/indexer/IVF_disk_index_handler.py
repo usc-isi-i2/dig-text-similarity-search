@@ -9,9 +9,10 @@ class DeployIVF(BaseIndex):
     :param nprobe: Number of clusters to visit during search
         (speed accuracy trade-off)
     """
-    def __init__(self, path_to_deployable_index, nprobe: int = 32):
+    def __init__(self, index_dir_path, nprobe: int = 32):
         BaseIndex.__init__(self)
-        self.index = faiss.read_index(path_to_deployable_index)
+        path_to_index = self.get_index_paths(index_dir_path)
+        self.index = faiss.read_index(path_to_index[0])
         self.index.nprobe = nprobe
 
     def index_embeddings(self, embeddings: np.array, faiss_ids: np.array):
@@ -30,9 +31,9 @@ class DeployShards(BaseIndex):
     :param nprobe: Number of clusters to visit during search
         (speed accuracy trade-off)
     """
-    def __init__(self, paths_to_shards: List[str], nprobe: int = 32):
+    def __init__(self, shard_dir, nprobe: int = 32):
         BaseIndex.__init__(self)
-        self.paths_to_shards = paths_to_shards
+        self.paths_to_shards = self.get_index_paths(shard_dir)
         self.nprobe = nprobe
 
         # Load shards

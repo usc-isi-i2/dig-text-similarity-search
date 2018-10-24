@@ -16,7 +16,6 @@ options.add_option('-r', '--report', action='store_true', default=False)
 options.add_option('-d', '--delete_tmp_files', action='store_true', default=False)
 options.add_option('-a', '--add_shard', action='store_true', default=False)
 options.add_option('-u', '--url', default='http://localhost:5954/faiss')
-options.add_option('-s', '--skip', type='int', default=0)
 (opts, _) = options.parse_args()
 # </editor-fold>
 
@@ -49,16 +48,23 @@ from digtextsimilaritysearch.process_documents.document_processor \
 """
 Requires USE-liteBatch-v2 running in docker for vectorization
 
-First make Batch service model:
-    (from dig-text-similarity-search/)
+First make service model:
+    $ ./prep_service_model.sh
+    OR
     $ source activate dig_text_similarity
-    $ python digtextsimilaritysearch/vectorizer/make_service_model -b
+    $ python make_service_model.py
 
 Then run docker:
+    $ ./run_service_model.sh
+    OR
     $ docker pull tensorflow/serving
     $ docker run -p 8501:8501 \ 
         --mount type=bind,source={/path/to}/USE-lite-v2/,target=/models/USE-lite-v2 \ 
         -e MODEL_NAME=USE-lite-v2 -t tensorflow/serving
+        
+To run this script:
+    $ python docker_streaming_preprocessor.py \ 
+        -i {/path/to/split/sents.jl} -o {/path/to/write/shard.index} -r -d
 
 
 Options:
@@ -81,11 +87,6 @@ Options:
     -u  If -a is True, -u can be used to specify where to put() the new index 
             (default http://localhost:5954/faiss')
             * Note: url must end with '/faiss'
-
-    -s  Development param: If preprocessing was interrupted after several 
-            sub.index files were created, but before the on-disk shard was merged, 
-            use -s <int:n_files_to_reuse> to reuse existing intermediate files. 
-            * Note: Do NOT reuse partially created intermediate files
 """
 
 
@@ -242,30 +243,27 @@ def main():
             if opts.report:
                 print('  Starting doc batch:  {:3d}'.format(i+1))
 
+            # Vectorize
+            batched_embs = list()
+            for m in range(0, len(batched_sents), 512):
+                batched_embs.extend(dp.vectorizer.make_vectors(batched_sents[m:m+512]))
+
+            # Numpify outputs
+            batched_embs = np.asarray(batched_embs, dtype=np.float32)
+
+            t_vect = time()
+            if opts.report:
+                print('  * Vectorized in {:6.2f}s'.format(t_vect - t_0))
+
+            # Make faiss subindex
             subidx = str(raw_jl.split('/')[-1]).replace('.jl', '_{:03d}.index'.format(i))
             subidx_path = os.path.join(subidx_dir, subidx)
-
-            if i < opts.skip:
-                assert os.path.exists(subidx_path), \
-                    'Warning: File does not exist: {} \nAborting...'.format(subidx_path)
-                dp.index_builder.extend_invlist_paths([subidx_path])
-            else:
-                # Vectorize
-                batched_embs = dp.vectorizer.make_vectors(batched_sents)
-                t_vect = time()
-                if opts.report:
-                    print('  * Vectorized in {:6.2f}s'.format(t_vect - t_0))
-
-                # Numpify outputs
-                batched_embs = np.asarray(batched_embs, dtype=np.float32)
-
-                # Make faiss subindex
-                subidx_path = check_unique(path=subidx_path)
-                dp.index_embeddings_on_disk(embeddings=batched_embs, sent_ids=batched_ids,
-                                            path_to_invlist=subidx_path)
-                t_subidx = time()
-                if opts.report:
-                    print('  * Subindexed in {:6.2f}s'.format(t_subidx - t_vect))
+            subidx_path = check_unique(path=subidx_path)
+            dp.index_embeddings_on_disk(embeddings=batched_embs, sent_ids=batched_ids,
+                                        path_to_invlist=subidx_path)
+            t_subidx = time()
+            if opts.report:
+                print('  * Subindexed in {:6.2f}s'.format(t_subidx - t_vect))
 
             if opts.report:
                 mp, sp = divmod(time() - t_start, 60)

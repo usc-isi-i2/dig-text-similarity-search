@@ -12,7 +12,15 @@ options.add_option('-v', '--version', default='001')
 Makes file to run Universal Sentence Encoder with docker 
     for efficient vectorization
 
-To run docker:
+First run this script with:
+    $ ./prep_service_model.sh
+    OR
+    $ source activate dig_text_similarity 
+    $ python make_service_model.py -v {version int}
+
+Then run docker with:
+    $ ./run_service_model.sh
+    OR 
     $ docker pull tensorflow/serving
     $ docker run -p 8501:8501 \ 
         --mount type=bind,source={/path/to}/USE-lite-v2/,target=/models/USE-lite-v2 \ 

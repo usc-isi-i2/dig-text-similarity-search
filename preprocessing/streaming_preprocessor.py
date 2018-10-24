@@ -255,6 +255,16 @@ def main():
                 if opts.report:
                     print('  * Vectorized in {:6.2f}s'.format(t_vect - t_0))
 
+                # Numpify
+                if not isinstance(batched_embs, np.ndarray):
+                    batched_embs = np.vstack(batched_embs).astype(np.float32)
+                if not isinstance(batched_ids, np.ndarray):
+                    try:
+                        batched_ids = np.array(batched_ids, dtype=np.int64)
+                    except ValueError:
+                        print(batched_ids)
+                        raise ValueError
+
                 # Make faiss subindex
                 subidx_path = check_unique(path=subidx_path)
                 dp.index_embeddings_on_disk(embeddings=batched_embs, sent_ids=batched_ids,

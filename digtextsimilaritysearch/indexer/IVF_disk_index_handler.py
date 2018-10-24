@@ -9,15 +9,15 @@ class DeployIVF(BaseIndex):
     :param nprobe: Number of clusters to visit during search
         (speed accuracy trade-off)
     """
-    def __init__(self, index_dir_path, nprobe: int = 32):
+    def __init__(self, index_dir, nprobe: int = 32):
         BaseIndex.__init__(self)
-        path_to_index = self.get_index_paths(index_dir_path)
+        path_to_index = self.get_index_paths(index_dir)
         self.index = faiss.read_index(path_to_index[0])
         self.index.nprobe = nprobe
 
     def index_embeddings(self, embeddings: np.array, faiss_ids: np.array):
-        print('WARNING: Cannot add to index')
-        print('   Hint: Use the DiskBuilderIVF class for adding to an index')
+        print('WARNING: Cannot add to index \n'
+              '   Hint: Use the DiskBuilderIVF class for adding to an index')
 
 
 class DeployShards(BaseIndex):
@@ -55,17 +55,17 @@ class DeployShards(BaseIndex):
 
     def add_shard(self, new_shard_path: str):
         if new_shard_path in self.paths_to_shards:
-            print('WARNING: This shard is already online')
-            print('         Aborting...')
+            print('WARNING: This shard is already online \n'
+                  '         Aborting...')
             return
         self.paths_to_shards.append(new_shard_path)
         shard = self.load_shard(path_to_shard=new_shard_path, nprobe=self.nprobe)
         self.index.add_shard(shard)
 
     def index_embeddings(self, embeddings: np.array, faiss_ids: np.array):
-        print('WARNING: Cannot add to index shards')
-        print('   Hint: Use the DiskBuilderIVF class for adding to an index '
-              'or self.add_shard(path) to deploy a new shard')
+        print('WARNING: Cannot add to index shards \n'
+              '   Hint: Use the DiskBuilderIVF class for adding to an index '
+              'or self.add_shard(path) to add a new searchable shard')
 
 
 class DiskBuilderIVF(BaseIndex):

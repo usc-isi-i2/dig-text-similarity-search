@@ -1,15 +1,14 @@
 # Connect to TF Env
 source activate dig_text_similarity
+printf "\n"
 
 
 # Update Docker TF Serving 
-printf "\n"
 docker pull tensorflow/serving
+printf "\n"
 
 
 # Construct Docker Run Instructions
-printf "\n"
-
 PORT=8501
 
 VECTORIZER_NAME="USE-lite-v2"
@@ -21,7 +20,7 @@ MOUNT_INSTRUCTIONS="type=bind,source=$MODEL_DIR,target=/models/$VECTORIZER_NAME"
 
 
 # Run It
-docker run -d -p "$PORT:$PORT" --mount "$MOUNT_INSTRUCTIONS" -e "MODEL_NAME=$VECTORIZER_NAME" -t tensorflow/serving -d
+docker run -d -p "$PORT:$PORT" --mount "$MOUNT_INSTRUCTIONS" -e "MODEL_NAME=$VECTORIZER_NAME" -t tensorflow/serving
 
 
 # Report Status

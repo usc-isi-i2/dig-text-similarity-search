@@ -255,15 +255,6 @@ def main():
                 if opts.report:
                     print('  * Vectorized in {:6.2f}s'.format(t_vect - t_0))
 
-                # # Save to .npz
-                # npz_path = check_unique(path=npz_path)
-                # dp.vectorizer.save_with_ids(file_path=npz_path, embeddings=batched_embs,
-                #                             sentences=batched_sents, sent_ids=batched_ids,
-                #                             compressed=opts.compress)
-                # t_npz = time()
-                # if opts.report:
-                #     print('  * Saved .npz in {:6.2f}s'.format(t_npz - t_vect))
-
                 # Make faiss subindex
                 subidx_path = check_unique(path=subidx_path)
                 dp.index_embeddings_on_disk(embeddings=batched_embs, sent_ids=batched_ids,

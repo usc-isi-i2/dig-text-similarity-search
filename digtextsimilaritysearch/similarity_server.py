@@ -38,11 +38,13 @@ def hello():
 def text_similarity_search():
     query = request.args.get("query", None)
     k = request.args.get("k", 10)
+    rerank_by_doc = request.args.get("rerank_by_doc", False)
 
     if not query:
         return jsonify({"message": "The service is not able to process null request"}), 400
 
     try:
+        # TODO when merged pass the rerank_by_doc to dp.query_text method
         results = dp.query_text(query, k=int(k))
     except Exception as e:
         return jsonify({"message": str(e)}), 500

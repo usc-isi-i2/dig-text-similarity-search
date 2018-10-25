@@ -81,12 +81,16 @@ class DocumentProcessor(object):
             - If fetch_docs == True, we call elasticsearch and retrieve the text of the documents that matched
             - If False, we only return the ids and the scores of the sentence and document
 
-            By Sentence: [ {'score': diff_score <float32>, 'sentence_id': str(<int64>)} ]
+            By Sentence: [ {'score': diff_score <float32>,          # Lower is better
+                            'sentence_id': str(<int64>)
+                            } ]
                   Where: doc_id <int64>, sent_id <int64> = divmod(int('sentence_id'), 10000)
 
-            By Document: [ {'doc_id': str(doc_id),
-                        'id_score_tups': [ (str(sent_id), diff_score <float32>) ],
-                        'doc_score': doc_relevance <float32>} ]
+            By Document: [ {'score': doc_relevance <float32>,       # Higher is better
+                            'doc_id': str(doc_id),
+                            'sentence_id': [ str(sent_id) ],
+                            'sentence_scores': [ diff_score <float32> ]
+                            } ]
         """
 
         if not isinstance(str_query, list):
@@ -113,8 +117,8 @@ class DocumentProcessor(object):
         print('  Faiss search time: {:0.6f}s'.format(t_search))
 
         if rerank_by_doc:
-            return self.rerank_by_docs(scores=scores[0], faiss_ids=faiss_ids[0], k=k,
-                                       debug=debug)
+            return self.rerank_by_docs(scores=scores[0], faiss_ids=faiss_ids[0],
+                                       k=k, debug=debug)
         else:
             return self.rerank_by_sents(scores=scores[0], faiss_ids=faiss_ids[0],
                                         k=k, fetch_sentences=fetch_sentences,
@@ -128,33 +132,32 @@ class DocumentProcessor(object):
             doc_id = str(doc_id)
             if doc_id not in docs:
                 docs[doc_id] = dict()
-                docs[doc_id]['id_score_tups'] = list()
+                docs[doc_id]['sentence_id'] = list()
+                docs[doc_id]['sentence_scores'] = list()
                 docs[doc_id]['unique_scores'] = set()
                 docs[doc_id]['sent_ids'] = list()
-            id_score = (str(sent_id), score)
-            docs[doc_id]['id_score_tups'].append(id_score)
+            docs[doc_id]['sentence_id'].append(str(sent_id))
+            docs[doc_id]['sentence_scores'].append(score)
             docs[doc_id]['sent_ids'].append(faiss_id)
             if score not in docs[doc_id]['unique_scores']:
                 docs[doc_id]['unique_scores'].add(score)
             if debug:
-                print('  (Sent ID, Diff score): {}'.format(id_score))
+                print('  (Sent ID, Diff score): {}'.format(str(sent_id), score))
 
         similar_docs = list()
         unique_doc_scores = set()
         for doc_id, ids_and_scores in docs.items():
             out = dict()
             out['doc_id'] = doc_id
-            out['id_score_tups'] = ids_and_scores['id_score_tups']
+            out['sentence_id'] = ids_and_scores['sentence_id']
             norm_scores = [min(1/sc, 5) for sc in ids_and_scores['unique_scores']]
-            out['doc_score'] = sum(norm_scores)
-            out['score'] = 1/sum(norm_scores)
-            out['sentence_id'] = sorted(ids_and_scores['sent_ids'], reverse=True)[0]
-            if out['doc_score'] not in unique_doc_scores:
+            out['score'] = sum(norm_scores)
+            if out['score'] not in unique_doc_scores:
                 similar_docs.append(out)
-                unique_doc_scores.add(float(out['doc_score']))
+                unique_doc_scores.add(float(out['score']))
             if debug:
-                print('  Doc score: {}'.format(out['doc_score']))
-        similar_docs.sort(key=lambda ds: ds['doc_score'], reverse=True)
+                print('  Doc score: {}'.format(out['score']))
+        similar_docs.sort(key=lambda ds: ds['score'], reverse=True)
         return similar_docs[:k]
 
     def rerank_by_sents(self, scores, faiss_ids, k,

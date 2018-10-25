@@ -1,5 +1,4 @@
 import numpy as np
-from typing import List
 from time import time, sleep
 
 _SENTENCE_ID = 'sentence_id'

@@ -44,8 +44,7 @@ def text_similarity_search():
         return jsonify({"message": "The service is not able to process null request"}), 400
 
     try:
-        # TODO when merged pass the rerank_by_doc to dp.query_text method
-        results = dp.query_text(query, k=int(k))
+        results = dp.query_text(query, k=int(k), rerank_by_doc=rerank_by_doc)
     except Exception as e:
         return jsonify({"message": str(e)}), 500
 

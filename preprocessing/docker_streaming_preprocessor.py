@@ -14,10 +14,8 @@ options.add_option('-b', '--base_index_path', default=base_index_dir)
 options.add_option('-m', '--m_per_batch', type='int', default=512*128)
 options.add_option('-r', '--report', action='store_true', default=False)
 options.add_option('-d', '--delete_tmp_files', action='store_true', default=False)
-options.add_option('-c', '--compress', action='store_true', default=False)
 options.add_option('-a', '--add_shard', action='store_true', default=False)
 options.add_option('-u', '--url', default='http://localhost:5954/faiss')
-options.add_option('-s', '--skip', type='int', default=0)
 (opts, _) = options.parse_args()
 # </editor-fold>
 
@@ -42,16 +40,32 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from digtextsimilaritysearch.indexer.IVF_disk_index_handler \
     import DiskBuilderIVF
 from digtextsimilaritysearch.vectorizer.sentence_vectorizer \
-    import SentenceVectorizer
+    import DockerVectorizer
 from digtextsimilaritysearch.process_documents.document_processor \
     import DocumentProcessor
 
 
 """
+Requires USE-liteBatch-v2 running in docker for vectorization
+
+First make service model:
+    $ ./prep_service_model.sh
+    OR
+    $ source activate dig_text_similarity
+    $ python make_service_model.py
+
+Then run docker:
+    $ ./run_service_model.sh
+    OR
+    $ docker pull tensorflow/serving
+    $ docker run -p 8501:8501 \ 
+        --mount type=bind,source={/path/to}/USE-lite-v2/,target=/models/USE-lite-v2 \ 
+        -e MODEL_NAME=USE-lite-v2 -t tensorflow/serving
+        
 To run this script:
-    (from dig-text-similarity-search/)
-    $ python preprocessing/docker_streaming_preprocessor.py \ 
+    $ python docker_streaming_preprocessor.py \ 
         -i {/path/to/split/sents.jl} -o {/path/to/write/shard.index} -r -d
+
 
 Options:
     -i  Path to raw news dir
@@ -62,24 +76,17 @@ Options:
             (default progress.txt)
     -b  Path to empty, pre-trained faiss index 
             (default ../saved_indexes/IVF16K_indexes/emptyTrainedIVF16384.index)
-    -m  Minimum number of sentences/vectors per .npz/.index 
+    -m  Minimum number of sentences/vectors per .index 
             (default 512*128)
     -r  Bool to toggle prints 
             (default False)
-    -d  Bool to delete intermediate .npz/.index files 
+    -d  Bool to delete intermediate .index files 
             (default False)
-    -c  Bool to compress .npz files, which takes longer 
-            (default False) 
     -a  Bool to automatically add the created shard to the similarity server 
             (default False)
     -u  If -a is True, -u can be used to specify where to put() the new index 
             (default http://localhost:5954/faiss')
             * Note: url must end with '/faiss'
-
-    -s  Development param: If preprocessing was interrupted after several 
-            .npz/sub.index files were created, but before the on-disk shard was merged, 
-            use -s <int:n_files_to_reuse> to reuse existing intermediate files. 
-            * Note: Do NOT reuse partially created intermediate files
 """
 
 
@@ -199,23 +206,20 @@ else:
 
 intermediate_dir = os.path.abspath(os.path.join(input_dir, '../intermediate_files/'))
 daily_dir = os.path.join(intermediate_dir, date)
-npz_dir = os.path.join(daily_dir, 'npzs')
 subidx_dir = os.path.join(daily_dir, 'subindexes')
 if not os.path.isdir(intermediate_dir):
     os.mkdir(intermediate_dir)
 if not os.path.isdir(daily_dir):
     os.mkdir(daily_dir)
-if not os.path.isdir(npz_dir):
-    os.mkdir(npz_dir)
 if not os.path.isdir(subidx_dir):
     os.mkdir(subidx_dir)
 
 
 # Init DocumentProcessor
 idx_bdr = DiskBuilderIVF(path_to_empty_index=opts.base_index_path)
-sv = SentenceVectorizer()
+dv = DockerVectorizer()
 dp = DocumentProcessor(indexer=None, index_builder=idx_bdr,
-                       vectorizer=sv, storage_adapter=None)
+                       vectorizer=dv, storage_adapter=None)
 
 
 # Preprocessing
@@ -239,64 +243,33 @@ def main():
             if opts.report:
                 print('  Starting doc batch:  {:3d}'.format(i+1))
 
-            npz = str(raw_jl.split('/')[-1]).replace('.jl', '_{:03d}.npz'.format(i))
-            npz_path = os.path.join(npz_dir, npz)
-            subidx = 'subidx_' + str(npz_path.split('/')[-1]).replace('.npz', '.index')
+            # Vectorize
+            batched_embs = list()
+            for m in range(0, len(batched_sents), 512):
+                batched_embs.extend(dp.vectorizer.make_vectors(batched_sents[m:m+512]))
+
+            # Numpify outputs
+            batched_embs = np.asarray(batched_embs, dtype=np.float32)
+
+            t_vect = time()
+            if opts.report:
+                print('  * Vectorized in {:6.2f}s'.format(t_vect - t_0))
+
+            # Make faiss subindex
+            subidx = str(raw_jl.split('/')[-1]).replace('.jl', '_{:03d}.index'.format(i))
             subidx_path = os.path.join(subidx_dir, subidx)
-
-            if i < opts.skip:
-                assert os.path.exists(subidx_path), \
-                    'Warning: File does not exist: {} \nAborting...'.format(subidx_path)
-                dp.index_builder.extend_invlist_paths([subidx_path])
-            else:
-                # Vectorize
-                batched_embs = dp.vectorizer.make_vectors(batched_sents)
-                t_vect = time()
-                if opts.report:
-                    print('  * Vectorized in {:6.2f}s'.format(t_vect - t_0))
-
-                # Numpify
-                if not isinstance(batched_embs, np.ndarray):
-                    batched_embs = np.vstack(batched_embs).astype(np.float32)
-                if not isinstance(batched_ids, np.ndarray):
-                    try:
-                        batched_ids = np.array(batched_ids, dtype=np.int64)
-                    except ValueError:
-                        print(batched_ids)
-                        raise ValueError
-
-                # Make faiss subindex
-                subidx_path = check_unique(path=subidx_path)
-                dp.index_embeddings_on_disk(embeddings=batched_embs, sent_ids=batched_ids,
-                                            path_to_invlist=subidx_path)
-                t_subidx = time()
-                if opts.report:
-                    print('  * Subindexed in {:6.2f}s'.format(t_subidx - t_vect))
-
-                # Clear graph
-                del batched_embs, batched_sents, batched_ids
-                dp.vectorizer.close_session()
-                t_reset = time()
-                if opts.report:
-                    print('  * Cleared TF in {:6.2f}s'.format(t_reset - t_subidx))
-
-                # Restart TF session if necessary
-                if i < n_batches - 1:
-                    dp.vectorizer.start_session()
-                    if opts.report:
-                        print('  * Started TF in {:6.2f}s'.format(time() - t_reset))
+            subidx_path = check_unique(path=subidx_path)
+            dp.index_embeddings_on_disk(embeddings=batched_embs, sent_ids=batched_ids,
+                                        path_to_invlist=subidx_path)
+            t_subidx = time()
+            if opts.report:
+                print('  * Subindexed in {:6.2f}s'.format(t_subidx - t_vect))
 
             if opts.report:
                 mp, sp = divmod(time() - t_start, 60)
                 print('  Completed doc batch: {:3d}/{}      '
                       '  Total time passed: {:3d}m{:0.2f}s\n'
                       ''.format(i+1, n_batches, int(mp), sp))
-
-        # Clear .npz files before merge
-        if opts.delete_tmp_files:
-            clear(npz_dir)
-            if opts.report:
-                print('  Cleared .npz files')
 
         # Merge
         t_merge = time()

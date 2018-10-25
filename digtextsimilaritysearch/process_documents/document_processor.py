@@ -1,3 +1,4 @@
+import numpy as np
 from typing import List
 from time import time, sleep
 
@@ -98,16 +99,20 @@ class DocumentProcessor(object):
         t_0 = time()
         query_vector = self.vectorizer.make_vectors(str_query)
         t_vector = time() - t_0
-        if isinstance(query_vector, list):
-            query_vector = query_vector[0]
         print('  TF vectorization time: {:0.6f}s'.format(t_vector))
+
+        if isinstance(query_vector[0], np.ndarray):
+            query_vector = query_vector[0]
+        if not isinstance(query_vector, np.ndarray):
+            query_vector = np.asarray(query_vector, dtype=np.float32)
 
         if rerank_by_doc:
             k_search = max(500, k * 100)
         else:
             k_search = max(50, k * 10)
-        t_1 = time()
+
         # TODO: change start/end params to be dates (not list indices)
+        t_1 = time()
         if self.indexer.dynamic:
             scores, faiss_ids = self.indexer.search(query_vector, k_search,
                                                     start=start, end=end)
@@ -285,6 +290,14 @@ class DocumentProcessor(object):
             assert sent_ids.shape[0] == vectors.shape[0], \
                 'Found {} sent_ids and {} vectors'.format(sent_ids.shape[0], vectors.shape[0])
             self.index_builder.generate_invlist(path_to_invlist, sent_ids, vectors)
+        else:
+            raise Exception('Cannot index on disk without an index_builder')
+
+    def index_embeddings_on_disk(self, embeddings, sent_ids, path_to_invlist):
+        if self.index_builder:
+            assert sent_ids.shape[0] == embeddings.shape[0], \
+                'Found {} sent_ids and {} vectors'.format(sent_ids.shape[0], vectors.shape[0])
+            self.index_builder.generate_invlist(path_to_invlist, sent_ids, embeddings)
         else:
             raise Exception('Cannot index on disk without an index_builder')
 

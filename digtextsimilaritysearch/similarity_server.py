@@ -8,7 +8,7 @@ import json
 
 from indexer.IVF_disk_index_handler import DeployShards
 from process_documents.document_processor import DocumentProcessor
-from vectorizer.sentence_vectorizer import SentenceVectorizer
+from vectorizer.sentence_vectorizer import DockerVectorizer
 from storage.es_adapter import ESAdapter
 from config import config
 
@@ -16,10 +16,10 @@ app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
 print('Initializing Batch Vectorizer')
-query_vectorizer = SentenceVectorizer()
+query_vectorizer = DockerVectorizer()
 
 print('Initializing Faiss Indexer')
-faiss_indexer = DeployShards(paths_to_shards=config['faiss_index_path'])
+faiss_indexer = DeployShards(config['faiss_index_path'])
 
 print('Initializing ES Adapter')
 es_adapter = ESAdapter(es_endpoint=config['es_endpoint'])
@@ -38,11 +38,13 @@ def hello():
 def text_similarity_search():
     query = request.args.get("query", None)
     k = request.args.get("k", 10)
+    rerank_by_doc = request.args.get("rerank_by_doc", False)
 
     if not query:
         return jsonify({"message": "The service is not able to process null request"}), 400
 
     try:
+        # TODO when merged pass the rerank_by_doc to dp.query_text method
         results = dp.query_text(query, k=int(k))
     except Exception as e:
         return jsonify({"message": str(e)}), 500

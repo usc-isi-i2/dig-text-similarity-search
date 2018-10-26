@@ -156,8 +156,14 @@ class DocumentProcessor(object):
             out = dict()
             out['doc_id'] = doc_id
             out['sentence_id'] = ids_and_scores['sentence_id']
-            norm_scores = [min(1/sc, 5) for sc in ids_and_scores['unique_scores']]
-            out['score'] = sum(norm_scores)
+
+            # New score
+            top_scores = sorted(list(ids_and_scores['unique_scores']))
+            norm_scores = [min(1/sc, 10) for sc in top_scores[:5]]
+            new_score = sum(norm_scores)
+
+            # Assign score
+            out['score'] = new_score
             if out['score'] not in unique_doc_scores:
                 similar_docs.append(out)
                 unique_doc_scores.add(float(out['score']))

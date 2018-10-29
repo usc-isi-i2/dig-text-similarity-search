@@ -14,7 +14,6 @@ options.add_option('-b', '--base_index_path', default=base_index_dir)
 options.add_option('-m', '--m_per_batch', type='int', default=512*128)
 options.add_option('-r', '--report', action='store_true', default=False)
 options.add_option('-d', '--delete_tmp_files', action='store_true', default=False)
-options.add_option('-c', '--compress', action='store_true', default=False)
 options.add_option('-a', '--add_shard', action='store_true', default=False)
 options.add_option('-u', '--url', default='http://localhost:5954/faiss')
 options.add_option('-s', '--skip', type='int', default=0)
@@ -62,14 +61,12 @@ Options:
             (default progress.txt)
     -b  Path to empty, pre-trained faiss index 
             (default ../saved_indexes/IVF16K_indexes/emptyTrainedIVF16384.index)
-    -m  Minimum number of sentences/vectors per .npz/.index 
+    -m  Minimum number of sentences per batch 
             (default 512*128)
     -r  Bool to toggle prints 
             (default False)
-    -d  Bool to delete intermediate .npz/.index files 
+    -d  Bool to delete intermediate .index files 
             (default False)
-    -c  Bool to compress .npz files, which takes longer 
-            (default False) 
     -a  Bool to automatically add the created shard to the similarity server 
             (default False)
     -u  If -a is True, -u can be used to specify where to put() the new index 
@@ -77,7 +74,7 @@ Options:
             * Note: url must end with '/faiss'
 
     -s  Development param: If preprocessing was interrupted after several 
-            .npz/sub.index files were created, but before the on-disk shard was merged, 
+            sub.index files were created, but before the on-disk shard was merged, 
             use -s <int:n_files_to_reuse> to reuse existing intermediate files. 
             * Note: Do NOT reuse partially created intermediate files
 """
@@ -199,14 +196,11 @@ else:
 
 intermediate_dir = os.path.abspath(os.path.join(input_dir, '../intermediate_files/'))
 daily_dir = os.path.join(intermediate_dir, date)
-npz_dir = os.path.join(daily_dir, 'npzs')
 subidx_dir = os.path.join(daily_dir, 'subindexes')
 if not os.path.isdir(intermediate_dir):
     os.mkdir(intermediate_dir)
 if not os.path.isdir(daily_dir):
     os.mkdir(daily_dir)
-if not os.path.isdir(npz_dir):
-    os.mkdir(npz_dir)
 if not os.path.isdir(subidx_dir):
     os.mkdir(subidx_dir)
 
@@ -222,7 +216,7 @@ dp = DocumentProcessor(indexer=None, index_builder=idx_bdr,
 def main():
     for raw_jl in file_to_process:
         if opts.report:
-            print('\nProcessing: {}'.format(raw_jl))
+            print('\nReading file: {}'.format(raw_jl))
 
         doc_count, line_count, junk, n_batches = check_docs(file_path=raw_jl,
                                                             b_size=opts.m_per_batch)
@@ -239,9 +233,7 @@ def main():
             if opts.report:
                 print('  Starting doc batch:  {:3d}'.format(i+1))
 
-            npz = str(raw_jl.split('/')[-1]).replace('.jl', '_{:03d}.npz'.format(i))
-            npz_path = os.path.join(npz_dir, npz)
-            subidx = 'subidx_' + str(npz_path.split('/')[-1]).replace('.npz', '.index')
+            subidx = str(raw_jl.split('/')[-1]).replace('.jl', '_{:03d}_sub.index'.format(i))
             subidx_path = os.path.join(subidx_dir, subidx)
 
             if i < opts.skip:
@@ -291,12 +283,6 @@ def main():
                 print('  Completed doc batch: {:3d}/{}      '
                       '  Total time passed: {:3d}m{:0.2f}s\n'
                       ''.format(i+1, n_batches, int(mp), sp))
-
-        # Clear .npz files before merge
-        if opts.delete_tmp_files:
-            clear(npz_dir)
-            if opts.report:
-                print('  Cleared .npz files')
 
         # Merge
         t_merge = time()

@@ -14,7 +14,7 @@ PORT=8501
 VECTORIZER_NAME="USE-lite-v2"
 
 SHELL_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" > /dev/null && pwd )"
-MODEL_DIR="SHELL_DIR/service_models/$VECTORIZER_NAME/"
+MODEL_DIR="$SHELL_DIR/service_models/$VECTORIZER_NAME/"
 
 MOUNT_INSTRUCTIONS="type=bind,source=$MODEL_DIR,target=/models/$VECTORIZER_NAME"
 

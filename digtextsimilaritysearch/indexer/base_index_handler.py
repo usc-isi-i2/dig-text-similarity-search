@@ -6,6 +6,7 @@ import numpy as np
 class BaseIndex(object):
     def __init__(self):
         self.index = None
+        self.dynamic = False
 
     @staticmethod
     def get_index_paths(index_dir_path):

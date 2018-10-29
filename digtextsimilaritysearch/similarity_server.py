@@ -5,6 +5,8 @@ from flask_cors import CORS
 
 import os
 import json
+import sys
+import traceback
 
 from indexer.IVF_disk_index_handler import DeployShards
 from process_documents.document_processor import DocumentProcessor
@@ -46,6 +48,9 @@ def text_similarity_search():
     try:
         results = dp.query_text(query, k=int(k), rerank_by_doc=rerank_by_doc)
     except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+        print(''.join(lines))
         return jsonify({"message": str(e)}), 500
 
     return json.dumps(results), 200

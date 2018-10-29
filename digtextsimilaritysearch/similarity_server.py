@@ -38,8 +38,8 @@ def hello():
 def text_similarity_search():
     query = request.args.get("query", None)
     k = request.args.get("k", 10)
-    rerank_by_doc = request.args.get("rerank_by_doc", False)
-
+    rerank_by_doc = request.args.get("rerank_by_doc", 'false')
+    rerank_by_doc = str(rerank_by_doc).lower() == 'true'
     if not query:
         return jsonify({"message": "The service is not able to process null request"}), 400
 

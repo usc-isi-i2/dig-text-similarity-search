@@ -311,7 +311,7 @@ class DocumentProcessor(object):
     @staticmethod
     def consistent(scores, ids):
         consistent_results = dict()
-        for score, id in zip(scores, ids):
+        for score, id in zip(scores[0], ids[0]):
             if score not in consistent_results:
                 consistent_results[score] = list()
             consistent_results[score].append(id)
@@ -326,5 +326,5 @@ class DocumentProcessor(object):
                 con_scores.append(score)
                 con_ids.append(id)
 
-        assert con_scores == scores
-        return con_scores, con_ids
+        # assert con_scores == scores
+        return [con_scores], [con_ids]

@@ -120,6 +120,7 @@ class DocumentProcessor(object):
         t_search = time() - t_1
         print('  Faiss search time: {:0.6f}s'.format(t_search))
 
+        scores, faiss_ids = self.consistent(scores, faiss_ids)
         if rerank_by_doc:
             return self.rerank_by_docs(scores=scores[0], faiss_ids=faiss_ids[0],
                                        k=k, debug=debug)
@@ -306,3 +307,24 @@ class DocumentProcessor(object):
             return ntotal
         else:
             raise Exception('Cannot build index on disk without an index_builder')
+
+    @staticmethod
+    def consistent(scores, ids):
+        consistent_results = dict()
+        for score, id in zip(scores, ids):
+            if score not in consistent_results:
+                consistent_results[score] = list()
+            consistent_results[score].append(id)
+
+        for score in consistent_results:
+            consistent_results[score].sort()
+
+        con_scores = list()
+        con_ids = list()
+        for score, sids in consistent_results.items():
+            for id in sids:
+                con_scores.append(score)
+                con_ids.append(id)
+
+        assert con_scores == scores
+        return con_scores, con_ids

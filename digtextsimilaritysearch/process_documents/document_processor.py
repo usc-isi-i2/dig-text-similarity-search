@@ -1,3 +1,4 @@
+import pickle
 import numpy as np
 from time import time, sleep
 from collections import OrderedDict
@@ -89,7 +90,7 @@ class DocumentProcessor(object):
 
             By Document: [ {'score': doc_relevance <float32>,       # Higher is better
                             'doc_id': str(doc_id),
-                            'sentence_id': [ str(sent_id) ],
+                            'sentence_id': [ str(faiss_id) ],
                             'sentence_scores': [ diff_score <float32> ]
                             } ]
         """
@@ -123,15 +124,12 @@ class DocumentProcessor(object):
 
         scores, faiss_ids = self.consistent(scores, faiss_ids)
         if rerank_by_doc:
-            return self.rerank_by_docs(scores=scores[0], faiss_ids=faiss_ids[0],
-                                       k=k, debug=debug)
+            return self.rerank(scores=scores[0], faiss_ids=faiss_ids[0], k=k, norm_sents=4)
         else:
-            return self.rerank_by_sents(scores=scores[0], faiss_ids=faiss_ids[0],
-                                        k=k, fetch_sentences=fetch_sentences,
-                                        t_vector=t_vector, t_search=t_search)
+            return self.rerank(scores=scores[0], faiss_ids=faiss_ids[0], k=k)
 
     @staticmethod
-    def rerank_by_docs(scores, faiss_ids, k, debug=False):
+    def rerank(scores, faiss_ids, k, norm_sents=1):
         docs = dict()
         for score, faiss_id in zip(scores, faiss_ids):
             doc_id, sent_id = divmod(faiss_id, 10000)
@@ -147,30 +145,34 @@ class DocumentProcessor(object):
             docs[doc_id]['sent_ids'].append(faiss_id)
             if score not in docs[doc_id]['unique_scores']:
                 docs[doc_id]['unique_scores'].add(score)
-            if debug:
-                print('  (Sent ID, Diff score): {}'.format(str(sent_id), score))
 
         similar_docs = list()
         unique_doc_scores = set()
+
         for doc_id, ids_and_scores in docs.items():
-            out = dict()
-            out['doc_id'] = doc_id
-            out['sentence_id'] = ids_and_scores['sentence_id']
+            if len(similar_docs) >= k:
+                break
 
-            # New score
-            top_scores = sorted(list(ids_and_scores['unique_scores']))
-            norm_scores = [min(1/sc, 10) for sc in top_scores[:5]]
-            new_score = sum(norm_scores)
+            doc_hits = pickle.dumps(ids_and_scores['unique_scores'])
+            if doc_hits in unique_doc_scores:
+                pass
+            else:
+                unique_doc_scores.add(doc_hits)
+                out = dict()
+                out['doc_id'] = doc_id
+                out['sentence_id'] = ids_and_scores['sentence_id']
 
-            # Assign score
-            out['score'] = new_score
-            if out['score'] not in unique_doc_scores:
+                # New score
+                top_scores = sorted(list(ids_and_scores['unique_scores']))
+                norm_scores = [min(1/sc, 10) for sc in top_scores[:norm_sents]]
+                new_score = sum(norm_scores)
+
+                # Assign score
+                out['score'] = new_score
                 similar_docs.append(out)
-                unique_doc_scores.add(float(out['score']))
-            if debug:
-                print('  Doc score: {}'.format(out['score']))
+
         similar_docs.sort(key=lambda ds: ds['score'], reverse=True)
-        return similar_docs[:k]
+        return similar_docs
 
     def rerank_by_sents(self, scores, faiss_ids, k,
                         fetch_sentences, t_vector, t_search):

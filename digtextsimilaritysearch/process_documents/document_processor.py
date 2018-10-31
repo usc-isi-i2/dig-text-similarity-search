@@ -124,9 +124,9 @@ class DocumentProcessor(object):
 
         scores, faiss_ids = self.consistent(scores, faiss_ids)
         if rerank_by_doc:
-            return self.rerank(scores=scores[0], faiss_ids=faiss_ids[0], k=k, norm_sents=4)
+            return self.rerank(scores=scores[0], faiss_ids=faiss_ids[0], k=k, norm_sents=3)
         else:
-            return self.rerank(scores=scores[0], faiss_ids=faiss_ids[0], k=k)
+            return self.rerank(scores=scores[0], faiss_ids=faiss_ids[0], k=k, norm_sents=1)
 
     @staticmethod
     def rerank(scores, faiss_ids, k, norm_sents=1):
@@ -164,7 +164,8 @@ class DocumentProcessor(object):
 
                 # New score
                 top_scores = sorted(list(ids_and_scores['unique_scores']))
-                norm_scores = [min(1/sc, 10) for sc in top_scores[:norm_sents]]
+                norm_scores = [min(1/sc, 10)*(1/i) for sc, i in
+                               zip(top_scores[:norm_sents], range(1, norm_sents + 1))]
                 new_score = sum(norm_scores)
 
                 # Assign score

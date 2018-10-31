@@ -164,7 +164,7 @@ class DocumentProcessor(object):
 
                 # New score
                 top_scores = sorted(list(ids_and_scores['unique_scores']))
-                norm_scores = [min(1/sc, 10)*(1/i) for sc, i in
+                norm_scores = [min(1/sc, 1/0.125)*(0.5 + 0.5*(1/i)) for sc, i in
                                zip(top_scores[:norm_sents], range(1, norm_sents + 1))]
                 new_score = sum(norm_scores)
 

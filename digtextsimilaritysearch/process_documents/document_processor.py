@@ -1,5 +1,6 @@
 import numpy as np
 from time import time, sleep
+from collections import OrderedDict
 
 _SENTENCE_ID = 'sentence_id'
 _SENTENCE_TEXT = 'sentence_text'
@@ -310,21 +311,21 @@ class DocumentProcessor(object):
 
     @staticmethod
     def consistent(scores, ids):
-        consistent_results = dict()
-        for score, id in zip(scores[0], ids[0]):
-            if score not in consistent_results:
-                consistent_results[score] = list()
-            consistent_results[score].append(id)
+        results = dict()
+        for score, sent_id in zip(scores[0], ids[0]):
+            if score not in results:
+                results[score] = list()
+            results[score].append(sent_id)
 
+        consistent_results = OrderedDict(sorted(results.items()))
         for score in consistent_results:
             consistent_results[score].sort()
 
         con_scores = list()
         con_ids = list()
         for score, sids in consistent_results.items():
-            for id in sids:
+            for sent_id in sids:
                 con_scores.append(score)
-                con_ids.append(id)
+                con_ids.append(sent_id)
 
-        # assert con_scores == scores
         return [con_scores], [con_ids]

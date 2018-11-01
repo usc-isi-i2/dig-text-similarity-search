@@ -162,15 +162,15 @@ class DocumentProcessor(object):
                 out['sentence_id'] = ids_and_scores['sentence_id']
 
                 # A: score ceiling
-                def alpha(diff_score, threshold=0.125):
+                def alpha(diff_score, threshold=0.2):
                     return min(1/diff_score, 1/threshold)
 
                 # B: doc length penalty
-                def beta(sent_number, threshold=5*norm_sents):
-                    return min(threshold/(1+int(sent_number)), 1)**1.5
+                def beta(sent_number, threshold=(20 + 5*norm_sents)):
+                    return min(threshold/(1+int(sent_number)), 1)**2
 
                 # C: diminishing contributions
-                def gamma(ith_sent, base_contrib=0.25):
+                def gamma(ith_sent, base_contrib=0.75):
                     return base_contrib + (1 - base_contrib)*(1/ith_sent)
 
                 top_scores = sorted(list(ids_and_scores['unique_scores']),

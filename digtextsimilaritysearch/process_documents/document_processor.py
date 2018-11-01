@@ -110,7 +110,7 @@ class DocumentProcessor(object):
         if rerank_by_doc:
             k_search = max(500, k * 100)
         else:
-            k_search = max(50, k * 10)
+            k_search = max(500, k * 10)
 
         # TODO: change start/end params to be dates (not list indices)
         t_1 = time()
@@ -144,7 +144,7 @@ class DocumentProcessor(object):
             docs[doc_id]['sentence_scores'].append(score)
             docs[doc_id]['sent_ids'].append(faiss_id)
             if score not in docs[doc_id]['unique_scores']:
-                docs[doc_id]['unique_scores'].add(score)
+                docs[doc_id]['unique_scores'].add((score, sent_id))
 
         similar_docs = list()
         unique_doc_scores = set()
@@ -153,7 +153,7 @@ class DocumentProcessor(object):
             if len(similar_docs) >= k:
                 break
 
-            doc_hits = pickle.dumps(ids_and_scores['unique_scores'])
+            doc_hits = pickle.dumps(ids_and_scores['sentence_scores'][:norm_sents])
             if doc_hits in unique_doc_scores:
                 pass
             else:
@@ -162,9 +162,23 @@ class DocumentProcessor(object):
                 out['doc_id'] = doc_id
                 out['sentence_id'] = ids_and_scores['sentence_id']
 
-                # New score
-                top_scores = sorted(list(ids_and_scores['unique_scores']))
-                norm_scores = [min(1/sc, 1/0.125)*(0.25 + 0.75*(1/i)) for sc, i in
+                # A: score ceiling
+                def alpha(diff_score, threshold=0.125):
+                    return min(1/diff_score, 1/threshold)
+
+                # B: doc length penalty
+                def beta(sent_number, threshold=5*norm_sents):
+                    return min(threshold/(1+int(sent_number)), 1)**1.5
+
+                # C: diminishing contributions
+                def gamma(ith_sent, base_contrib=0.25):
+                    return base_contrib + (1 - base_contrib)*(1/ith_sent)
+
+                top_scores = sorted(list(ids_and_scores['unique_scores']),
+                                    key=lambda sc_sid: sc_sid[0])
+
+                # Norm score = A * B * C
+                norm_scores = [alpha(sc) * beta(sid) * gamma(i) for (sc, sid), i in
                                zip(top_scores[:norm_sents], range(1, norm_sents + 1))]
                 new_score = sum(norm_scores)
 

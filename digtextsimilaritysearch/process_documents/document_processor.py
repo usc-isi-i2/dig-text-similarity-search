@@ -184,7 +184,7 @@ class DocumentProcessor(object):
                 break
             out = dict()
             out['score'] = 1/doc['score']
-            out['sentence_id'] = doc['doc_id'] + '{:04d}'.format(doc['sentence_id'][0])
+            out['sentence_id'] = doc['doc_id'] + '{:04d}'.format(int(doc['sentence_id'][0]))
             old_payload.append(out)
 
         return old_payload

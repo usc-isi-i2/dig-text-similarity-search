@@ -67,8 +67,7 @@ class DocumentProcessor(object):
                                          file_path=self.vector_save_path)
         return vectors
 
-    def query_text(self, str_query, k=3, fetch_sentences=False,
-                   rerank_by_doc=False, start=0, end=-1, debug=False):
+    def query_text(self, str_query, k=3, rerank_by_doc=False, start=0, end=-1):
         """
         :param str_query: The actual text for querying.
         :param k: Number of results required

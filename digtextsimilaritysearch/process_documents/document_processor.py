@@ -124,9 +124,9 @@ class DocumentProcessor(object):
 
         scores, faiss_ids = self.consistent(scores, faiss_ids)
         if rerank_by_doc:
-            return self.rerank(scores=scores[0], faiss_ids=faiss_ids[0], k=k, norm_sents=3)
+            return self.rerank(scores=scores[0], faiss_ids=faiss_ids[0], k=k, norm_sents=5)
         else:
-            return self.rerank(scores=scores[0], faiss_ids=faiss_ids[0], k=k, norm_sents=1)
+            return self.rerank_by_sents(scores=scores[0], faiss_ids=faiss_ids[0], k=k)
 
     @staticmethod
     def rerank(scores, faiss_ids, k, norm_sents=1):
@@ -164,7 +164,7 @@ class DocumentProcessor(object):
 
                 # New score
                 top_scores = sorted(list(ids_and_scores['unique_scores']))
-                norm_scores = [min(1/sc, 1/0.125)*(0.5 + 0.5*(1/i)) for sc, i in
+                norm_scores = [min(1/sc, 1/0.125)*(0.25 + 0.75*(1/i)) for sc, i in
                                zip(top_scores[:norm_sents], range(1, norm_sents + 1))]
                 new_score = sum(norm_scores)
 
@@ -175,50 +175,19 @@ class DocumentProcessor(object):
         similar_docs.sort(key=lambda ds: ds['score'], reverse=True)
         return similar_docs
 
-    def rerank_by_sents(self, scores, faiss_ids, k,
-                        fetch_sentences, t_vector, t_search):
-        similar_docs = list()
-        unique_scores = set()
-        unique_sentences = set()
-        for score, faiss_id in zip(scores, faiss_ids):
-            if len(similar_docs) >= k:
+    def rerank_by_sents(self, scores, faiss_ids, k):
+        similar_docs = self.rerank(scores, faiss_ids, k, norm_sents=2)
+
+        old_payload = list()
+        for doc in similar_docs:
+            if len(old_payload) >= k:
                 break
             out = dict()
-            out['score'] = float(score)
-            out['sentence_id'] = str(faiss_id)
+            out['score'] = 1/doc['score']
+            out['sentence_id'] = doc['doc_id'] + '{:04d}'.format(doc['sentence_id'][0])
+            old_payload.append(out)
 
-            doc_id, sent_id = divmod(faiss_id, 10000)
-            sentence_info = None
-            if fetch_sentences and self.storage_adapter.es_endpoint:
-                t_start = time()
-                sentence_info = self.storage_adapter.get_record(str(doc_id), self.table_name)
-                t_es = time() - t_start
-                out['es_query_time'] = t_es
-                if isinstance(sentence_info, list) and len(sentence_info) >= 1:
-                    sentence_info = sentence_info[0]
-
-            if sentence_info and fetch_sentences:
-                out['doc_id'] = str(doc_id)
-                out['vectorizer_time_taken'] = t_vector
-                out['faiss_query_time'] = t_search
-                if sent_id == 0:
-                    out['sentence'] = sentence_info['lexisnexis']['doc_title']
-                else:
-                    out['sentence'] = sentence_info['split_sentences'][sent_id-1]
-                if out['sentence'] not in unique_sentences \
-                        and score not in unique_scores:
-                    similar_docs.append(out)
-                    unique_scores.add(score)
-                    unique_sentences.add(str(out['sentence']))
-                else:
-                    pass
-            elif score not in unique_scores:
-                similar_docs.append(out)
-                unique_scores.add(score)
-            else:
-                pass
-
-        return similar_docs[:k]
+        return old_payload
 
     def index_documents(self, cdr_docs=None, load_vectors=False, column_family='dig',
                         save_faiss_index=False, batch_mode=False, batch_size=1000):

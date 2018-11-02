@@ -16,7 +16,7 @@ class BaseIndex(object):
                 if f.endswith('.index'):
                     index_paths.append(os.path.join(dir_path, f))
             break
-        return index_paths
+        return sorted(index_paths)
 
     def index_embeddings(self, embeddings: np.array, faiss_ids: np.array):
         raise NotImplementedError

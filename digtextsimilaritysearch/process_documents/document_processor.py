@@ -71,12 +71,9 @@ class DocumentProcessor(object):
         """
         :param str_query: The actual text for querying.
         :param k: Number of results required
-        :param fetch_sentences: Bool to fetch actual sentence text from the storage adapter
-            and send them back in the response json
         :param rerank_by_doc: Bool to return results ranked by docs or individual sentences
         :param start: TODO: merge shards by date range
         :param end: TODO: merge shards by date range
-        :param debug: Bool to toggle prints
 
         :return: List of top k results, where each result corresponds to a sentence that matched the query
             - If fetch_docs == True, we call elasticsearch and retrieve the text of the documents that matched
@@ -106,10 +103,7 @@ class DocumentProcessor(object):
         if not isinstance(query_vector, np.ndarray):
             query_vector = np.asarray(query_vector, dtype=np.float32)
 
-        if rerank_by_doc:
-            k_search = max(500, k * 100)
-        else:
-            k_search = max(500, k * 10)
+        k_search = max(500, k * 100)
 
         # TODO: change start/end params to be dates (not list indices)
         t_1 = time()
@@ -177,7 +171,7 @@ class DocumentProcessor(object):
                                     key=lambda sc_sid: sc_sid[0])
 
                 # Norm score = A * B * C
-                norm_scores = [alpha(sc) * beta(sid) * gamma(i) for (sc, sid), i in
+                norm_scores = [alpha(sc) for (sc, sid), i in
                                zip(top_scores[:norm_sents], range(1, norm_sents + 1))]
                 new_score = sum(norm_scores)
 
@@ -189,7 +183,7 @@ class DocumentProcessor(object):
         return similar_docs
 
     def rerank_by_sents(self, scores, faiss_ids, k):
-        similar_docs = self.rerank(scores, faiss_ids, k, norm_sents=2)
+        similar_docs = self.rerank(scores, faiss_ids, k, norm_sents=1)
 
         old_payload = list()
         for doc in similar_docs:

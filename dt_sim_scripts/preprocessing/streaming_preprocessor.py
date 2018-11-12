@@ -49,7 +49,7 @@ from dt_sim_api.process_documents.document_processor import DocumentProcessor
 """
 To run this script:
     (from dig-text-similarity-search/)
-    $ python preprocessing/docker_streaming_preprocessor.py \ 
+    $ python preprocessing/streaming_preprocessor.py \ 
         -i {/path/to/split/sents.jl} -o {/path/to/write/shard.index} -r -d
 
 Options:

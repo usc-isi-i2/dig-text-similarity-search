@@ -5,6 +5,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_hub as hub
 from typing import List
+from time import time
 
 
 class DockerVectorizer(object):
@@ -29,7 +30,7 @@ class DockerVectorizer(object):
 
 class SentenceVectorizer(object):
 
-    def __init__(self, path_to_model=None):
+    def __init__(self, path_to_model=None, intra=None, inter=None):
 
         model_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'model/'))
         model_loc = '1fb57c3ffe1a38479233ee9853ddd7a8ac8a8c47'
@@ -49,6 +50,15 @@ class SentenceVectorizer(object):
         self.define_graph()
         print('Done loading model')
 
+        if not intra:
+            intra = 8
+        if not inter:
+            inter = 2
+        self.config = tf.ConfigProto(device_count={'CPU': intra},
+                                     allow_soft_placement=True,
+                                     intra_op_parallelism_threads=intra,
+                                     inter_op_parallelism_threads=inter)
+
         self.session = None
         print('Initializing TF Session...')
         self.start_session()
@@ -59,7 +69,7 @@ class SentenceVectorizer(object):
             self.model = hub.Module(self.path_to_model)
 
     def start_session(self):
-        self.session = tf.Session()
+        self.session = tf.Session(config=self.config)
         with self.graph.as_default():
             self.session.run([tf.global_variables_initializer(), tf.tables_initializer()])
 
@@ -68,7 +78,10 @@ class SentenceVectorizer(object):
         tf.reset_default_graph()
         self.define_graph()
 
-    def make_vectors(self, sentences, batch_size=512) -> List[tf.Tensor]:
+    def make_vectors(self, sentences, batch_size=512, verbose=False) -> List[tf.Tensor]:
+        i = 0
+        t_st = time()
+        timing = list()
         embeddings = list()
         batched_tensors = list()
         if not isinstance(sentences, list):
@@ -86,13 +99,26 @@ class SentenceVectorizer(object):
 
                 while True:
                     try:
+                        t_0 = time()
                         embeddings.append(self.session.run(make_embeddings))
+                        if verbose:
+                            timing.append(time() - t_0)
+                            print('  ** {:5d}/{} : {:3.3f}s :: {:3.3f}s avg'
+                                  ''.format(i, len(batched_tensors),
+                                            timing[-1], sum(timing)/len(timing)))
+                            i += 1
                     except tf.errors.OutOfRangeError:
                         break
 
             if len(sentences):
+                t_1 = time()
                 basic_batch = self.model(sentences)
                 embeddings.append(self.session.run(basic_batch))
+                if verbose:
+                    tm, ts = divmod(time() - t_st, 60)
+                    print('  ** {:5d}/{} : {:3.3f}s :: {}m{:.1f}s tot'
+                          ''.format(i, len(batched_tensors),
+                                    time() - t_1, int(tm), ts))
 
         return embeddings
 
@@ -161,11 +187,16 @@ class SentenceVectorizer(object):
 
     # TODO: Depreciate load_vectors
     @staticmethod
-    def load_with_ids(file_path):
+    def load_with_ids(file_path, mmap=True):
         if not file_path.endswith('.npz'):
             file_path += '.npz'
 
-        loaded = np.load(file=file_path, mmap_mode='r')
+        if mmap:
+            mode = 'r'
+        else:
+            mode = None
+
+        loaded = np.load(file=file_path, mmap_mode=mode)
         embeddings = loaded['embeddings']
         sentences = loaded['sentences']
         sent_ids = loaded['sent_ids']

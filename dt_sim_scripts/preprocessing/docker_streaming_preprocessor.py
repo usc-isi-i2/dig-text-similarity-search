@@ -4,14 +4,15 @@ from optparse import OptionParser
 # <editor-fold desc="Parse Command Line Options">
 cwd = os.path.abspath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 prog_file_path = os.path.join(cwd, 'progress.txt')
-base_index_dir = os.path.abspath(os.path.join(cwd, '../saved_indexes/IVF16K_indexes/'
-                                                   'emptyTrainedIVF16384.index'))
+relative_base_path = '../../saved_indexes/USE_lite_base_IVF16K.index'
+base_index_path = os.path.abspath(os.path.join(cwd, relative_base_path))
+
 options = OptionParser()
 options.add_option('-i', '--input_dir')
 options.add_option('-o', '--output_dir')
 options.add_option('-t', '--num_threads')
 options.add_option('-p', '--progress_file', default=prog_file_path)
-options.add_option('-b', '--base_index_path', default=base_index_dir)
+options.add_option('-b', '--base_index_path', default=base_index_path)
 options.add_option('-m', '--m_per_batch', type='int', default=512*128)
 options.add_option('-r', '--report', action='store_true', default=False)
 options.add_option('-d', '--delete_tmp_files', action='store_true', default=False)
@@ -74,7 +75,7 @@ Options:
     -p  File to keep track of news that has already been processed 
             (default progress.txt)
     -b  Path to empty, pre-trained faiss index 
-            (default ../saved_indexes/IVF16K_indexes/emptyTrainedIVF16384.index)
+            (default ../saved_indexes/IVF16K_indexes/USE_lite_base_IVF16K.index)
     -m  Minimum number of sentences/vectors per .index 
             (default 512*128)
     -r  Bool to toggle prints 

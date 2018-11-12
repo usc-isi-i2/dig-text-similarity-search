@@ -4,12 +4,13 @@ from optparse import OptionParser
 # <editor-fold desc="Parse Command Line Options">
 cwd = os.path.abspath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 prog_file_path = os.path.join(cwd, 'progress.txt')
-base_index_dir = os.path.abspath(os.path.join(cwd, '../saved_indexes/IVF16K_indexes/'
-                                                   'emptyTrainedIVF16384.index'))
+relative_base_path = '../../saved_indexes/USE_lite_base_IVF16K.index'
+base_index_path = os.path.abspath(os.path.join(cwd, relative_base_path))
+
 options = OptionParser()
 options.add_option('-i', '--input_file')
 options.add_option('-t', '--num_threads')
-options.add_option('-b', '--base_index_path', default=base_index_dir)
+options.add_option('-b', '--base_index_path', default=base_index_path)
 options.add_option('-m', '--m_per_batch', type='int', default=512*128)
 options.add_option('-n', '--n_per_minibatch', type='int', default=128)
 options.add_option('-l', '--large', action='store_true', default=False)
@@ -54,7 +55,7 @@ Options:
     -t  Option to set thread budget for numpy to reduce CPU resource consumption 
             Useful if other tasks are running 
     -b  Path to empty, pre-trained faiss index 
-            (default ../saved_indexes/IVF16K_indexes/emptyTrainedIVF16384.index)
+            (default ../saved_indexes/IVF16K_indexes/USE_lite_base_IVF16K.index)
     -m  Minimum number of sentences per batch 
             (default 512*128)
     -l  Bool to use large Universal Sentence Encoder

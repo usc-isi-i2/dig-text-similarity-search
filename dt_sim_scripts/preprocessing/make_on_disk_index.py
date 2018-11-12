@@ -5,8 +5,8 @@ from time import time
 from optparse import OptionParser
 # <editor-fold desc="Parse Options">
 cwd = os.path.abspath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-base_index_path = os.path.abspath(os.path.join(cwd, '../saved_indexes/IVF16K_indexes/'
-                                                    'emptyTrainedIVF16384.index'))
+relative_base_path = '../../saved_indexes/USE_lite_base_IVF16K.index'
+base_index_path = os.path.abspath(os.path.join(cwd, relative_base_path))
 
 arg_parser = OptionParser()
 arg_parser.add_option('-i', '--input_npz_dir')

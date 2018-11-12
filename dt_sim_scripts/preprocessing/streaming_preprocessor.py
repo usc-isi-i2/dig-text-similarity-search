@@ -2,10 +2,9 @@
 import os
 from optparse import OptionParser
 # <editor-fold desc="Parse Command Line Options">
-cwd = os.path.abspath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-prog_file_path = os.path.join(cwd, 'progress.txt')
+prog_file_path = os.path.join(os.path.dirname(__file__), 'progress.txt')
 relative_base_path = '../../saved_indexes/USE_lite_base_IVF16K.index'
-base_index_path = os.path.abspath(os.path.join(cwd, relative_base_path))
+base_index_path = os.path.abspath(os.path.join(os.path.dirname(__file__), relative_base_path))
 
 options = OptionParser()
 options.add_option('-i', '--input_dir')
@@ -40,8 +39,10 @@ from time import time
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
+from dt_sim_api.data_reader.io_funcs \
+    import check_all_docs, aggregate_all_docs, check_unique, clear
+from dt_sim_api.vectorizer.sentence_vectorizer import SentenceVectorizer
 from dt_sim_api.indexer.IVF_disk_index_handler import DiskBuilderIVF
-from dt_sim_api.vectorizer import SentenceVectorizer
 from dt_sim_api.process_documents.document_processor import DocumentProcessor
 # </editor-fold>
 
@@ -78,78 +79,6 @@ Options:
             use -s <int:n_files_to_reuse> to reuse existing intermediate files. 
             * Note: Do NOT reuse partially created intermediate files
 """
-
-
-# Funcs
-def check_docs(file_path, b_size=512*128):
-    doc_count = 0
-    line_count = 0
-    junk_count = 0
-    with open(file_path, 'r') as jl:
-        for doc in jl:
-            document = json.loads(doc)
-            content = document['lexisnexis']['doc_description']
-            if content and not content == '' and not content == 'DELETED_STORY' \
-                    and 'split_sentences' in document and len(document['split_sentences']):
-                doc_count += 1
-                line_count += len(document['split_sentences']) + 1
-            else:
-                junk_count += 1
-    n_batches = divmod(line_count, b_size)[0] + 1
-    return doc_count, line_count, junk_count, n_batches
-
-
-def aggregate_docs(file_path, b_size=512*128):
-    batched_text = list()
-    batched_ids = list()
-    with open(file_path, 'r') as jl:
-        for doc in jl:
-            document = json.loads(doc)
-            content = document['lexisnexis']['doc_description']
-            if content and not content == '' and not content == 'DELETED_STORY' \
-                    and 'split_sentences' in document and len(document['split_sentences']):
-                text = list()
-                text.append(document['lexisnexis']['doc_title'])
-                text.extend(document['split_sentences'])
-
-                doc_id = document['doc_id']
-                base_sent_id = np.int64(doc_id + '0000')
-                sent_ids = list()
-                for jj, _ in enumerate(text):
-                    sent_ids.append(base_sent_id + jj)
-                sent_ids = np.vstack(sent_ids).astype(np.int64)
-                assert sent_ids.shape[0] == len(text), \
-                    'Something went wrong while making sent_ids'
-
-                batched_text.extend(text)
-                batched_ids.append(sent_ids)
-
-            if len(batched_text) >= b_size:
-                batched_ids = np.vstack(batched_ids).astype(np.int64)
-                yield batched_text, batched_ids
-                batched_text = list()
-                batched_ids = list()
-
-    batched_ids = np.vstack(batched_ids).astype(np.int64)
-    yield batched_text, batched_ids
-
-
-def check_unique(path, i=0):
-    if os.path.exists(path):
-        print('\nWarning: File already exists  {}'.format(path))
-        path = path.split('.')
-        path = path[0] + '_{}.'.format(i) + path[-1]
-        print('         Testing new path  {}\n'.format(path))
-        i += 1
-        check_unique(path=path, i=i)
-    return path
-
-
-def clear(tmp_dir_path):
-    for (tmp_dir, _, tmp_files) in os.walk(tmp_dir_path):
-        for file in tmp_files:
-            os.remove(os.path.join(tmp_dir, file))
-    os.rmdir(tmp_dir_path)
 
 
 # Track progress
@@ -218,8 +147,8 @@ def main():
         if opts.report:
             print('\nReading file: {}'.format(raw_jl))
 
-        doc_count, line_count, junk, n_batches = check_docs(file_path=raw_jl,
-                                                            b_size=opts.m_per_batch)
+        jl_stats = check_all_docs(file_path=raw_jl, b_size=opts.m_per_batch)
+        (doc_count, line_count, junk, n_batches) = jl_stats
         if opts.report:
             print('* Found {} good documents with {} total sentences\n'
                   '* Will skip {} junk documents\n'
@@ -227,7 +156,7 @@ def main():
                   ''.format(doc_count, line_count, junk, n_batches))
 
         t_start = time()
-        doc_batch_gen = aggregate_docs(file_path=raw_jl, b_size=opts.m_per_batch)
+        doc_batch_gen = aggregate_all_docs(file_path=raw_jl, b_size=opts.m_per_batch)
         for i, (batched_sents, batched_ids) in enumerate(doc_batch_gen):
             t_0 = time()
             if opts.report:

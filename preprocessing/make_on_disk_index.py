@@ -1,3 +1,4 @@
+# <editor-fold desc="Imports">
 import os
 import sys
 from time import time
@@ -22,12 +23,10 @@ arg_parser.add_option('-n', '--n_subindexes', type='int', default=-1)
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
-from digtextsimilaritysearch.indexer.IVF_disk_index_handler \
-    import DiskBuilderIVF
-from digtextsimilaritysearch.vectorizer.sentence_vectorizer \
-    import SentenceVectorizer
-from digtextsimilaritysearch.process_documents.document_processor \
-    import DocumentProcessor
+from dt_sim_api.indexer.IVF_disk_index_handler import DiskBuilderIVF
+from dt_sim_api.vectorizer import SentenceVectorizer
+from dt_sim_api.process_documents.document_processor import DocumentProcessor
+# </editor-fold>
 
 
 """

@@ -30,8 +30,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 import faiss
 import numpy as np
 from time import time
-from digtextsimilaritysearch.vectorizer.sentence_vectorizer \
-    import SentenceVectorizer
+from dt_sim_api.vectorizer import SentenceVectorizer
 # </editor-fold>
 
 

@@ -1,3 +1,4 @@
+# <editor-fold desc="Imports">
 import os
 from optparse import OptionParser
 # <editor-fold desc="Parse Command Line Options">
@@ -37,12 +38,10 @@ from time import time
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
-from digtextsimilaritysearch.indexer.IVF_disk_index_handler \
-    import DiskBuilderIVF
-from digtextsimilaritysearch.vectorizer.sentence_vectorizer \
-    import DockerVectorizer
-from digtextsimilaritysearch.process_documents.document_processor \
-    import DocumentProcessor
+from dt_sim_api.indexer.IVF_disk_index_handler import DiskBuilderIVF
+from dt_sim_api.vectorizer import DockerVectorizer
+from dt_sim_api.process_documents.document_processor import DocumentProcessor
+# </editor-fold>
 
 
 """

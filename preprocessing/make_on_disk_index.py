@@ -26,10 +26,6 @@ from digtextsimilaritysearch.indexer.IVF_disk_index_handler \
     import DiskBuilderIVF
 from digtextsimilaritysearch.vectorizer.sentence_vectorizer \
     import SentenceVectorizer
-# from digtextsimilaritysearch.storage.es_adapter \
-#     import ESAdapter
-from digtextsimilaritysearch.storage.memory_storage \
-    import MemoryStorage
 from digtextsimilaritysearch.process_documents.document_processor \
     import DocumentProcessor
 
@@ -90,14 +86,9 @@ idx_bdr = DiskBuilderIVF(path_to_empty_index=empty_index_path)
 
 sv = SentenceVectorizer
 
-# endpoint = 'http://localhost:9200'
-# es = ESAdapter(es_endpoint=endpoint)
-es = MemoryStorage()        # For quick local testing
-
 table = 'dig-text-similarity-search-IVF16K'
 dp = DocumentProcessor(indexer=None, index_builder=idx_bdr,
-                       vectorizer=sv, storage_adapter=es,
-                       table_name=table)
+                       vectorizer=sv, storage_adapter=None)
 t_init1 = time()
 print('\n\nInitialized in {:0.2f}s\n'.format(t_init1-t_init0))
 

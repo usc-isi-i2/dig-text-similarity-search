@@ -50,8 +50,8 @@ from dt_sim_api.process_documents.document_processor import DocumentProcessor
 """
 To run this script:
     (from dig-text-similarity-search/)
-    $ python preprocessing/streaming_preprocessor.py \ 
-        -i {/path/to/split/sents.jl} -o {/path/to/write/shard.index} -r -d
+    $ python scripts/preprocessing/streaming_preprocessor.py \ 
+        -i {/path/to/split_sents_dir/} -o {/path/to/shard_index_dir/} -r -d
 
 Options:
     -i  Path to raw news dir

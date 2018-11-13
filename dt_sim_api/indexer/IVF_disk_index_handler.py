@@ -214,8 +214,7 @@ class DiskBuilderIVF(BaseIndex):
                             ' index.ntotal: ({}), index.is_trained: ({})'
                             ''.format(empty_index.ntotal, empty_index.is_trained))
 
-    def generate_invlist(self, invlist_path, faiss_ids,
-                         embeddings: np.array) -> np.array:
+    def generate_invlist(self, invlist_path, faiss_ids, embeddings: np.array):
         self.load_empty()
         self.index_embeddings(embeddings, faiss_ids)
         self.invlist_paths.append(invlist_path)

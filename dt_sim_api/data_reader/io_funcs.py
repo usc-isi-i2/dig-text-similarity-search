@@ -1,14 +1,15 @@
 import os
 import json
-import numpy as np
 from time import time
+from typing import List, Tuple, Union
 
-from dt_sim_api.vectorizer.sentence_vectorizer import SentenceVectorizer
-sv = SentenceVectorizer()
+import numpy as np
 
 
-# Read news.jl
-def check_all_docs(file_path, b_size=512*128):
+##### Read news.jl #####
+
+def check_all_docs(file_path: str, b_size: int = 512*128
+                   ) -> (int, int, int, int):
     doc_count = 0
     line_count = 0
     junk_count = 0
@@ -26,7 +27,8 @@ def check_all_docs(file_path, b_size=512*128):
     return doc_count, line_count, junk_count, n_batches
 
 
-def check_training_docs(file_path, b_size=512*128):
+def check_training_docs(file_path: str, b_size: int = 512*128
+                        ) -> (int, int, int, int, int, int):
     doc_count = 0
     line_count = 0
     good_sents = 0
@@ -45,13 +47,15 @@ def check_training_docs(file_path, b_size=512*128):
                             good_sents += 1
             else:
                 junk_count += 1
-    n_batches = divmod(line_count, b_size)[0] + 1
-    n_good_batches = divmod(good_sents, b_size)[0] + 1
+    n_batches = int(divmod(line_count, b_size)[0]) + 1
+    n_good_batches = int(divmod(good_sents, b_size)[0]) + 1
     return doc_count, line_count, good_sents, junk_count, n_batches, n_good_batches
 
 
-# Load news.jl
-def aggregate_all_docs(file_path, b_size=512*128):
+##### Load news.jl #####
+
+def aggregate_all_docs(file_path: str, b_size: int = 512*128
+                       ) -> (List[str], np.array):
     batched_text = list()
     batched_ids = list()
     with open(file_path, 'r') as jl:
@@ -86,7 +90,8 @@ def aggregate_all_docs(file_path, b_size=512*128):
     yield batched_text, batched_ids
 
 
-def aggregate_training_docs(file_path, b_size=512*128):
+def aggregate_training_docs(file_path: str, b_size: int = 512*128
+                            ) -> (List[str], np.array):
     batched_text = list()
     batched_ids = list()
     with open(file_path, 'r') as jl:
@@ -146,14 +151,98 @@ def aggregate_training_docs(file_path, b_size=512*128):
     yield batched_text, batched_ids
 
 
-# Load data.npz
-def load_training_npz(npz_paths, tmp_name, sentence_vectorizer=sv, mmap=True):
+##### Save data.npz #####
+
+# TODO: Depreciate save_vectors
+def save_vectors(embeddings: List[tf.Tensor], sentences: List[object],
+                 file_path: str):
+    """
+    Converts embedding tensors and corresponding list of sentences into np.arrays,
+    then saves both arrays in the same compressed .npz file
+
+    Note: .npz will be appended to file_path automatically
+
+    :param embeddings: List of tensors made from sentences
+    :param sentences: List of corresponding sentences
+    :param file_path: /full/path/to/file_name
+    :return: Writes zipped archive to disk
+    """
+    embeddings = np.array(embeddings, dtype=np.float32)
+    sentences = np.array(sentences, dtype=object)
+    np.savez_compressed(file=file_path, embeddings=embeddings, sentences=sentences)
+
+
+def save_with_ids(file_path: str, embeddings, sentences, sent_ids,
+                  compressed=True):
+    # Format
+    if not isinstance(embeddings, np.ndarray):
+        embeddings = np.vstack(embeddings).astype(np.float32)
+    if not isinstance(sentences, np.ndarray):
+        sentences = np.array(sentences, dtype=np.str)
+    if not isinstance(sent_ids, np.ndarray):
+        try:
+            sent_ids = np.array(sent_ids, dtype=np.int64)
+        except ValueError:
+            print(sent_ids)
+
+    # Save
+    if compressed:
+        np.savez_compressed(file=file_path,
+                            sent_ids=sent_ids, embeddings=embeddings, sentences=sentences)
+    else:
+        np.savez(file=file_path,
+                 sent_ids=sent_ids, embeddings=embeddings, sentences=sentences)
+
+
+##### Load data.npz #####
+
+# TODO: Depreciate load_vectors
+def load_vectors(file_path: str, mmap: bool = True
+                 ) -> (np.array, np.array):
+    """
+    Loads zipped archive containing embeddings and sentences as two separate np.arrays
+
+    :param file_path: /full/path/to/file_name.npz
+    :param mmap: If mmap is True, the .npz file is not read from disk, not into memory
+    :return: embeddings and sentences as separate np.arrays
+    """
+    if not file_path.endswith('.npz'):
+        file_path += '.npz'
+    if mmap:
+        mode = 'r'
+    else:
+        mode = None
+
+    loaded = np.load(file=file_path, mmap_mode=mode)
+    embeddings = loaded['embeddings']
+    sentences = loaded['sentences']
+    return embeddings, sentences
+
+
+def load_with_ids(file_path: str, mmap: bool = True
+                  ) -> (np.array, np.array, np.array):
+    if not file_path.endswith('.npz'):
+        file_path += '.npz'
+    if mmap:
+        mode = 'r'
+    else:
+        mode = None
+
+    loaded = np.load(file=file_path, mmap_mode=mode)
+    embeddings = loaded['embeddings']
+    sentences = loaded['sentences']
+    sent_ids = loaded['sent_ids']
+    return embeddings, sentences, sent_ids
+
+
+def load_training_npz(npz_paths: List[str], tmp_name: str,
+                      mmap: bool = True) -> np.array:
     t_load = time()
 
     emb_list = list()
     emb_lens = list()
     for npzp in npz_paths:
-        emb, _, _ = sentence_vectorizer.load_with_ids(npzp, mmap=mmap)
+        emb, _, _ = load_with_ids(npzp, mmap=mmap)
         emb_list.append(emb), emb_lens.append(emb.shape)
 
     tot_embs = sum([n[0] for n in emb_lens])
@@ -175,8 +264,9 @@ def load_training_npz(npz_paths, tmp_name, sentence_vectorizer=sv, mmap=True):
     return ts_memmap
 
 
-# Misc
-def get_all_npz_paths(npz_parent_dir):
+##### Misc #####
+
+def get_all_npz_paths(npz_parent_dir: str) -> List[str]:
     npz_paths = list()
     for (dirpath, _, filenames) in os.walk(npz_parent_dir, topdown=True):
         for f in filenames:
@@ -185,7 +275,7 @@ def get_all_npz_paths(npz_parent_dir):
     return sorted(npz_paths)
 
 
-def check_unique(path, i=0):
+def check_unique(path: str, i=0) -> str:
     if os.path.exists(path):
         print('\nWarning: File already exists  {}'.format(path))
         path = path.split('.')
@@ -196,7 +286,7 @@ def check_unique(path, i=0):
     return path
 
 
-def clear(tmp_dir_path):
+def clear(tmp_dir_path: str):
     for (tmp_dir, _, tmp_files) in os.walk(tmp_dir_path):
         for file in tmp_files:
             os.remove(os.path.join(tmp_dir, file))

@@ -41,11 +41,12 @@ class QueryProcessor(BaseProcessor):
         scores, faiss_ids = self.indexer.search(query_vector, k=k_search)
 
         # TODO: add input options for doc reranking
-        # Sort, rerank, and format
+        # Sort hits -> aggregate into docs -> rerank (soon) -> format
         t_p = time()
         scores, faiss_ids = self.joint_sort(scores, faiss_ids)
         doc_hits = self.aggregate_docs(scores, faiss_ids)
-        similar_docs = self.sandpaper_payload(doc_hits)
+        self.rerank()   # TODO: implement new reranking logic
+        similar_docs = self.format_payload(doc_hits)
 
         t_r = time()
         if verbose:
@@ -108,12 +109,11 @@ class QueryProcessor(BaseProcessor):
 
     @staticmethod
     def rerank():
-        # TODO: implement new reranking logic
         pass
 
     @staticmethod
-    def sandpaper_payload(doc_hits: Dict[str, List[Tuple[float, int]]]
-                          ) -> List[Dict[str, Union[int, float]]]:
+    def format_payload(doc_hits: Dict[str, List[Tuple[float, int]]]
+                       ) -> List[Dict[str, Union[float, str]]]:
         """ 
         TMP payload formatting for current sandpaper implementation 
         
@@ -128,7 +128,7 @@ class QueryProcessor(BaseProcessor):
                 assert all(faiss_diff_id[i][0] <= faiss_diff_id[i+1][0] 
                            for i in range(len(faiss_diff_id) - 1))
                 out['score'] = faiss_diff_id[0][0]
-                out['sentence_id'] = faiss_diff_id[0][1]
+                out['sentence_id'] = str(faiss_diff_id[0][1])
             payload.append(out)
         return payload
 

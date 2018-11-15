@@ -1,3 +1,4 @@
+import os
 from time import sleep
 from typing import List, Tuple
 from multiprocessing import Pipe, Process, Queue
@@ -20,10 +21,6 @@ class DeployIVF(BaseIndexer):
         path_to_index = self.get_index_paths(index_dir)
         self.index = faiss.read_index(path_to_index[0])
         self.index.nprobe = nprobe
-
-    def index_embeddings(self, embeddings: np.array, faiss_ids: np.array):
-        print('WARNING: Cannot add to index \n'
-              '   Hint: Use the DiskBuilderIVF class for adding to an index')
 
 
 class DeployShards(BaseIndexer):
@@ -67,11 +64,6 @@ class DeployShards(BaseIndexer):
         self.paths_to_shards.append(new_shard_path)
         shard = self.load_shard(path_to_shard=new_shard_path, nprobe=self.nprobe)
         self.index.add_shard(shard)
-
-    def index_embeddings(self, embeddings: np.array, faiss_ids: np.array):
-        print('WARNING: Cannot add to index shards \n'
-              '   Hint: Use the DiskBuilderIVF class for adding to an index '
-              'or self.add_shard(path) to add a new searchable shard')
 
 
 #### Parallel Range Search ####################
@@ -162,11 +154,6 @@ class RangeShards(BaseIndexer):
         sleep(0.05)
         self.lock = False
 
-    def index_embeddings(self, embeddings: np.array, faiss_ids: np.array):
-        print('WARNING: Cannot add to index shards \n'
-              '   Hint: Use the DiskBuilderIVF class for adding to an index '
-              'or self.add_shard(path) to add a new searchable shard')
-
 
 #### IVF On-Disk Index Builder ################
 
@@ -185,6 +172,24 @@ class DiskBuilderIVF(BaseIndexer):
         faiss_ids = np.reshape(faiss_ids, (faiss_ids.shape[0],))
         self.index.add_with_ids(embeddings, faiss_ids)
 
+    @staticmethod
+    def save_index(index, index_path: str):
+        if not os.path.isfile(index_path) and index_path.endswith('.index'):
+            try:
+                faiss.write_index(index, index_path)
+            except Exception as e:
+                print(e)
+                print('Could not save index')
+        elif os.path.isfile(index_path) and index_path.endswith('.index'):
+            print('Error: Index already exists: {} \n'
+                  '       Aborting...'.format(index_path))
+        elif isinstance(index_path, str) and not index_path.endswith('.index'):
+            print('Error: Index filename must end with .index \n'
+                  '       Filename given: {} \n'
+                  '       Aborting...'.format(index_path.split('/')[-1]))
+        else:
+            print('Error: Unexpected path given {}'.format(index_path))
+
     def load_empty(self):
         empty_index = faiss.read_index(self.path_to_empty_index)
         if empty_index.is_trained and empty_index.ntotal == 0:
@@ -198,7 +203,7 @@ class DiskBuilderIVF(BaseIndexer):
         self.load_empty()
         self.index_embeddings(embeddings, faiss_ids)
         self.invlist_paths.append(invlist_path)
-        self.save_index(invlist_path)
+        self.save_index(self.index, invlist_path)
         del self.index
         self.index = None
 
@@ -229,6 +234,6 @@ class DiskBuilderIVF(BaseIndexer):
         ntotal = invlists.merge_from(ivf_vector.data(), ivf_vector.size())
         self.index.ntotal = ntotal
         self.index.replace_invlists(invlists)
-        self.save_index(merged_index_path)
+        self.save_index(self.index, merged_index_path)
         self.index = None
         return int(ntotal)

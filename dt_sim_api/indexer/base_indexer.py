@@ -10,6 +10,9 @@ class BaseIndexer(object):
         self.index = None
         self.dynamic = False
 
+    def search(self, query_vector: np.array, k: int):
+        return self.index.search(query_vector, k)
+
     @staticmethod
     def get_index_paths(index_dir_path):
         index_paths = list()
@@ -40,12 +43,3 @@ class BaseIndexer(object):
         sorted_scores, sorted_ids = (list(sorted_scs_ids) for sorted_scs_ids
                                      in zip(*sorted(zip(scores, ids))))
         return [sorted_scores], [sorted_ids]
-
-    def index_embeddings(self, embeddings: np.array, faiss_ids: np.array):
-        raise NotImplementedError
-
-    def save_index(self, output_path):
-        faiss.write_index(self.index, output_path)
-
-    def search(self, query_vector: np.array, k: int):
-        return self.index.search(query_vector, k)

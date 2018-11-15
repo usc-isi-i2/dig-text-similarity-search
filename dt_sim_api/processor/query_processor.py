@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple, Union
 
 import numpy as np
 
-from .base_processor import *
+from .base_processor import BaseProcessor
 from dt_sim_api.vectorizer.sentence_vectorizer import DockerVectorizer
 
 __all__ = ['QueryProcessor']

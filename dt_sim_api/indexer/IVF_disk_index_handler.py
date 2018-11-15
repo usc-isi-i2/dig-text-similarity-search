@@ -2,7 +2,11 @@ from time import sleep
 from typing import List
 from collections import OrderedDict
 from multiprocessing import Pipe, Process, Queue
-from .base_index_handler import *
+
+import faiss
+import numpy as np
+
+from .base_index_handler import BaseIndex
 
 
 class DeployIVF(BaseIndex):

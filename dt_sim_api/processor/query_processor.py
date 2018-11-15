@@ -41,9 +41,8 @@ class QueryProcessor(BaseProcessor):
         scores, faiss_ids = self.indexer.search(query_vector, k=k_search)
 
         # TODO: add input options for doc reranking
-        # Sort hits -> aggregate into docs -> rerank (soon) -> format
+        # Aggregate hits into docs -> rerank (soon) -> format
         t_p = time()
-        scores, faiss_ids = self.joint_sort(scores, faiss_ids)
         doc_hits = self.aggregate_docs(scores, faiss_ids)
         self.rerank()   # TODO: implement new reranking logic
         similar_docs = self.format_payload(doc_hits)
@@ -124,9 +123,6 @@ class QueryProcessor(BaseProcessor):
         for doc in doc_hits:
             out = dict()
             for doc_id, faiss_diff_id in doc.items():
-                # TODO: remove assert when joint_sort is solid
-                assert all(faiss_diff_id[i][0] <= faiss_diff_id[i+1][0] 
-                           for i in range(len(faiss_diff_id) - 1))
                 out['score'] = faiss_diff_id[0][0]
                 out['sentence_id'] = str(faiss_diff_id[0][1])
             payload.append(out)

@@ -1,15 +1,14 @@
 from time import sleep
-from typing import List
-from collections import OrderedDict
+from typing import List, Tuple
 from multiprocessing import Pipe, Process, Queue
 
 import faiss
 import numpy as np
 
-from .base_index_handler import BaseIndex
+from .base_indexer import BaseIndexer
 
 
-class DeployIVF(BaseIndex):
+class DeployIVF(BaseIndexer):
     """
     For deploying on-disk index made with DiskBuilderIVF
 
@@ -17,7 +16,7 @@ class DeployIVF(BaseIndex):
         (speed accuracy trade-off)
     """
     def __init__(self, index_dir, nprobe: int = 32):
-        BaseIndex.__init__(self)
+        BaseIndexer.__init__(self)
         path_to_index = self.get_index_paths(index_dir)
         self.index = faiss.read_index(path_to_index[0])
         self.index.nprobe = nprobe
@@ -27,7 +26,7 @@ class DeployIVF(BaseIndex):
               '   Hint: Use the DiskBuilderIVF class for adding to an index')
 
 
-class DeployShards(BaseIndex):
+class DeployShards(BaseIndexer):
     """
     For deploying multiple, pre-made IVF indexes as shards
         (intended for on-disk indexes that do not fit in memory)
@@ -39,7 +38,7 @@ class DeployShards(BaseIndex):
         (speed accuracy trade-off)
     """
     def __init__(self, shard_dir, nprobe: int = 32):
-        BaseIndex.__init__(self)
+        BaseIndexer.__init__(self)
         self.paths_to_shards = self.get_index_paths(shard_dir)
         self.nprobe = nprobe
 
@@ -96,10 +95,10 @@ class Shard(Process):
             self.output.put((dd, ii), block=False)
 
 
-class RangeShards(BaseIndex):
+class RangeShards(BaseIndexer):
 
     def __init__(self, shard_dir, nprobe: int = 16, max_radius: float = 1.0):
-        BaseIndex.__init__(self)
+        BaseIndexer.__init__(self)
         self.paths_to_shards = self.get_index_paths(shard_dir)
         self.nprobe = nprobe
         self.max_radius = max_radius
@@ -145,30 +144,7 @@ class RangeShards(BaseIndex):
         if radius < self.max_radius and len(D) < k:
             new_radius = radius + 0.3
             D, I = self.search(query_vector, k, radius=new_radius)
-            D, I = D[0], I[0]
-
-        D, I = self.sort(diff_scores=D, sent_ids=I)
-        return [D], [I]
-
-    @staticmethod
-    def sort(diff_scores, sent_ids):
-        results = dict()
-        for score, sent_id in zip(diff_scores, sent_ids):
-            if score not in results:
-                results[score] = list()
-            results[score].append(sent_id)
-
-        sorted_results = OrderedDict(sorted(results.items()))
-        for score in sorted_results:
-            sorted_results[score].sort()
-
-        sorted_scores = list()
-        sorted_ids = list()
-        for score, sids in sorted_results.items():
-            for sent_id in sids:
-                sorted_scores.append(score)
-                sorted_ids.append(sent_id)
-        return sorted_scores, sorted_ids
+        return self.joint_sort(D, I)
 
     def add_shard(self, new_shard_path: str):
         # Lock search while loading shard
@@ -194,13 +170,13 @@ class RangeShards(BaseIndex):
 
 #### IVF On-Disk Index Builder ################
 
-class DiskBuilderIVF(BaseIndex):
+class DiskBuilderIVF(BaseIndexer):
     """
     For building IVF index on-disk.
     Requires a pre-trained, empty index.
     """
     def __init__(self, path_to_empty_index):
-        BaseIndex.__init__(self)
+        BaseIndexer.__init__(self)
         self.path_to_empty_index = path_to_empty_index
         self.invlist_paths = list()
 

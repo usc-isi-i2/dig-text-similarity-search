@@ -23,7 +23,7 @@ arg_parser.add_option('-n', '--n_subindexes', type='int', default=-1)
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
-from dt_sim_api.indexer.IVF_disk_index_handler import DiskBuilderIVF
+from dt_sim_api.indexer.IVF_disk_index_handler import OnDiskIndexBuilder
 from dt_sim_api.vectorizer import SentenceVectorizer
 from dt_sim_api.processor.document_processor import DocumentProcessor
 # </editor-fold>
@@ -81,7 +81,7 @@ for npz in small_npzs:
 t_init0 = time()
 empty_index_path = args.base_empty_index
 assert os.path.exists(empty_index_path), 'Faiss index builder requires an empty pretrained index'
-idx_bdr = DiskBuilderIVF(path_to_empty_index=empty_index_path)
+idx_bdr = OnDiskIndexBuilder(path_to_empty_index=empty_index_path)
 
 sv = SentenceVectorizer
 

@@ -11,7 +11,7 @@ from .base_indexer import BaseIndexer
 
 class DeployIVF(BaseIndexer):
     """
-    For deploying on-disk index made with DiskBuilderIVF
+    For deploying on-disk index made with OnDiskIndexBuilder
 
     :param nprobe: Number of clusters to visit during search
         (speed accuracy trade-off)
@@ -157,7 +157,7 @@ class RangeShards(BaseIndexer):
 
 #### IVF On-Disk Index Builder ################
 
-class DiskBuilderIVF(BaseIndexer):
+class OnDiskIndexBuilder(BaseIndexer):
     """
     For building IVF index on-disk.
     Requires a pre-trained, empty index.

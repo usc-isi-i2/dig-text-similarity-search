@@ -43,7 +43,7 @@ from dt_sim_api.data_reader.io_funcs \
     import check_all_docs, aggregate_all_docs, check_unique, clear
 from dt_sim_api.vectorizer.sentence_vectorizer import SentenceVectorizer
 from dt_sim_api.indexer.IVF_disk_index_handler import DiskBuilderIVF
-from dt_sim_api.process_documents.document_processor import DocumentProcessor
+from dt_sim_api.processor.document_processor import DocumentProcessor
 # </editor-fold>
 
 

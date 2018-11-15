@@ -44,7 +44,7 @@ import numpy as np
 from dt_sim_api.data_reader.io_funcs \
     import check_training_docs, aggregate_training_docs, check_unique
 from dt_sim_api.vectorizer.sentence_vectorizer import SentenceVectorizer
-from dt_sim_api.process_documents.document_processor import DocumentProcessor
+from dt_sim_api.processor.document_processor import DocumentProcessor
 # </editor-fold>
 
 

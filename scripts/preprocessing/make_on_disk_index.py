@@ -25,7 +25,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
 from dt_sim_api.indexer.IVF_disk_index_handler import DiskBuilderIVF
 from dt_sim_api.vectorizer import SentenceVectorizer
-from dt_sim_api.process_documents.document_processor import DocumentProcessor
+from dt_sim_api.processor.document_processor import DocumentProcessor
 # </editor-fold>
 
 

@@ -275,7 +275,7 @@ class DocumentProcessor(object):
             vectors, sentences, sent_ids = self.vectorizer.load_with_ids(path_to_npz)
             assert sent_ids.shape[0] == vectors.shape[0], \
                 'Found {} sent_ids and {} vectors'.format(sent_ids.shape[0], vectors.shape[0])
-            self.index_builder.generate_invlist(path_to_invlist, sent_ids, vectors)
+            self.index_builder.generate_subindex(path_to_invlist, vectors, sent_ids)
         else:
             raise Exception('Cannot index on disk without an index_builder')
 
@@ -283,13 +283,13 @@ class DocumentProcessor(object):
         if self.index_builder:
             assert sent_ids.shape[0] == embeddings.shape[0], \
                 'Found {} sent_ids and {} vectors'.format(sent_ids.shape[0], vectors.shape[0])
-            self.index_builder.generate_invlist(path_to_invlist, sent_ids, embeddings)
+            self.index_builder.generate_subindex(path_to_invlist, embeddings, sent_ids)
         else:
             raise Exception('Cannot index on disk without an index_builder')
 
     def build_index_on_disk(self, merged_ivfs_path, merged_index_path) -> int:
         if self.index_builder:
-            ntotal = self.index_builder.build_disk_index(merged_ivfs_path, merged_index_path)
+            ntotal = self.index_builder.merge_IVFs(merged_ivfs_path, merged_index_path)
             return ntotal
         else:
             raise Exception('Cannot build index on disk without an index_builder')

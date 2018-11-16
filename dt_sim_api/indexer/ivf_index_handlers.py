@@ -6,33 +6,21 @@ import numpy as np
 
 from .base_indexer import BaseIndexer
 
-
-class DeployIVF(BaseIndexer):
-    """
-    For deploying on-disk index made with OnDiskIndexBuilder
-
-    :param nprobe: Number of clusters to visit during search
-        (speed accuracy trade-off)
-    """
-    def __init__(self, index_dir, nprobe: int = 32):
-        BaseIndexer.__init__(self)
-        path_to_index = self.get_index_paths(index_dir)
-        self.index = faiss.read_index(path_to_index[0])
-        self.index.nprobe = nprobe
+__all__ = ['DeployShards', 'RangeShards']
 
 
 class DeployShards(BaseIndexer):
-    """
-    For deploying multiple, pre-made IVF indexes as shards
-        (intended for on-disk indexes that do not fit in memory)
-
-    Note: The index shards must be true partitions with no overlapping ids
-
-    :param paths_to_shards: List of paths to faiss index shards
-    :param nprobe: Number of clusters to visit during search
-        (speed accuracy trade-off)
-    """
     def __init__(self, shard_dir, nprobe: int = 32):
+        """
+        For deploying multiple, pre-made IVF indexes as shards.
+            (intended for on-disk indexes that do not fit in memory)
+
+        Note: The index shards must be true partitions with no overlapping ids
+
+        :param shard_dir: Dir containing faiss index shards
+        :param nprobe: Number of clusters to visit during search
+                       (speed accuracy trade-off)
+        """
         BaseIndexer.__init__(self)
         self.paths_to_shards = self.get_index_paths(shard_dir)
         self.nprobe = nprobe
@@ -64,12 +52,11 @@ class DeployShards(BaseIndexer):
         self.index.add_shard(shard)
 
 
-#### Parallel Range Search ####################
-
+##### Parallelized Nearest Neighbor Search #####
 class Shard(Process):
-
     def __init__(self, shard_name, shard_path, input_pipe, output_queue,
                  nprobe: int = 16, daemon: bool = False):
+        """ RangeShards search worker """
         Process.__init__(self, name=shard_name)
         self.daemon = daemon
 
@@ -86,13 +73,23 @@ class Shard(Process):
 
 
 class RangeShards(BaseIndexer):
-
     def __init__(self, shard_dir, nprobe: int = 16, max_radius: float = 1.0):
+        """
+        For deploying multiple, pre-made IVF indexes as shards.
+            (intended for on-disk indexes that do not fit in memory)
+
+        Note: The index shards must be true partitions with no overlapping ids
+
+        :param shard_dir: Dir containing faiss index shards
+        :param nprobe: Number of clusters to visit during search
+                       (speed accuracy trade-off)
+        :param max_radius: Maximum L2 distance neighborhood radius
+        """
         BaseIndexer.__init__(self)
         self.paths_to_shards = self.get_index_paths(shard_dir)
         self.nprobe = nprobe
         self.max_radius = max_radius
-        self.dynamic = False        # TODO: Coordinate with frontend for date-range search
+        self.dynamic = False
         self.lock = False
 
         self.results = Queue()
@@ -116,7 +113,7 @@ class RangeShards(BaseIndexer):
 
         # Lock search while loading index
         if self.lock:
-            sleep(0.25)
+            sleep(0.5)
             return self.search(query_vector, k, radius)
 
         # Start parallel range search

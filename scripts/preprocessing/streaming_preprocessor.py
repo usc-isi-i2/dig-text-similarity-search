@@ -39,8 +39,8 @@ from time import time
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
-from dt_sim_api.data_reader.io_funcs \
-    import check_all_docs, aggregate_all_docs, check_unique, clear
+from dt_sim_api.data_reader.jl_io_funcs import check_all_docs, get_all_docs
+from dt_sim_api.data_reader.misc_io_funcs import check_unique, clear_dir
 from dt_sim_api.vectorizer.sentence_vectorizer import SentenceVectorizer
 from dt_sim_api.indexer.on_disk_index_builder import OnDiskIndexBuilder
 from dt_sim_api.processor.document_processor import DocumentProcessor
@@ -147,7 +147,7 @@ def main():
         if opts.report:
             print('\nReading file: {}'.format(raw_jl))
 
-        jl_stats = check_all_docs(file_path=raw_jl, b_size=opts.m_per_batch)
+        jl_stats = check_all_docs(raw_jl, batch_size=opts.m_per_batch)
         (doc_count, line_count, junk, n_batches) = jl_stats
         if opts.report:
             print('* Found {} good documents with {} total sentences\n'
@@ -156,7 +156,7 @@ def main():
                   ''.format(doc_count, line_count, junk, n_batches))
 
         t_start = time()
-        doc_batch_gen = aggregate_all_docs(file_path=raw_jl, b_size=opts.m_per_batch)
+        doc_batch_gen = get_all_docs(raw_jl, batch_size=opts.m_per_batch)
         for i, (batched_sents, batched_ids) in enumerate(doc_batch_gen):
             t_0 = time()
             if opts.report:
@@ -187,7 +187,7 @@ def main():
                         raise ValueError
 
                 # Make faiss subindex
-                subidx_path = check_unique(path=subidx_path)
+                subidx_path = check_unique(subidx_path)
                 dp.index_embeddings_on_disk(embeddings=batched_embs, sent_ids=batched_ids,
                                             path_to_invlist=subidx_path)
                 t_subidx = time()
@@ -217,10 +217,10 @@ def main():
         t_merge = time()
         merged_ivfs = date + '_mergedIVF16K.ivfdata'
         merged_ivfs = os.path.join(opts.output_dir, merged_ivfs)
-        merged_ivfs = check_unique(path=merged_ivfs)
+        merged_ivfs = check_unique(merged_ivfs)
         merged_index = date + '_populatedIVF16K.index'
         merged_index = os.path.join(opts.output_dir, merged_index)
-        merged_index = check_unique(path=merged_index)
+        merged_index = check_unique(merged_index)
         if opts.report:
             print('\n  Merging {} on-disk'.format(merged_index.split('/')[-1]))
 

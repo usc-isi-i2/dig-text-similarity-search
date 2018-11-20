@@ -41,8 +41,8 @@ if opts.num_threads:
 
 import numpy as np
 
-from dt_sim_api.data_reader.io_funcs \
-    import check_training_docs, aggregate_training_docs, check_unique
+from dt_sim_api.data_reader.jl_io_funcs import check_training_docs, get_training_docs
+from dt_sim_api.data_reader.misc_io_funcs import check_unique
 from dt_sim_api.vectorizer.sentence_vectorizer import SentenceVectorizer
 from dt_sim_api.processor.document_processor import DocumentProcessor
 # </editor-fold>
@@ -130,7 +130,7 @@ def main():
     if opts.report:
         print('\nReading file: {}'.format(input_file))
 
-    line_counts = check_training_docs(file_path=input_file, b_size=opts.m_per_batch)
+    line_counts = check_training_docs(input_file, batch_size=opts.m_per_batch)
     (doc_count, line_count, good_sents, junk, n_batches, n_good_batches) = line_counts
     if opts.report:
         print('* Found {} good documents with {} lines and {} good sentences\n'
@@ -140,7 +140,7 @@ def main():
                         junk, n_good_batches, n_batches))
 
     t_start = time()
-    doc_batch_gen = aggregate_training_docs(file_path=input_file, b_size=opts.m_per_batch)
+    doc_batch_gen = get_training_docs(input_file, batch_size=opts.m_per_batch)
     for i, (batched_sents, batched_ids) in enumerate(doc_batch_gen, start=1):
         t_0 = time()
         if opts.report:
@@ -172,7 +172,7 @@ def main():
                     print(e)
 
             # Save .npz for later
-            npz_path = check_unique(path=npz_path)
+            npz_path = check_unique(npz_path)
             dp.vectorizer.save_with_ids(npz_path,
                                         embeddings=batched_embs,
                                         sentences=batched_sents,

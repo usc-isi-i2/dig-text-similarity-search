@@ -16,15 +16,22 @@ class DockerVectorizer(BaseVectorizer):
     """
     Intended for fast Query Vectorization
     """
-    def __init__(self, url=None):
+    def __init__(self, model_name: str = None, large: bool = False):
         BaseVectorizer.__init__(self)
-        if not url:
-            url = 'http://localhost:8501/v1/models/USE-lite-v2:predict'
-        self.url = url
 
-    def make_vectors(self, query):
+        if not model_name and large:
+            model_name = 'USE-large-v3'
+            self.large_USE = True
+        elif not model_name:
+            model_name = 'USE-lite-v2'
+        self.url = 'http://localhost:8501/v1/models/{}:predict'.format(model_name)
+
+    def make_vectors(self, query: Union[str, List[str]]):
+        """ Takes one query """
         if not isinstance(query, list):
-            query = [query]
+            query = [str(query)]
+        elif len(query) > 1:
+            query = query[:1]
 
         payload = {"inputs": {"text": query}}
         payload = json.dumps(payload)

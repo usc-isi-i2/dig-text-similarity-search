@@ -75,8 +75,7 @@ def main():
 
     # Load
     training_set = load_training_npz(args.input_npz_dir,
-                                     training_set_name=args.mmap_name,
-                                     mmap_tmp=True)
+                                     training_set_name=args.mmap_name)
 
     # Train
     make_base_IVF(training_set, save_path=base_index_path,

@@ -30,15 +30,13 @@ def get_all_npz_paths(npz_parent_dir: str) -> List[str]:
 
 
 ##### Load .npz #####
-def load_training_npz(npz_top_dir: str, training_set_name: str,
-                      mmap_tmp: bool = True) -> np.array:
+def load_training_npz(npz_top_dir: str, training_set_name: str) -> np.array:
     """
     Merges .npz files into a memory mapped, numpy array for training a
     base faiss index.
 
     :param npz_top_dir: Parent dir containing .npz files
     :param training_set_name: Filename for training_set
-    :param mmap_tmp: Bool to load component .npz files in mmap mode
     :return: Memory mapped training set array
     """
     t_load = time()
@@ -47,14 +45,13 @@ def load_training_npz(npz_top_dir: str, training_set_name: str,
     print('Found {} .npz files'.format(n_npzs))
 
     emb_list = list()
-    emb_lens = list()
     for i, npzp in enumerate(npz_paths, start=1):
-        emb, _, _ = load_with_ids(npzp, mmap=mmap_tmp)
-        emb_list.append(emb), emb_lens.append(emb.shape)
+        emb, _, _ = load_with_ids(npzp, mmap=True)
+        emb_list.append(emb)
         print('{}/{} files loaded'.format(i, n_npzs))
 
-    tot_embs = sum([n[0] for n in emb_lens])
-    emb_wide = emb_lens[0][1]
+    tot_embs = sum([n.shape[0] for n in emb_list])
+    emb_wide = emb_list[0].shape[1]
     print('Found {} vectors of {}d \n'
           'Merging into single mmap array...'
           ''.format(tot_embs, emb_wide))
@@ -69,10 +66,15 @@ def load_training_npz(npz_top_dir: str, training_set_name: str,
         ts_memmap[place:place+n_vect, :] = emb[:]
         place += n_vect
 
+    # ts_memmap.flush()
+    # training_set = np.ndarray(buffer=ts_memmap,
+    #                           dtype=np.float32,
+    #                           shape=(tot_embs, emb_wide))
+
     m, s = divmod(time()-t_load, 60)
     print('Training set loaded in {}m{:0.2f}s'.format(int(m), s))
 
-    return ts_memmap
+    return ts_memmap    # training_set
 
 
 def load_with_ids(file_path: str, mmap: bool = True, load_sents=False

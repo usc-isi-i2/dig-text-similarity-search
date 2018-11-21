@@ -3,6 +3,13 @@ import numpy as np
 from time import time, sleep
 from collections import OrderedDict
 
+import os
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+
+from dt_sim_api.data_reader.npz_io_funcs import load_with_ids
+
 _SENTENCE_ID = 'sentence_id'
 _SENTENCE_TEXT = 'sentence_text'
 
@@ -272,7 +279,7 @@ class DocumentProcessor(object):
             path_to_invlist = 'invl_' + path_to_npz.replace('.npz', '.index')
 
         if self.index_builder:
-            vectors, sentences, sent_ids = self.vectorizer.load_with_ids(path_to_npz)
+            vectors, sent_ids, sentences = load_with_ids(path_to_npz)
             assert sent_ids.shape[0] == vectors.shape[0], \
                 'Found {} sent_ids and {} vectors'.format(sent_ids.shape[0], vectors.shape[0])
             self.index_builder.generate_subindex(path_to_invlist, vectors, sent_ids)

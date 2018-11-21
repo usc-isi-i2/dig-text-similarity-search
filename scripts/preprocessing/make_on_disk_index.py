@@ -1,6 +1,5 @@
 # <editor-fold desc="Imports">
 import os
-import sys
 from time import time
 from optparse import OptionParser
 # <editor-fold desc="Parse Options">
@@ -11,19 +10,21 @@ base_index_path = os.path.abspath(os.path.join(cwd, relative_base_path))
 arg_parser = OptionParser()
 arg_parser.add_option('-i', '--input_npz_dir')
 arg_parser.add_option('-o', '--output_index_dir')
-arg_parser.add_option('-s', '--subindex_dir')
-arg_parser.add_option('-b', '--base_empty_index', default=base_index_path)
 arg_parser.add_option('-m', '--merged_ivf_data', default='mergedIVF16384.ivfdata')
 arg_parser.add_option('-p', '--populated_index', default='populatedIVF16384.index')
+arg_parser.add_option('-s', '--subindex_dir')
+arg_parser.add_option('-b', '--base_empty_index', default=base_index_path)
 arg_parser.add_option('-e', '--build_from_existing', action='store_true', default=False)
 arg_parser.add_option('-n', '--n_subindexes', type='int', default=-1)
 (args, _) = arg_parser.parse_args()
 # </editor-fold>
 
+import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
-from dt_sim_api.vectorizer import SentenceVectorizer
+from dt_sim_api.data_reader.npz_io_funcs import get_all_npz_paths
+from dt_sim_api.vectorizer.sentence_vectorizer import SentenceVectorizer
 from dt_sim_api.indexer.on_disk_index_builder import OnDiskIndexBuilder
 from dt_sim_api.processor.document_processor import DocumentProcessor
 # </editor-fold>
@@ -54,21 +55,15 @@ Options:
 t_start = time()
 
 # Resource paths
-emb_dir = args.input_npz_dir
+emb_dir = os.path.abspath(args.input_npz_dir)
 assert os.path.isdir(emb_dir), 'Full path does not exist: {}'.format(emb_dir)
-index_dir = args.output_index_dir
+index_dir = os.path.abspath(args.output_index_dir)
 assert os.path.isdir(index_dir), 'Full path does not exist: {}'.format(index_dir)
-subindex_dir = args.subindex_dir
+subindex_dir = os.path.abspath(args.subindex_dir)
 assert os.path.isdir(subindex_dir), 'Full path does not exist: {}'.format(subindex_dir)
 
 # Get .npz paths
-small_npzs = list()
-for (dir_path, _, file_list) in os.walk(emb_dir):
-    for f in file_list:
-        if f.startswith('vect') and f.endswith('.npz'):
-            small_npzs.append(os.path.join(dir_path, f))
-    break
-small_npzs.sort(reverse=True)
+small_npzs = get_all_npz_paths(emb_dir)
 
 # Make invlist paths
 small_invlists = list()
@@ -99,7 +94,7 @@ timestamps = list()
 timestamps.append(0)
 if args.build_from_existing:
     # Add paths to subindexes to be merged
-    dp.index_builder.extend_invlist_paths(small_invlists)
+    dp.index_builder.extend_subindex_paths(small_invlists)
 
     # Merge
     merged_ivfs = os.path.join(index_dir, args.merged_ivf_data)

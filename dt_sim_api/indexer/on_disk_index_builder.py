@@ -90,7 +90,7 @@ class OnDiskIndexBuilder(object):
         if isinstance(paths_to_add, str):
             paths_to_add = [paths_to_add]
         for subindex_path in paths_to_add:
-            if self.index_path_clear(subindex_path):
+            if os.path.isfile(subindex_path) and subindex_path.endswith('.index'):
                 self.subindex_paths.append(subindex_path)
         self.print_n_subindexes()
 

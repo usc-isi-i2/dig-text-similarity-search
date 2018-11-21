@@ -30,27 +30,34 @@ def get_all_npz_paths(npz_parent_dir: str) -> List[str]:
 
 
 ##### Load .npz #####
-def load_training_npz(npz_paths: List[str], training_set_name: str,
+def load_training_npz(npz_top_dir: str, training_set_name: str,
                       mmap_tmp: bool = True) -> np.array:
     """
     Merges .npz files into a memory mapped, numpy array for training a
     base faiss index.
 
-    :param npz_paths: List of full paths to .npz files
+    :param npz_top_dir: Parent dir containing .npz files
     :param training_set_name: Filename for training_set
     :param mmap_tmp: Bool to load component .npz files in mmap mode
     :return: Memory mapped training set array
     """
     t_load = time()
+    npz_paths = get_all_npz_paths(npz_top_dir)
+    n_npzs = len(npz_paths)
+    print('Found {} .npz files'.format(n_npzs))
+
     emb_list = list()
     emb_lens = list()
-    for npzp in npz_paths:
+    for i, npzp in enumerate(npz_paths, start=1):
         emb, _, _ = load_with_ids(npzp, mmap=mmap_tmp)
         emb_list.append(emb), emb_lens.append(emb.shape)
+        print('{}/{} files loaded'.format(i, n_npzs))
 
     tot_embs = sum([n[0] for n in emb_lens])
     emb_wide = emb_lens[0][1]
-    print('\nFound {} vectors of {}d'.format(tot_embs, emb_wide))
+    print('Found {} vectors of {}d \n'
+          'Merging into single mmap array...'
+          ''.format(tot_embs, emb_wide))
 
     training_set_name = os.path.abspath(training_set_name)
     ts_memmap = np.memmap(training_set_name, dtype=np.float32,
@@ -63,7 +70,7 @@ def load_training_npz(npz_paths: List[str], training_set_name: str,
         place += n_vect
 
     m, s = divmod(time()-t_load, 60)
-    print(' Training set loaded in {}m{:0.2f}s'.format(int(m), s))
+    print('Training set loaded in {}m{:0.2f}s'.format(int(m), s))
 
     return ts_memmap
 

@@ -73,12 +73,8 @@ def main():
     base_index_path = os.path.abspath(os.path.join(args.output_dir,
                                                    args.base_index_name))
 
-    # Gather
-    all_npz_paths = get_all_npz_paths(args.input_npz_dir)
-    print('Found {} .npz files'.format(len(all_npz_paths)))
-
     # Load
-    training_set = load_training_npz(npz_paths=all_npz_paths,
+    training_set = load_training_npz(args.input_npz_dir,
                                      training_set_name=args.mmap_name,
                                      mmap_tmp=True)
 

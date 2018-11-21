@@ -12,6 +12,7 @@ arg_parser.add_option('-n', '--n_centroids', default='4096')
 arg_parser.add_option('-c', '--compression', default='Flat')
 arg_parser.add_option('-v', '--verbose', action='store_true', default=False)
 arg_parser.add_option('-t', '--num_threads')
+arg_parser.add_option('-N', '--N_training_vectors', type='int', default=1000000)
 (args, _) = arg_parser.parse_args()
 # </editor-fold>
 
@@ -75,7 +76,8 @@ def main():
 
     # Load
     training_set = load_training_npz(args.input_npz_dir,
-                                     training_set_name=args.mmap_name)
+                                     training_set_name=args.mmap_name,
+                                     n_vectors=args.N_training_vectors)
 
     # Train
     make_base_IVF(training_set, save_path=base_index_path,

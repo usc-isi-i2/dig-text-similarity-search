@@ -30,13 +30,15 @@ def get_all_npz_paths(npz_parent_dir: str) -> List[str]:
 
 
 ##### Load .npz #####
-def load_training_npz(npz_top_dir: str, training_set_name: str) -> np.array:
+def load_training_npz(npz_top_dir: str, training_set_name: str,
+                      n_vectors: int) -> np.array:
     """
     Merges .npz files into a memory mapped, numpy array for training a
     base faiss index.
 
     :param npz_top_dir: Parent dir containing .npz files
     :param training_set_name: Filename for training_set
+    :param n_vectors: Number of vectors to put into training set
     :return: Memory mapped training set array
     """
     t_load = time()
@@ -44,37 +46,54 @@ def load_training_npz(npz_top_dir: str, training_set_name: str) -> np.array:
     n_npzs = len(npz_paths)
     print('Found {} .npz files'.format(n_npzs))
 
-    emb_list = list()
-    for i, npzp in enumerate(npz_paths, start=1):
-        emb, _, _ = load_with_ids(npzp, mmap=True)
-        emb_list.append(emb)
-        print('{}/{} files loaded'.format(i, n_npzs))
-
-    tot_embs = sum([n.shape[0] for n in emb_list])
-    emb_wide = emb_list[0].shape[1]
-    print('Found {} vectors of {}d \n'
-          'Merging into single mmap array...'
-          ''.format(tot_embs, emb_wide))
-
-    training_set_name = os.path.abspath(training_set_name)
     ts_memmap = np.memmap(training_set_name, dtype=np.float32,
-                          mode='w+', shape=(tot_embs, emb_wide))
-
-    place = 0
-    for emb in emb_list:
-        n_vect = emb.shape[0]
-        ts_memmap[place:place+n_vect, :] = emb[:]
-        place += n_vect
+                          mode='w+', shape=(n_vectors, 512))
+    npz_count = 0
+    emb_count = 0
+    while emb_count < n_vectors:
+        emb, _, _ = load_with_ids(npz_paths[npz_count])
+        emb_batch = emb_count + emb.shape[0]
+        npz_count += 1
+        print('Loaded {}/{} vectors of {}d from {} files...'
+              ''.format(emb_batch, npz_count, emb.shape[1], npz_count))
+        if emb_batch > n_vectors:
+            stop = n_vectors - emb_count
+            ts_memmap[emb_count:n_vectors, :] = emb[:stop, :]
+        else:
+            ts_memmap[emb_count:emb_batch, :] = emb[:, :]
+        emb_count += emb.shape[0]
 
     # ts_memmap.flush()
-    # training_set = np.ndarray(buffer=ts_memmap,
-    #                           dtype=np.float32,
-    #                           shape=(tot_embs, emb_wide))
+    #
+    # emb_list = list()
+    # for i, npzp in enumerate(npz_paths, start=1):
+    #     emb, _, _ = load_with_ids(npzp, mmap=True)
+    #     emb_list.append(emb)
+    #     print('{}/{} files loaded'.format(i, n_npzs))
+    #
+    # tot_embs = sum([n.shape[0] for n in emb_list])
+    # emb_wide = emb_list[0].shape[1]
+    # print('Found {} vectors of {}d \n'
+    #       'Merging into single mmap array...'
+    #       ''.format(tot_embs, emb_wide))
+    #
+    # training_set_name = os.path.abspath(training_set_name)
+    #
+    # place = 0
+    # for emb in emb_list:
+    #     n_vect = emb.shape[0]
+    #     ts_memmap[place:place+n_vect, :] = emb[:]
+    #     place += n_vect
+
+    ts_memmap.flush()
+    training_set = np.ndarray(buffer=ts_memmap,
+                              dtype=np.float32,
+                              shape=(n_vectors, 512))
 
     m, s = divmod(time()-t_load, 60)
     print('Training set loaded in {}m{:0.2f}s'.format(int(m), s))
 
-    return ts_memmap    # training_set
+    return training_set
 
 
 def load_with_ids(file_path: str, mmap: bool = True, load_sents=False

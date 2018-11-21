@@ -25,6 +25,8 @@ if args.num_threads:
     os.environ['OMP_NUM_THREADS'] = opts.num_threads
 # </editor-fold>
 
+import faiss
+
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
@@ -78,6 +80,7 @@ def main():
     training_set = load_training_npz(args.input_npz_dir,
                                      training_set_name=args.mmap_name,
                                      n_vectors=args.N_training_vectors)
+    print(training_set.shape)
 
     # Train
     make_base_IVF(training_set, save_path=base_index_path,

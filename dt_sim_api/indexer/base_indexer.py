@@ -1,4 +1,6 @@
 import os
+from typing import List, Tuple
+
 import faiss
 import numpy as np
 

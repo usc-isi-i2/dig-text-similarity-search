@@ -55,7 +55,7 @@ def load_training_npz(npz_top_dir: str, training_set_name: str,
         emb_batch = emb_count + emb.shape[0]
         npz_count += 1
         print('Loaded {}/{} vectors of {}d from {} files...'
-              ''.format(emb_batch, npz_count, emb.shape[1], npz_count))
+              ''.format(emb_batch, n_vectors, emb.shape[1], npz_count))
         if emb_batch > n_vectors:
             stop = n_vectors - emb_count
             ts_memmap[emb_count:n_vectors, :] = emb[:stop, :]

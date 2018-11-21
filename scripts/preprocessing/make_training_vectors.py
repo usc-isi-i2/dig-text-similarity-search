@@ -151,7 +151,9 @@ def main():
         npz = str(input_file.split('/')[-1]).replace('.jl', '_{:03d}_train.npz'.format(i))
         npz_path = os.path.join(daily_dir, npz)
 
-        if opts.skip and i <= opts.skip and os.path.exists(npz_path):
+        if opts.skip and i < opts.skip:
+            print('  Skipping...  ')
+        elif os.path.exists(npz_path):
             print('  File exists: {} \n'
                   '  Skipping...  '.format(npz_path))
         else:

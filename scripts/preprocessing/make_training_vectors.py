@@ -23,8 +23,6 @@ options.add_option('-t', '--num_threads')
 options.add_option('-l', '--USE_large', action='store_true', default=False)
 options.add_option('-m', '--m_per_batch', type='int', default=512*128)
 options.add_option('-n', '--n_per_minibatch', type='int', default=128)
-options.add_option('-a', '--intra', type='int', default=8)  # TODO: fix TF Config
-options.add_option('-e', '--inter', type='int', default=2)
 
 # Dev
 options.add_option('-s', '--skip', type='int')
@@ -41,7 +39,12 @@ if opts.num_threads:
 
 import numpy as np
 
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+
 from dt_sim_api.data_reader.jl_io_funcs import check_training_docs, get_training_docs
+from dt_sim_api.data_reader.npz_io_funcs import save_with_ids
 from dt_sim_api.data_reader.misc_io_funcs import check_unique
 from dt_sim_api.vectorizer.sentence_vectorizer import SentenceVectorizer
 from dt_sim_api.processor.document_processor import DocumentProcessor
@@ -119,8 +122,7 @@ else:
 
 
 # Init
-sv = SentenceVectorizer(path_to_model=model_dir,
-                        intra=opts.intra, inter=opts.inter)
+sv = SentenceVectorizer(path_to_model=model_dir)
 dp = DocumentProcessor(indexer=None, index_builder=None,
                        vectorizer=sv, storage_adapter=None)
 
@@ -155,7 +157,7 @@ def main():
         else:
             # Vectorize
             batched_embs = dp.vectorizer.make_vectors(batched_sents,
-                                                      batch_size=opts.n_per_minibatch,
+                                                      n_minibatch=opts.n_per_minibatch,
                                                       verbose=opts.verbose_vectorizer)
             t_vect = time()
             if opts.report:
@@ -173,11 +175,8 @@ def main():
 
             # Save .npz for later
             npz_path = check_unique(npz_path)
-            dp.vectorizer.save_with_ids(npz_path,
-                                        embeddings=batched_embs,
-                                        sentences=batched_sents,
-                                        sent_ids=batched_ids,
-                                        compressed=False)
+            save_with_ids(npz_path, embeddings=batched_embs,
+                          sentences=batched_sents, sent_ids=batched_ids, compressed=False)
 
             t_npz = time()
             if opts.report:

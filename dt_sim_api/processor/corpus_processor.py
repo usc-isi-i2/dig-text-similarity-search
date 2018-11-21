@@ -2,11 +2,11 @@ import os
 from typing import List, Union
 
 from .base_processor import BaseProcessor
-from dt_sim_api.indexer.on_disk_index_builder import OnDiskIndexBuilder
-from dt_sim_api.vectorizer.sentence_vectorizer import SentenceVectorizer
 from dt_sim_api.data_reader.jl_io_funcs import *
 from dt_sim_api.data_reader.npz_io_funcs import *
 from dt_sim_api.data_reader.misc_io_funcs import *
+from dt_sim_api.indexer.on_disk_index_builder import OnDiskIndexBuilder
+from dt_sim_api.vectorizer.sentence_vectorizer import SentenceVectorizer
 
 
 class CorpusProcessor(BaseProcessor):

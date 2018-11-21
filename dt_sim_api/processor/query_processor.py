@@ -12,7 +12,7 @@ __all__ = ['QueryProcessor']
 
 class QueryProcessor(BaseProcessor):
 
-    def __init__(self, index_handler, query_vectorizer=None):
+    def __init__(self, index_handler: object, query_vectorizer: object = None):
         BaseProcessor.__init__(self)
         if not query_vectorizer:
             query_vectorizer = DockerVectorizer()

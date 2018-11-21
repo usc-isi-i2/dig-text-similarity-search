@@ -69,8 +69,7 @@ def load_training_npz(npz_paths: List[str], training_set_name: str,
 
 
 def load_with_ids(file_path: str, mmap: bool = True, load_sents=False
-                  ) -> Union[Tuple[np.array, np.array],
-                             Tuple[np.array, np.array, np.array]]:
+                  ) -> Tuple[np.array, np.array, np.array]:
     """
     Load preprocessed sentence embeddings with corresponding integer ids.
     Note: Loading sentences is optional
@@ -94,7 +93,7 @@ def load_with_ids(file_path: str, mmap: bool = True, load_sents=False
     if load_sents:
         return embeddings, sent_ids, sentences
     else:
-        return embeddings, sent_ids
+        return embeddings, sent_ids, np.array([['']], dtype=np.str)
 
 
 ##### Save .npz #####

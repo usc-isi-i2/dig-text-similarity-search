@@ -47,8 +47,7 @@ class SentenceVectorizer(BaseVectorizer):
     """
     Intended for batch Corpus Vectorization
     """
-    def __init__(self, path_to_model: str = None, large: bool = False,
-                 intra: int = 8, inter: int = 2):
+    def __init__(self, path_to_model: str = None, large: bool = False):
         BaseVectorizer.__init__(self)
 
         model_parent_dir = os.path.join(os.path.dirname(__file__), 'model/')
@@ -69,12 +68,6 @@ class SentenceVectorizer(BaseVectorizer):
         if not self.path_to_model:
             self.path_to_model = model_url
 
-        # TODO: fix TF Config
-        self.config = tf.ConfigProto(device_count={'CPU': intra},
-                                     allow_soft_placement=True,
-                                     intra_op_parallelism_threads=intra,
-                                     inter_op_parallelism_threads=inter)
-
         self.graph = None
         self.model = None
         print('Loading model: {}'.format(self.path_to_model))
@@ -90,7 +83,7 @@ class SentenceVectorizer(BaseVectorizer):
             self.model = hub.Module(self.path_to_model)
 
     def start_session(self):
-        self.session = tf.Session(config=self.config)
+        self.session = tf.Session()
         with self.graph.as_default():
             self.session.run([tf.global_variables_initializer(), tf.tables_initializer()])
 
@@ -99,8 +92,8 @@ class SentenceVectorizer(BaseVectorizer):
         tf.reset_default_graph()
         self.define_graph()
 
-    def make_vectors(self, sentences: Union[str, List[str]],
-                     n_minibatch: int = 512, verbose: bool = False) -> List[tf.Tensor]:
+    def make_vectors(self, sentences: Union[str, List[str]], n_minibatch: int = 512,
+                     verbose: bool = False) -> List[tf.Tensor]:
         if not isinstance(sentences, list):
             sentences = [sentences]
         i = 0

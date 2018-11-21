@@ -52,6 +52,7 @@ def load_training_npz(npz_paths: List[str], training_set_name: str,
     emb_wide = emb_lens[0][1]
     print('\nFound {} vectors of {}d'.format(tot_embs, emb_wide))
 
+    training_set_name = os.path.abspath(training_set_name)
     ts_memmap = np.memmap(training_set_name, dtype=np.float32,
                           mode='w+', shape=(tot_embs, emb_wide))
 

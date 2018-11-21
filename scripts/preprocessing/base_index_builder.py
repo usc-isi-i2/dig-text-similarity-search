@@ -70,7 +70,8 @@ def main():
     # Set up paths
     if not os.path.isdir(args.output_dir):
         os.mkdir(args.output_dir)
-    base_index_path = os.path.join(args.output_dir, args.base_index_name)
+    base_index_path = os.path.abspath(os.path.join(args.output_dir,
+                                                   args.base_index_name))
 
     # Gather
     all_npz_paths = get_all_npz_paths(args.input_npz_dir)

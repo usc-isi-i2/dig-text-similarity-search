@@ -31,21 +31,21 @@ def get_all_npz_paths(npz_parent_dir: str) -> List[str]:
 
 ##### Load .npz #####
 def load_training_npz(npz_paths: List[str], training_set_name: str,
-                      load_mmap: bool = True) -> np.array:
+                      mmap_tmp: bool = True) -> np.array:
     """
     Merges .npz files into a memory mapped, numpy array for training a
     base faiss index.
 
     :param npz_paths: List of full paths to .npz files
     :param training_set_name: Filename for training_set
-    :param load_mmap: Bool to load component .npz files in mmap mode
+    :param mmap_tmp: Bool to load component .npz files in mmap mode
     :return: Memory mapped training set array
     """
     t_load = time()
     emb_list = list()
     emb_lens = list()
     for npzp in npz_paths:
-        emb, _, _ = load_with_ids(npzp, mmap=load_mmap)
+        emb, _, _ = load_with_ids(npzp, mmap=mmap_tmp)
         emb_list.append(emb), emb_lens.append(emb.shape)
 
     tot_embs = sum([n[0] for n in emb_lens])

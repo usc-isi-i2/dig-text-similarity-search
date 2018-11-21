@@ -12,7 +12,7 @@ options = OptionParser()
 # Required
 options.add_option('-i', '--input_file')
 
-# Prints
+# Prints          # -r to STOP prints
 options.add_option('-r', '--report', action='store_false', default=True)
 options.add_option('-v', '--verbose_vectorizer', action='store_true', default=False)
 

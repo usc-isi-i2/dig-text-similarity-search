@@ -8,14 +8,16 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_hub as hub
 
+from .base_vectorizer import BaseVectorizer
+
 
 ##### Query Vectorization #####
-
-class DockerVectorizer(object):
+class DockerVectorizer(BaseVectorizer):
     """
     Intended for fast Query Vectorization
     """
     def __init__(self, url=None):
+        BaseVectorizer.__init__(self)
         if not url:
             url = 'http://localhost:8501/v1/models/USE-lite-v2:predict'
         self.url = url
@@ -34,17 +36,19 @@ class DockerVectorizer(object):
 
 
 ##### Corpus Vectorization #####
-
-class SentenceVectorizer(object):
+class SentenceVectorizer(BaseVectorizer):
     """
     Intended for batch Corpus Vectorization
     """
     def __init__(self, path_to_model: str = None, large: bool = False,
                  intra: int = 8, inter: int = 2):
+        BaseVectorizer.__init__(self)
+
         model_parent_dir = os.path.join(os.path.dirname(__file__), 'model/')
         if large:
             model_dir = '96e8f1d3d4d90ce86b2db128249eb8143a91db73/'
             model_url = 'https://tfhub.dev/google/universal-sentence-encoder-large/3'
+            self.large_USE = True
         else:
             model_dir = '1fb57c3ffe1a38479233ee9853ddd7a8ac8a8c47/'
             model_url = 'https://tfhub.dev/google/universal-sentence-encoder/2'

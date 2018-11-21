@@ -274,12 +274,12 @@ class DocumentProcessor(object):
         if batch_mode:
             self.storage_adapter.insert_records_batch(self.table_name, records)
 
-    def index_docs_on_disk(self, path_to_npz, path_to_invlist=None):
+    def index_docs_on_disk(self, path_to_npz, path_to_invlist=None, mmap=True):
         if not path_to_invlist:
             path_to_invlist = 'invl_' + path_to_npz.replace('.npz', '.index')
 
         if self.index_builder:
-            vectors, sent_ids, sentences = load_with_ids(path_to_npz)
+            vectors, sent_ids, sentences = load_with_ids(path_to_npz, mmap=mmap)
             assert sent_ids.shape[0] == vectors.shape[0], \
                 'Found {} sent_ids and {} vectors'.format(sent_ids.shape[0], vectors.shape[0])
             self.index_builder.generate_subindex(path_to_invlist, vectors, sent_ids)

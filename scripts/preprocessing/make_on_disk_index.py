@@ -17,6 +17,7 @@ arg_parser.add_option('-b', '--base_empty_index', default=base_index_path)
 arg_parser.add_option('-e', '--build_from_existing', action='store_true', default=False)
 arg_parser.add_option('-n', '--n_subindexes', type='int', default=-1)
 arg_parser.add_option('-r', '--report_interval', type='int', default=10)
+arg_parser.add_option('--load_mmap', action='store_true', default=False)
 (args, _) = arg_parser.parse_args()
 # </editor-fold>
 
@@ -112,7 +113,8 @@ else:
     for i, (npz, invl) in enumerate(zip(small_npzs, small_invlists)):
         if not os.path.exists(invl):
             t_1 = time()
-            dp.index_docs_on_disk(path_to_npz=npz, path_to_invlist=invl)
+            dp.index_docs_on_disk(path_to_npz=npz, path_to_invlist=invl,
+                                  mmap=args.load_mmap)
             timestamps.append(time()-t_1)
         else:
             print('  Skipping: {}'.format(invl))

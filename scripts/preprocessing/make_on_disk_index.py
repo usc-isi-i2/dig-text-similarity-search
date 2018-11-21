@@ -16,6 +16,7 @@ arg_parser.add_option('-s', '--subindex_dir')
 arg_parser.add_option('-b', '--base_empty_index', default=base_index_path)
 arg_parser.add_option('-e', '--build_from_existing', action='store_true', default=False)
 arg_parser.add_option('-n', '--n_subindexes', type='int', default=-1)
+arg_parser.add_option('-r', '--report_interval', type='int', default=10)
 (args, _) = arg_parser.parse_args()
 # </editor-fold>
 
@@ -116,7 +117,7 @@ else:
         else:
             print('  Skipping: {}'.format(invl))
 
-        if i % 50 == 0 or i >= len(small_npzs)-2:
+        if i % args.report_interval == 0 or i >= len(small_npzs)-2:
             print('  {:4d} of {} .npz files indexed'.format(i, len(small_npzs)))
             print('  Average time per chunk: {:0.2f}s'
                   '\n'.format(sum(timestamps[1:])/len(timestamps[1:])))

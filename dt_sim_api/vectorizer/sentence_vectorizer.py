@@ -67,6 +67,7 @@ class SentenceVectorizer(BaseVectorizer):
             os.environ['TFHUB_CACHE_DIR'] = model_parent_dir
         if not self.path_to_model:
             self.path_to_model = model_url
+        self.path_to_model = os.path.abspath(self.path_to_model)
 
         self.graph = None
         self.model = None

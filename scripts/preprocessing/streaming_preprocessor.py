@@ -12,7 +12,9 @@ options.add_option('-o', '--output_dir')
 options.add_option('-t', '--num_threads')
 options.add_option('-p', '--progress_file', default=prog_file_path)
 options.add_option('-b', '--base_index_path', default=base_index_path)
+options.add_option('-l', '--large', action='store_true', default=False)
 options.add_option('-m', '--m_per_batch', type='int', default=512*128)
+options.add_option('-n', '--n_per_minibatch', type='int', default=32)
 options.add_option('-r', '--report', action='store_true', default=False)
 options.add_option('-d', '--delete_tmp_files', action='store_true', default=False)
 options.add_option('-a', '--add_shard', action='store_true', default=False)
@@ -29,13 +31,13 @@ if opts.num_threads:
     os.environ['OMP_NUM_THREADS'] = opts.num_threads
 
 import re
-import sys
 import json
 import datetime
 import requests
 import numpy as np
 from time import time
 
+import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
@@ -136,7 +138,7 @@ if not os.path.isdir(subidx_dir):
 
 # Init DocumentProcessor
 idx_bdr = OnDiskIndexBuilder(path_to_empty_index=opts.base_index_path)
-sv = SentenceVectorizer()
+sv = SentenceVectorizer(large=opts.large)
 dp = DocumentProcessor(indexer=None, index_builder=idx_bdr,
                        vectorizer=sv, storage_adapter=None)
 
@@ -171,7 +173,8 @@ def main():
                 dp.index_builder.extend_invlist_paths([subidx_path])
             else:
                 # Vectorize
-                batched_embs = dp.vectorizer.make_vectors(batched_sents)
+                batched_embs = dp.vectorizer.make_vectors(batched_sents,
+                                                          n_minibatch=opts.n_per_minibatch)
                 t_vect = time()
                 if opts.report:
                     print('  * Vectorized in {:6.2f}s'.format(t_vect - t_0))
@@ -237,7 +240,7 @@ def main():
 
         # Clear sub.index files after merge
         if opts.delete_tmp_files:
-            clear(subidx_dir)
+            clear_dir(subidx_dir)
             if opts.report:
                 print('\n  Cleared sub.index files')
 

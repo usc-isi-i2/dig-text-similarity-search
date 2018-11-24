@@ -20,6 +20,7 @@ options.add_option('-d', '--delete_tmp_files', action='store_true', default=Fals
 options.add_option('-a', '--add_shard', action='store_true', default=False)
 options.add_option('-u', '--url', default='http://localhost:5954/faiss')
 options.add_option('-s', '--skip', type='int', default=0)
+options.add_option('-T', '--TF_logging', action='store_false', default=True)
 (opts, _) = options.parse_args()
 # </editor-fold>
 
@@ -36,6 +37,11 @@ import datetime
 import requests
 import numpy as np
 from time import time
+
+# Suppress TF logging
+if opts.TF_logging:
+    import tensorflow as tf
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))

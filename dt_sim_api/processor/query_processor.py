@@ -114,7 +114,8 @@ class QueryProcessor(BaseProcessor):
                     out['score'] = faiss_diff
                     out['sentence_id'] = str(faiss_id)
                     payload.append(out)
-        return payload
+        sorted_payload = sorted(payload, key=lambda h: h['score'])
+        return sorted_payload
 
     def add_shard(self, shard_path: str):
         """
@@ -139,6 +140,6 @@ class QueryProcessor(BaseProcessor):
 
     def print_shards(self):
         n_shards = len(self.indexer.paths_to_shards)
-        print('{} Index Shards Deployed:'.format(n_shards))
+        print('Faiss Index Shards Deployed: {}'.format(n_shards))
         for i, shard_path in enumerate(self.indexer.paths_to_shards, start=1):
             print(' {:3d}/{}: {}'.format(i, n_shards, shard_path))

@@ -1,4 +1,6 @@
-import os 
+import os
+import sys
+import traceback
 from time import time
 from typing import Dict, List, Tuple, Union
 
@@ -137,11 +139,14 @@ class QueryProcessor(BaseProcessor):
             try:
                 self.indexer.add_shard(shard_path)
             except NameError as e:
+                exc_type, exc_val, exc_trace = sys.exc_info()
+                lines = traceback.format_exception(exc_type, exc_val, exc_trace)
+                print(''.join(lines))
                 print(e)
-                print('Could not add shard to this index handler')
+                print('Could not add shard: {}'.format(shard_path))
         elif not os.path.isfile(shard_path):
-            print('Error: Path does not specify a file {}'.format(shard_path))
+            print('Error: Path does not specify a file: {}'.format(shard_path))
         elif not shard_path.endswith('.index'):
-            print('Error: Path does not lead to .index {}'.format(shard_path))
+            print('Error: Path does not lead to .index: {}'.format(shard_path))
         else:
-            print('Error: Unexpected input given {}'.format(shard_path))
+            print('Error: Unexpected input: {}'.format(shard_path))

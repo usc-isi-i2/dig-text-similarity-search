@@ -12,7 +12,8 @@ class BaseIndexer(object):
         self.index = None
         self.dynamic = False
 
-    def search(self, query_vector: np.array, k: int):
+    def search(self, query_vector: np.array, k: int
+               ) -> Tuple[List[List[float]], List[List[int]]]:
         return self.index.search(query_vector, k)
 
     @staticmethod

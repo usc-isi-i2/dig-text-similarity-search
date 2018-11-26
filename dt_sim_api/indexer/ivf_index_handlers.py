@@ -1,5 +1,6 @@
 from time import sleep
 from multiprocessing import Pipe, Process, Queue
+from typing import List, Tuple
 
 import faiss
 import numpy as np
@@ -94,10 +95,12 @@ class RangeShards(BaseIndexer):
 
         self.results = Queue()
         self.shards = dict()
+        self.n_shards = 0
         for shard_path in self.paths_to_shards:
             self.load_shard(shard_path)
         for shard_name, (handler_pipe, shard) in self.shards.items():
-            shard.start()            
+            shard.start()
+            self.n_shards += 1
 
     def load_shard(self, shard_path):
         shard_name = shard_path.replace('.index', '').split('/')[-1]
@@ -107,7 +110,9 @@ class RangeShards(BaseIndexer):
                       nprobe=self.nprobe, daemon=False)
         self.shards[shard_name] = (handler_pipe, shard)
 
-    def search(self, query_vector: np.array, k: int, radius: float = 0.5):
+    def search(self, query_vector: np.array, k: int, radius: float = 0.5
+               ) -> Tuple[List[List[float]], List[List[int]]]:
+
         if len(query_vector.shape) < 2 or query_vector.shape[0] > 1:
             query_vector = np.reshape(query_vector, (1, query_vector.shape[0]))
 
@@ -123,12 +128,15 @@ class RangeShards(BaseIndexer):
 
         # Aggregate results
         D, I = list(), list()
-        while not self.results.empty():
+        n_results = 0
+        while n_results < self.n_shards or not self.results.empty():
             dd, ii = self.results.get()
-            D.extend(dd), I.extend(ii)
+            D.extend(dd[0]), I.extend(ii[0])
+            n_results += 1
+        D, I = [D], [I]
 
         # Ensure len(results) > k
-        if radius < self.max_radius and len(D) < k:
+        if radius < self.max_radius and len(D[0]) < k:
             new_radius = radius + 0.3
             D, I = self.search(query_vector, k, radius=new_radius)
         return self.joint_sort(D, I)

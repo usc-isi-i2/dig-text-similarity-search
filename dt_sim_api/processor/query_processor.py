@@ -150,3 +150,9 @@ class QueryProcessor(BaseProcessor):
             print('Error: Path does not lead to .index: {}'.format(shard_path))
         else:
             print('Error: Unexpected input: {}'.format(shard_path))
+
+    def print_shards(self):
+        n_shards = len(self.indexer.paths_to_shards)
+        print('{} Index Shards Deployed:'.format(n_shards))
+        for i, shard_path in enumerate(self.indexer.paths_to_shards, start=1):
+            print(' {:3d}/{}: {}'.format(i, n_shards, shard_path))

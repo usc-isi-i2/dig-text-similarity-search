@@ -289,7 +289,7 @@ class DocumentProcessor(object):
     def index_embeddings_on_disk(self, embeddings, sent_ids, path_to_invlist):
         if self.index_builder:
             assert sent_ids.shape[0] == embeddings.shape[0], \
-                'Found {} sent_ids and {} vectors'.format(sent_ids.shape[0], vectors.shape[0])
+                'Found {} sent_ids and {} vectors'.format(sent_ids.shape[0], embeddings.shape[0])
             self.index_builder.generate_subindex(path_to_invlist, embeddings, sent_ids)
         else:
             raise Exception('Cannot index on disk without an index_builder')

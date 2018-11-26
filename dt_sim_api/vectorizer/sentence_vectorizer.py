@@ -14,7 +14,8 @@ from .base_vectorizer import BaseVectorizer
 ##### Query Vectorization #####
 class DockerVectorizer(BaseVectorizer):
     """
-    Intended for fast Query Vectorization
+    Intended for fast Query Vectorization.
+    Note: Ensure docker container is running before importing class.
     """
     def __init__(self, large: bool = False, model_name: str = None):
         BaseVectorizer.__init__(self)

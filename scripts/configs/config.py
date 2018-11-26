@@ -21,7 +21,7 @@ base_config = {
 }
 
 # Standard faiss index directory (provide full path)
-std_index_path = os.path.abspath('../saved_indexes/')
+std_index_path = os.path.abspath('../saved_indexes/shards/')
 
 
 #### IMPORTABLE CONFIGS ####

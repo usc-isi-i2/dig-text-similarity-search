@@ -131,7 +131,7 @@ class RangeShards(BaseIndexer):
         n_results = 0
         while n_results < self.n_shards or not self.results.empty():
             dd, ii = self.results.get()
-            D.extend(dd[0]), I.extend(ii[0])
+            D.extend(list(dd[0])), I.extend(list(ii[0]))
             n_results += 1
         D, I = [D], [I]
 

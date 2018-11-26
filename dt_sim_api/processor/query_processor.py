@@ -23,7 +23,7 @@ class QueryProcessor(BaseProcessor):
         self.vectorizer = query_vectorizer
 
     def query_corpus(self, query_str: str, k: int = 5, 
-                     verbose: bool = False) -> List[dict]:
+                     verbose: bool = True) -> List[dict]:
         """
         Vectorize query -> Search faiss index handler -> Format doc payload
         Expects to receive only one query per call.
@@ -36,27 +36,22 @@ class QueryProcessor(BaseProcessor):
         t_v = time()
         query_vector = self.vectorize(query_str)
 
-        # TODO: date-range search
-        # Search
+        # Search            # TODO: date-range search
         t_s = time()
         k_search = max(500, 100*k)
         scores, faiss_ids = self.indexer.search(query_vector, k=k_search)
 
-        # TODO: add input options for doc reranking
         # Aggregate hits into docs -> rerank (soon) -> format
         t_p = time()
         doc_hits = self.aggregate_docs(scores, faiss_ids)
-        self.rerank()   # TODO: implement new reranking logic
+        # self.rerank()     # TODO: implement new reranking logic
         similar_docs = self.format_payload(doc_hits)
 
         t_r = time()
         if verbose:
-            print('  Query vectorized in -- {:0.4f}s'.format(t_s - t_v))
-            print('  Index searched in ---- {:0.4f}s'.format(t_p - t_s))
-            print('  Payload formatted in - {:0.4f}s'.format(t_r - t_p))
-        # TODO: check output
-        assert all(similar_docs[i]['score'] <= similar_docs[i+1]['score'] 
-                   for i in range(len(similar_docs) - 1))
+            print('  Query vectorized in --- {:0.4f}s'.format(t_s - t_v))
+            print('  Index searched in ----- {:0.4f}s'.format(t_p - t_s))
+            print('  Payload formatted in -- {:0.4f}s'.format(t_r - t_p))
 
         return similar_docs[:k]
 
@@ -73,18 +68,8 @@ class QueryProcessor(BaseProcessor):
 
         query_vector = self.vectorizer.make_vectors(query)
 
-        # TODO: check exact return structure of docker vectorizer
-        print(query_vector)
         if isinstance(query_vector[0], list):
             query_vector = np.array(query_vector, dtype=np.float32)
-            # TODO: check if this outputs the correct shape
-            print(query_vector.shape)
-        # TODO: check type/shape
-        print(type(query_vector))
-        print(len(query_vector))
-        # TODO: check if shape==(1, 512) works with k-search AND distance-search
-        if len(query_vector.shape) < 2 or query_vector.shape[0] > 1:
-            query_vector = np.reshape(query_vector, (1, query_vector.shape[0]))
         return query_vector
 
     @staticmethod
@@ -122,12 +107,13 @@ class QueryProcessor(BaseProcessor):
             [ { 'score': faiss_diff_score, 'sentence_id': str(faiss_id) } ]
         """
         payload = list()
-        for doc in doc_hits:
-            out = dict()
-            for doc_id, faiss_diff_id in doc.items():
-                out['score'] = faiss_diff_id[0][0]
-                out['sentence_id'] = str(faiss_diff_id[0][1])
-            payload.append(out)
+        for doc_id, faiss_diff_ids in doc_hits.items():
+            if int(doc_id) > 0:
+                for faiss_diff, faiss_id in faiss_diff_ids:
+                    out = dict()
+                    out['score'] = faiss_diff
+                    out['sentence_id'] = str(faiss_id)
+                    payload.append(out)
         return payload
 
     def add_shard(self, shard_path: str):

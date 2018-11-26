@@ -16,7 +16,7 @@ class DockerVectorizer(BaseVectorizer):
     """
     Intended for fast Query Vectorization
     """
-    def __init__(self, model_name: str = None, large: bool = False):
+    def __init__(self, large: bool = False, model_name: str = None):
         BaseVectorizer.__init__(self)
 
         if not model_name and large:
@@ -47,7 +47,7 @@ class SentenceVectorizer(BaseVectorizer):
     """
     Intended for batch Corpus Vectorization
     """
-    def __init__(self, path_to_model: str = None, large: bool = False):
+    def __init__(self, large: bool = False, path_to_model: str = None):
         BaseVectorizer.__init__(self)
 
         model_parent_dir = os.path.join(os.path.dirname(__file__), 'model/')

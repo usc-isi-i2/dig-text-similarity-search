@@ -22,6 +22,7 @@ from scripts.configs.config import std_config, lrg_config
 from optparse import OptionParser
 options = OptionParser()
 options.add_option('-i', '--index_dir_path', type='str')
+options.add_option('-c', '--centroids', type='int', default=16)
 options.add_option('-r', '--range_search', action='store_true', default=False)
 options.add_option('-l', '--large', action='store_true', default=False)
 options.add_option('-d', '--debug', action='store_true', default=False)
@@ -49,16 +50,16 @@ if opts.AWS:
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
-print('* Initializing Faiss Indexes')
+print(' * Initializing Faiss Indexes')
 if opts.range_search:
-    faiss_indexer = RangeShards(my_config['faiss_index_path'])
+    faiss_indexer = RangeShards(my_config['faiss_index_path'], nprobe=opts.centroids)
 else:
-    faiss_indexer = DeployShards(my_config['faiss_index_path'])
+    faiss_indexer = DeployShards(my_config['faiss_index_path'], nprobe=opts.centroids)
 
-print('* Initializing Query Vectorizer')
+print(' * Initializing Query Vectorizer')
 query_vectorizer = DockerVectorizer(large=my_config['large_emb_space'])
 
-print('* Initializing Query Processor')
+print(' * Initializing Query Processor')
 qp = QueryProcessor(index_handler=faiss_indexer, query_vectorizer=query_vectorizer)
 
 

@@ -104,14 +104,14 @@ class QueryProcessor(BaseProcessor):
         TMP payload formatting for current sandpaper implementation 
         
         Old payload structure: 
-            [ { 'score': faiss_diff_score, 'sentence_id': str(faiss_id) } ]
+            [ { 'score': str(faiss_diff), 'sentence_id': str(faiss_id) } ]
         """
         payload = list()
         for doc_id, faiss_diff_ids in doc_hits.items():
             if int(doc_id) > 0:
                 for faiss_diff, faiss_id in faiss_diff_ids:
                     out = dict()
-                    out['score'] = faiss_diff
+                    out['score'] = str(faiss_diff)
                     out['sentence_id'] = str(faiss_id)
                     payload.append(out)
         sorted_payload = sorted(payload, key=lambda h: h['score'])

@@ -50,7 +50,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from dt_sim_api.data_reader.jl_io_funcs import check_all_docs, get_all_docs
 from dt_sim_api.data_reader.misc_io_funcs import check_unique, clear_dir
 from dt_sim_api.vectorizer.sentence_vectorizer import SentenceVectorizer
-from dt_sim_api.indexer.on_disk_index_builder import OnDiskIndexBuilder
+from dt_sim_api.indexer.index_builder import LargeIndexBuilder
 from dt_sim_api.processor.document_processor import DocumentProcessor
 # </editor-fold>
 
@@ -143,7 +143,7 @@ if not os.path.isdir(subidx_dir):
 
 
 # Init DocumentProcessor
-idx_bdr = OnDiskIndexBuilder(path_to_empty_index=opts.base_index_path)
+idx_bdr = LargeIndexBuilder(path_to_base_index=opts.base_index_path)
 sv = SentenceVectorizer(large=opts.large)
 dp = DocumentProcessor(indexer=None, index_builder=idx_bdr,
                        vectorizer=sv, storage_adapter=None)

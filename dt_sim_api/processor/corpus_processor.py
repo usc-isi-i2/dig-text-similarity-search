@@ -51,7 +51,7 @@ class CorpusProcessor(BaseProcessor):
     def vectorize(self, text_batch: List[str], id_batch: List[str],
                   n_minibatch: int, very_verbose: bool = False
                   ) -> Tuple[np.array, np.array]:
-        assert len(text_batch) == len(ids_batch)
+        assert len(text_batch) == len(id_batch)
         batched_embs = self.vectorizer.make_vectors(text_batch, n_minibatch,
                                                     verbose=very_verbose)
 

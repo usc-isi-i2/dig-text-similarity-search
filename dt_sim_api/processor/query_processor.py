@@ -7,7 +7,7 @@ from typing import Dict, List, Tuple, Union
 import numpy as np
 
 from .base_processor import BaseProcessor
-from .processor_cache import memoize
+from .processor_cache import Memoized
 from dt_sim_api.vectorizer.sentence_vectorizer import DockerVectorizer
 
 __all__ = ['QueryProcessor']
@@ -23,7 +23,7 @@ class QueryProcessor(BaseProcessor):
         self.indexer = index_handler
         self.vectorizer = query_vectorizer
 
-    @memoize
+    @Memoized
     def query_corpus(self, query_str: str, k: int = 5, 
                      verbose: bool = True) -> List[dict]:
         """

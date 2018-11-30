@@ -79,7 +79,7 @@ def text_similarity_search():
         return jsonify({'message': 'The service is not able to process null requests'}), 400
 
     try:
-        results = qp.query_corpus(query, k=int(k))
+        results = qp.query_corpus(query, int(k))
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         lines = traceback.format_exception(exc_type, exc_value, exc_traceback)

@@ -1,28 +1,45 @@
-# <editor-fold desc="Imports">
+# <editor-fold desc="Basic Imports">
 import os
+import os.path as p
+import re
+import sys
+import json
+import datetime
+import requests
+from time import time
 from optparse import OptionParser
-# <editor-fold desc="Parse Command Line Options">
-prog_file_path = os.path.join(os.path.dirname(__file__), 'progress.txt')
-relative_base_path = '../../saved_indexes/USE_lite_base_IVF16K.index'
-base_index_path = os.path.abspath(os.path.join(os.path.dirname(__file__), relative_base_path))
 
-options = OptionParser()
-options.add_option('-i', '--input_dir')
-options.add_option('-o', '--output_dir')
-options.add_option('-t', '--num_threads')
-options.add_option('-p', '--progress_file', default=prog_file_path)
-options.add_option('-b', '--base_index_path', default=base_index_path)
-options.add_option('-l', '--large', action='store_true', default=False)
-options.add_option('-m', '--m_per_batch', type='int', default=512*128)
-options.add_option('-n', '--n_per_minibatch', type='int', default=32)
-options.add_option('-r', '--report', action='store_true', default=False)
-options.add_option('-d', '--delete_tmp_files', action='store_true', default=False)
-options.add_option('-a', '--add_shard', action='store_true', default=False)
-options.add_option('-u', '--url', default='http://localhost:5954/faiss')
-options.add_option('-s', '--skip', type='int', default=0)
-options.add_option('-T', '--TF_logging', action='store_false', default=True)
-(opts, _) = options.parse_args()
+sys.path.append(p.join(p.dirname(__file__), '..'))
+sys.path.append(p.join(p.dirname(__file__), '../..'))
 # </editor-fold>
+
+# <editor-fold desc="Parse Command Line Options">
+prog_file_path = p.join(p.dirname(__file__), 'progress.txt')
+relative_base_path = '../../saved_indexes/USE_lite_base_IVF16K.index'
+base_index_path = p.abspath(p.join(p.dirname(__file__), relative_base_path))
+
+arg_parser = OptionParser()
+arg_parser.add_option('-i', '--input_dir')
+arg_parser.add_option('-o', '--output_dir')
+arg_parser.add_option('-t', '--num_threads')
+arg_parser.add_option('-p', '--progress_file', default=prog_file_path)
+arg_parser.add_option('-b', '--base_index_path', default=base_index_path)
+arg_parser.add_option('-l', '--large', action='store_true', default=False)
+arg_parser.add_option('-m', '--m_per_batch', type='int', default=512*128)
+arg_parser.add_option('-n', '--n_per_minibatch', type='int', default=32)
+arg_parser.add_option('-r', '--report', action='store_true', default=False)
+arg_parser.add_option('-d', '--delete_tmp_files', action='store_true', default=False)
+arg_parser.add_option('-a', '--add_shard', action='store_true', default=False)
+arg_parser.add_option('-u', '--url', default='http://localhost:5954/faiss')
+arg_parser.add_option('-s', '--skip', type='int', default=0)
+arg_parser.add_option('-T', '--TF_logging', action='store_false', default=True)
+(opts, _) = arg_parser.parse_args()
+# </editor-fold>
+
+# Suppress TF logging
+if opts.TF_logging:
+    import tensorflow as tf
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 if opts.num_threads:
     print('\nRestricting numpy to {} thread(s)\n'.format(opts.num_threads))
@@ -31,28 +48,11 @@ if opts.num_threads:
     os.environ['MKL_NUM_THREADS'] = opts.num_threads
     os.environ['OMP_NUM_THREADS'] = opts.num_threads
 
-import re
-import json
-import datetime
-import requests
 import numpy as np
-from time import time
-
-# Suppress TF logging
-if opts.TF_logging:
-    import tensorflow as tf
-    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
 from dt_sim_api.data_reader.jl_io_funcs import check_all_docs, get_all_docs
 from dt_sim_api.data_reader.misc_io_funcs import check_unique, clear_dir
-from dt_sim_api.vectorizer.sentence_vectorizer import SentenceVectorizer
-from dt_sim_api.indexer.index_builder import LargeIndexBuilder
-from dt_sim_api.processor.document_processor import DocumentProcessor
-# </editor-fold>
+from dt_sim_api.processor.corpus_processor import CorpusProcessor
 
 
 """
@@ -89,64 +89,19 @@ Options:
 """
 
 
+# Init
+cp = CorpusProcessor(large_USE=opts.large,
+                     base_index_path=opts.base_index_path,
+                     progress_file=opts.progress_file)
+
 # Track progress
-preprocessed_news = list()
-if os.path.exists(opts.progress_file):
-    with open(opts.progress_file, 'r') as f:
-        for line in f:
-            preprocessed_news.append(str(line).replace('\n', ''))
-            if opts.report:
-                print('* Processed:  {}'.format(str(line).replace('\n', '')))
-preprocessed_news.sort(reverse=True)
-
-raw_news = list()
-for (dir_path, _, file_list) in os.walk(opts.input_dir):
-    for f in file_list:
-        if f.endswith('.jl'):
-            raw_news.append(str(os.path.join(dir_path, f)))
-            if opts.report:
-                print('* Raw news:   {}'.format(str(os.path.join(dir_path, f))))
-    break
-raw_news.sort(reverse=True)
-
-files_to_process = list()
-for f in raw_news:
-    if f not in preprocessed_news:
-        files_to_process.append(str(f))
-        if opts.report:
-            print('* Candidates: {}'.format(str(f)))
-assert len(files_to_process), 'No new files to process! \nAborting...'
-files_to_process.sort(reverse=True)
-file_to_process = files_to_process[:1]   # Only preprocesses one news.jl
+prepped_news = cp.track_preprocessing(cp.progress_file, verbose=opts.report)
+raw_news = cp.get_news_paths(opts.input_dir, verbose=opts.report)
+candidates = cp.candidate_files(prepped_news, raw_news, verbose=opts.report)
+file_to_process = candidates[:1]   # Only preprocesses one news.jl
+subidx_dir = cp.init_paths(file_to_process[0], opts.input_dir)
 if opts.report:
     print('Will process: {}\n'.format(file_to_process[0]))
-
-
-# Init paths
-input_dir = opts.input_dir
-date_today = str(datetime.date.today())
-if date_today in file_to_process[0]:
-    date = date_today
-else:
-    seed = str('\d{4}[-/]\d{2}[-/]\d{2}')
-    date = re.search(seed, file_to_process[0]).group()
-
-intermediate_dir = os.path.abspath(os.path.join(input_dir, '../intermediate_files/'))
-daily_dir = os.path.join(intermediate_dir, date)
-subidx_dir = os.path.join(daily_dir, 'subindexes')
-if not os.path.isdir(intermediate_dir):
-    os.mkdir(intermediate_dir)
-if not os.path.isdir(daily_dir):
-    os.mkdir(daily_dir)
-if not os.path.isdir(subidx_dir):
-    os.mkdir(subidx_dir)
-
-
-# Init DocumentProcessor
-idx_bdr = LargeIndexBuilder(path_to_base_index=opts.base_index_path)
-sv = SentenceVectorizer(large=opts.large)
-dp = DocumentProcessor(indexer=None, index_builder=idx_bdr,
-                       vectorizer=sv, storage_adapter=None)
 
 
 # Preprocessing
@@ -171,48 +126,46 @@ def main():
                 print('  Starting doc batch:  {:3d}'.format(i+1))
 
             subidx = str(raw_jl.split('/')[-1]).replace('.jl', '_{:03d}_sub.index'.format(i))
-            subidx_path = os.path.join(subidx_dir, subidx)
+            subidx_path = p.join(subidx_dir, subidx)
 
             if i < opts.skip:
-                assert os.path.exists(subidx_path), \
-                    'Warning: File does not exist: {} \nAborting...'.format(subidx_path)
-                dp.index_builder.extend_invlist_paths([subidx_path])
+                assert p.exists(subidx_path), \
+                    'Warning: File does not exist: {} \n' \
+                    'Aborting...'.format(subidx_path)
+                cp.index_builder.include_subpath(subidx_path)
+
+            elif p.exists(subidx_path):
+                print('  File exists: {} \n'
+                      '  Skipping...  '.format(subidx_path))
+                cp.index_builder.include_subpath(subidx_path)
+
             else:
                 # Vectorize
-                batched_embs = dp.vectorizer.make_vectors(batched_sents,
-                                                          n_minibatch=opts.n_per_minibatch)
+                emb_batch, id_batch = cp.vectorize(text_batch=batched_sents,
+                                                   id_batch=batched_ids,
+                                                   n_minibatch=opts.n_per_minibatch,
+                                                   very_verbose=False)
                 t_vect = time()
                 if opts.report:
                     print('  * Vectorized in {:6.2f}s'.format(t_vect - t_0))
 
-                # Numpify
-                if not isinstance(batched_embs, np.ndarray):
-                    batched_embs = np.vstack(batched_embs).astype(np.float32)
-                if not isinstance(batched_ids, np.ndarray):
-                    try:
-                        batched_ids = np.array(batched_ids, dtype=np.int64)
-                    except ValueError:
-                        print(batched_ids)
-                        raise ValueError
-
                 # Make faiss subindex
                 subidx_path = check_unique(subidx_path)
-                dp.index_embeddings_on_disk(embeddings=batched_embs, sent_ids=batched_ids,
-                                            path_to_invlist=subidx_path)
+                cp.index_builder.generate_subindex(subidx_path, emb_batch, id_batch)
                 t_subidx = time()
                 if opts.report:
                     print('  * Subindexed in {:6.2f}s'.format(t_subidx - t_vect))
 
                 # Clear graph
-                del batched_embs, batched_sents, batched_ids
-                dp.vectorizer.close_session()
+                del emb_batch, batched_sents, id_batch
+                cp.vectorizer.close_session()
                 t_reset = time()
                 if opts.report:
                     print('  * Cleared TF in {:6.2f}s'.format(t_reset - t_subidx))
 
                 # Restart TF session if necessary
                 if i < n_batches - 1:
-                    dp.vectorizer.start_session()
+                    cp.vectorizer.start_session()
                     if opts.report:
                         print('  * Started TF in {:6.2f}s'.format(time() - t_reset))
 
@@ -223,26 +176,26 @@ def main():
                       ''.format(i+1, n_batches, int(mp), sp))
 
         # Merge
+        # TODO: Title indexes
         t_merge = time()
-        merged_ivfs = date + '_mergedIVF16K.ivfdata'
-        merged_ivfs = os.path.join(opts.output_dir, merged_ivfs)
+        merged_ivfs = date + '_all.ivfdata'
+        merged_ivfs = p.join(opts.output_dir, merged_ivfs)
         merged_ivfs = check_unique(merged_ivfs)
-        merged_index = date + '_populatedIVF16K.index'
-        merged_index = os.path.join(opts.output_dir, merged_index)
+        merged_index = date + '_all.index'
+        merged_index = p.join(opts.output_dir, merged_index)
         merged_index = check_unique(merged_index)
         if opts.report:
             print('\n  Merging {} on-disk'.format(merged_index.split('/')[-1]))
 
-        dp.build_index_on_disk(merged_ivfs_path=merged_ivfs,
-                               merged_index_path=merged_index)
+        n_vect = cp.merge_IVFs(index_path=merged_index, ivfdata_path=merged_ivfs)
 
         if opts.report:
             mm, sm = divmod(time() - t_merge, 60)
-            print('  Merged subindexes in: {:3d}m{:0.2f}s'.format(int(mm), sm))
+            print('  Merged subindexes ({} vectors) in: {:3d}m{:0.2f}s'
+                  ''.format(n_vect, int(mm), sm))
 
         # Record progress
-        with open(opts.progress_file, 'a') as p:
-            p.write(raw_jl + '\n')
+        cp.record_progress(raw_jl)
 
         # Clear sub.index files after merge
         if opts.delete_tmp_files:

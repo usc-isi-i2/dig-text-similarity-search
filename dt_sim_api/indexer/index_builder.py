@@ -78,7 +78,7 @@ class LargeIndexBuilder(object):
         faiss.write_index(index, index_path)
         return int(ntotal)
 
-    def generate_subindex(self, subindex_path: str, 
+    def generate_subindex(self, subindex_path: str,
                           embeddings: np.array, faiss_ids: np.array):
         if self.index_path_clear(subindex_path):
             index = self.load_base_idx()
@@ -95,7 +95,7 @@ class LargeIndexBuilder(object):
         index.add_with_ids(embeddings, faiss_ids)
         return index
 
-    def extend_subindex_paths(self, paths_to_add: Union[str, List[str]]):
+    def include_subpath(self, paths_to_add: Union[str, List[str]]):
         """ Useful if subindexes already exist """
         if isinstance(paths_to_add, str):
             paths_to_add = [paths_to_add]

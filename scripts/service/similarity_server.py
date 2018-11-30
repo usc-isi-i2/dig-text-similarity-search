@@ -22,7 +22,7 @@ from scripts.configs.config import std_config, lrg_config
 from optparse import OptionParser
 options = OptionParser()
 options.add_option('-i', '--index_dir_path', type='str')
-options.add_option('-c', '--centroids', type='int', default=16)
+options.add_option('-c', '--centroids', type='int', default=1)
 options.add_option('-r', '--range_search', action='store_true', default=False)
 options.add_option('-l', '--large', action='store_true', default=False)
 options.add_option('-d', '--debug', action='store_true', default=False)

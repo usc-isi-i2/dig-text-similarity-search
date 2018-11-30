@@ -15,37 +15,21 @@ from dt_sim_api.indexer.index_builder import LargeIndexBuilder
 from dt_sim_api.vectorizer.sentence_vectorizer import SentenceVectorizer
 
 
-default_base_index_path = 'dig-text-similarity-search/saved_indexes/' \
-                           'USE_lite_base_IVF16K.index'
-default_base_index_path = p.abspath(default_base_index_path)
-
-
 class CorpusProcessor(BaseProcessor):
     # TODO: move preprocessing scripts into methods
     # TODO: Add docstrings
 
     def __init__(self, vectorizer: object = None, index_builder: object = None,
-                 large_USE: bool = False, base_index_path: str = None,
                  progress_file: str = None):
         BaseProcessor.__init__(self)
 
-        # TODO: Include new base indexes (when ready)
-        if not base_index_path:
-            base_index_path = p.abspath('../../saved_indexes/'
-                                        'USE_large_base_IVF4K_15M.index')
-            assert p.isfile(base_index_path)
-
-        if not index_builder:
-            index_builder = LargeIndexBuilder(path_to_base_index=base_index_path)
-        if not vectorizer:
-            vectorizer = SentenceVectorizer(large=large_USE)
-
         # Workhorses
-        self.index_builder = index_builder
         self.vectorizer = vectorizer
+        self.index_builder = index_builder
 
         # Logging
-        self.progress_file = p.abspath(progress_file)
+        if progress_file:
+            self.progress_file = p.abspath(progress_file)
 
     # Implement for BaseProcessor
     def vectorize(self, text_batch: List[str], id_batch: List[str],
@@ -55,14 +39,8 @@ class CorpusProcessor(BaseProcessor):
         batched_embs = self.vectorizer.make_vectors(text_batch, n_minibatch,
                                                     verbose=very_verbose)
 
-        if not isinstance(text_batch, np.ndarray):
-            batched_embs = np.vstack(batched_embs).astype(np.float32)
-        if not isinstance(id_batch, np.ndarray):
-            try:
-                batched_ids = np.array(id_batch, dtype=np.int64)
-            except ValueError:
-                print(id_batch)
-                raise ValueError
+        batched_embs = np.vstack(batched_embs).astype(np.float32)
+        batched_ids = np.array(id_batch, dtype=np.int64)
 
         return batched_embs, batched_ids
 
@@ -121,7 +99,7 @@ class CorpusProcessor(BaseProcessor):
     # Path Funcs
     @staticmethod
     def init_paths(file_to_process: str, input_dir: str,
-                   seed: str = str('\d{4}[-/]\d{2}[-/]\d{2}')) -> str:
+                   seed: str = str('\d{4}[-/]\d{2}[-/]\d{2}')) -> Tuple[str, str]:
         """
         TODO
         :param file_to_process:
@@ -144,6 +122,4 @@ class CorpusProcessor(BaseProcessor):
             os.mkdir(daily_dir)
         if not p.isdir(subidx_dir):
             os.mkdir(subidx_dir)
-        return subidx_dir
-
-
+        return subidx_dir, date

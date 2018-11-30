@@ -296,7 +296,7 @@ class DocumentProcessor(object):
 
     def build_index_on_disk(self, merged_ivfs_path, merged_index_path) -> int:
         if self.index_builder:
-            ntotal = self.index_builder.merge_IVFs(merged_ivfs_path, merged_index_path)
+            ntotal = self.index_builder.merge_IVFs(merged_index_path, merged_ivfs_path)
             return ntotal
         else:
             raise Exception('Cannot build index on disk without an index_builder')

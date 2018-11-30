@@ -7,6 +7,7 @@ from typing import Dict, List, Tuple, Union
 import numpy as np
 
 from .base_processor import BaseProcessor
+from .processor_cache import memoize
 from dt_sim_api.vectorizer.sentence_vectorizer import DockerVectorizer
 
 __all__ = ['QueryProcessor']
@@ -22,6 +23,7 @@ class QueryProcessor(BaseProcessor):
         self.indexer = index_handler
         self.vectorizer = query_vectorizer
 
+    @memoize
     def query_corpus(self, query_str: str, k: int = 5, 
                      verbose: bool = True) -> List[dict]:
         """
@@ -99,7 +101,7 @@ class QueryProcessor(BaseProcessor):
 
     @staticmethod
     def format_payload(doc_hits: Dict[str, List[Tuple[float, int]]]
-                       ) -> List[Dict[str, Union[float, str]]]:
+                       ) -> List[Dict[str, str]]:
         """ 
         TMP payload formatting for current sandpaper implementation 
         
@@ -114,8 +116,7 @@ class QueryProcessor(BaseProcessor):
                     out['score'] = str(faiss_diff)
                     out['sentence_id'] = str(faiss_id)
                     payload.append(out)
-        sorted_payload = sorted(payload, key=lambda h: h['score'])
-        return sorted_payload
+        return sorted(payload, key=lambda h: h['score'])
 
     def add_shard(self, shard_path: str):
         """

@@ -112,4 +112,5 @@ def main():
 
 
 if __name__ == '__main__':
+    # TODO: Cache ifps on startup
     main()

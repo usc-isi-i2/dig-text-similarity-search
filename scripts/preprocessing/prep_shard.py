@@ -146,10 +146,10 @@ def main():
 
         else:
             # Vectorize
-            emb_batch, id_batch = cp.vectorize(text_batch=batched_sents,
-                                               id_batch=batched_ids,
-                                               n_minibatch=opts.n_per_minibatch,
-                                               very_verbose=False)
+            emb_batch, id_batch = cp.batch_vectorize(
+                text_batch=batched_sents, id_batch=batched_ids,
+                n_minibatch=opts.n_per_minibatch, very_verbose=False
+            )
             t_vect = time()
             if opts.report:
                 print('  * Vectorized in {:6.2f}s'.format(t_vect - t_0))
@@ -180,42 +180,42 @@ def main():
                   '  Total time passed: {:3d}m{:0.2f}s\n'
                   ''.format(i+1, n_batches, int(mp), sp))
 
-        # Merge
-        # TODO: Title indexes
-        t_merge = time()
-        merged_ivfs = shard_date + '_all.ivfdata'
-        merged_ivfs = p.join(opts.output_dir, merged_ivfs)
-        merged_ivfs = check_unique(merged_ivfs)
-        merged_index = shard_date + '_all.index'
-        merged_index = p.join(opts.output_dir, merged_index)
-        merged_index = check_unique(merged_index)
+    # Merge
+    # TODO: Title indexes
+    t_merge = time()
+    merged_ivfs = shard_date + '_all.ivfdata'
+    merged_ivfs = p.join(opts.output_dir, merged_ivfs)
+    merged_ivfs = check_unique(merged_ivfs)
+    merged_index = shard_date + '_all.index'
+    merged_index = p.join(opts.output_dir, merged_index)
+    merged_index = check_unique(merged_index)
+    if opts.report:
+        print('\n  Merging {} on-disk'.format(merged_index.split('/')[-1]))
+
+    n_vect = cp.index_builder.merge_IVFs(index_path=merged_index, ivfdata_path=merged_ivfs)
+
+    if opts.report:
+        mm, sm = divmod(time() - t_merge, 60)
+        print('  Merged subindexes ({} vectors) in: {:3d}m{:0.2f}s'
+              ''.format(n_vect, int(mm), sm))
+
+    # Record progress
+    cp.record_progress(raw_jl)
+
+    # Clear sub.index files after merge
+    if opts.delete_tmp_files:
+        clear_dir(subidx_dir)
         if opts.report:
-            print('\n  Merging {} on-disk'.format(merged_index.split('/')[-1]))
+            print('\n  Cleared sub.index files')
 
-        n_vect = cp.index_builder.merge_IVFs(index_path=merged_index, ivfdata_path=merged_ivfs)
-
-        if opts.report:
-            mm, sm = divmod(time() - t_merge, 60)
-            print('  Merged subindexes ({} vectors) in: {:3d}m{:0.2f}s'
-                  ''.format(n_vect, int(mm), sm))
-
-        # Record progress
-        cp.record_progress(raw_jl)
-
-        # Clear sub.index files after merge
-        if opts.delete_tmp_files:
-            clear_dir(subidx_dir)
-            if opts.report:
-                print('\n  Cleared sub.index files')
-
-        if opts.add_shard:
-            try:
-                url = opts.url
-                payload = {'path': merged_index}
-                r = requests.put(url, params=payload)
-                print(r.text)
-            except Exception as e:
-                print('Shard was not added because an exception occurred: {}'.format(e))
+    if opts.add_shard:
+        try:
+            url = opts.url
+            payload = {'path': merged_index}
+            r = requests.put(url, params=payload)
+            print(r.text)
+        except Exception as e:
+            print('Shard was not added because an exception occurred: {}'.format(e))
 
 
 if __name__ == '__main__':

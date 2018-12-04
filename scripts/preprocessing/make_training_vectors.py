@@ -139,10 +139,10 @@ def main():
                   '  Skipping...  '.format(npz_path))
         else:
             # Vectorize
-            emb_batch, id_batch = cp.vectorize(text_batch=batched_sents,
-                                               id_batch=batched_ids,
-                                               n_minibatch=opts.n_per_minibatch,
-                                               very_verbose=opts.verbose_vectorizer)
+            emb_batch, id_batch = cp.batch_vectorize(
+                text_batch=batched_sents, id_batch=batched_ids,
+                n_minibatch=opts.n_per_minibatch, very_verbose=opts.verbose_vectorizer
+            )
             t_vect = time()
             if opts.report:
                 print('  * Vectorized in {:6.2f}s'.format(t_vect - t_0))

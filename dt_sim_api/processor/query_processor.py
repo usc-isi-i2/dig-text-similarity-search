@@ -6,7 +6,7 @@ from typing import Dict, List, Tuple, Union
 
 import numpy as np
 
-from .base_processor import BaseProcessor
+from .base_processor import BaseProcessor, QueryReturn
 from .processor_cache import Memoized
 from dt_sim_api.vectorizer.sentence_vectorizer import DockerVectorizer
 
@@ -57,7 +57,7 @@ class QueryProcessor(BaseProcessor):
 
         return similar_docs[:k]
 
-    def vectorize(self, query: Union[str, List[str]]) -> np.array:
+    def vectorize(self, query: Union[str, List[str]]) -> QueryReturn:
         """
         Use DockerVectorizer for fast Query Vectorization.
         :param query: Text to vectorize

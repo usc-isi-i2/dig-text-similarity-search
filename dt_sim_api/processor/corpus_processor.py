@@ -7,7 +7,7 @@ from typing import List, Tuple, Union
 
 import numpy as np
 
-from .base_processor import BaseProcessor
+from .base_processor import BaseProcessor, BatchReturn
 from dt_sim_api.data_reader.jl_io_funcs import *
 from dt_sim_api.data_reader.npz_io_funcs import *
 from dt_sim_api.data_reader.misc_io_funcs import *
@@ -32,9 +32,9 @@ class CorpusProcessor(BaseProcessor):
             self.progress_file = p.abspath(progress_file)
 
     # Implement for BaseProcessor
-    def vectorize(self, text_batch: List[str], id_batch: List[str],
-                  n_minibatch: int, very_verbose: bool = False
-                  ) -> Tuple[np.array, np.array]:
+    def batch_vectorize(self, text_batch: List[str], id_batch: List[str],
+                        n_minibatch: int, very_verbose: bool = False
+                        ) -> BatchReturn:
         assert len(text_batch) == len(id_batch)
         batched_embs = self.vectorizer.make_vectors(text_batch, n_minibatch,
                                                     verbose=very_verbose)

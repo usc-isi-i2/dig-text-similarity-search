@@ -156,7 +156,7 @@ class QueryProcessor(BaseProcessor):
             # One match
             if not len(faiss_diff_ids):
                 out['score'] = title_diff
-                out['sentence_id'] = title_id
+                out['sentence_id'] = str(title_id)
             # By title
             elif new_score_type == 0:
                 out['score'] = hard_score(title_diff, faiss_diff_ids)

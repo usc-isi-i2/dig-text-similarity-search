@@ -134,18 +134,17 @@ class QueryProcessor(BaseProcessor):
                     break
 
         def hard_score(score, hits: SentHitList):
-            n_hits = len(hits)
-            boosted_score = score / n_hits
+            boosted_score = score / min(5, len(hits))
             return boosted_score
 
         def soft_score2(title_score, hits: SentHitList):
             avg_score = (title_score + hits[0][0])/2
-            boosted_score = avg_score / len(hits)
+            boosted_score = avg_score / min(5, len(hits))
             return boosted_score
 
         def soft_score(all_hits: SentHitList):
             avg_score = sum(all_hits[j][0] for j in range(len(all_hits)))/len(all_hits)
-            boosted_score = avg_score / len(all_hits)
+            boosted_score = avg_score / min(5, len(all_hits))
             return boosted_score
 
         reranked = list()
@@ -154,15 +153,21 @@ class QueryProcessor(BaseProcessor):
             faiss_diff_ids.sort()
 
             out = dict()
+            # One match
+            if not len(faiss_diff_ids):
+                out['score'] = title_diff
+                out['sentence_id'] = title_id
             # By title
-            if new_score_type == 0:
+            elif new_score_type == 0:
                 out['score'] = hard_score(title_diff, faiss_diff_ids)
                 out['sentence_id'] = str(title_id)
             # By content
             elif new_score_type == 1:
+                faiss_diff_ids.append((title_diff, title_id))
+                faiss_diff_ids.sort()
                 best_sent = faiss_diff_ids[0][0]
                 out['score'] = hard_score(best_sent, faiss_diff_ids)
-            # Avg title+content
+            # Avg all content
             elif new_score_type == 2:
                 faiss_diff_ids.append((title_diff, title_id))
                 out['score'] = soft_score(faiss_diff_ids)

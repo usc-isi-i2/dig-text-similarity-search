@@ -155,30 +155,30 @@ class QueryProcessor(BaseProcessor):
             out = dict()
             # One match
             if not len(faiss_diff_ids):
-                out['score'] = title_diff
+                out['score'] = str(title_diff)
                 out['sentence_id'] = str(title_id)
             # By title
             elif new_score_type == 0:
-                out['score'] = hard_score(title_diff, faiss_diff_ids)
+                out['score'] = str(hard_score(title_diff, faiss_diff_ids))
                 out['sentence_id'] = str(title_id)
             # By content
             elif new_score_type == 1:
                 faiss_diff_ids.append((title_diff, title_id))
                 faiss_diff_ids.sort()
                 best_sent = faiss_diff_ids[0][0]
-                out['score'] = hard_score(best_sent, faiss_diff_ids)
+                out['score'] = str(hard_score(best_sent, faiss_diff_ids))
             # Avg all content
             elif new_score_type == 2:
                 faiss_diff_ids.append((title_diff, title_id))
-                out['score'] = soft_score(faiss_diff_ids)
+                out['score'] = str(soft_score(faiss_diff_ids))
             # Avg title+best
             elif new_score_type == 3:
-                out['score'] = soft_score2(title_diff, faiss_diff_ids)
+                out['score'] = str(soft_score2(title_diff, faiss_diff_ids))
             # Default
             else:
                 faiss_diff_ids.append((title_diff, title_id))
                 faiss_diff_ids.sort()
-                out['score'] = faiss_diff_ids[0][0]
+                out['score'] = str(faiss_diff_ids[0][0])
             if 'sentence_id' not in out:
                 out['sentence_id'] = str(faiss_diff_ids[0][1])
             reranked.append(out)

@@ -20,7 +20,7 @@ base_config = {
 }
 
 # Standard faiss index directory (provide full path)
-std_index_path = p.abspath('../saved_indexes/shards/')
+std_index_path = p.abspath('../base_indexes/shards/')
 
 # Standard config
 std_config = dict(base_config)

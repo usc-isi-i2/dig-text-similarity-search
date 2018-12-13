@@ -15,7 +15,7 @@ sys.path.append(p.join(p.dirname(__file__), '../..'))
 
 # <editor-fold desc="Parse Command Line Options">
 prog_file_path = p.join(p.dirname(__file__), 'progress.txt')
-relative_base_path = '../../saved_indexes/USE_lite_base_IVF16K.index'
+relative_base_path = '../../base_indexes/USE_lite_base_IVF16K.index'
 base_index_path = p.abspath(p.join(p.dirname(__file__), relative_base_path))
 
 arg_parser = OptionParser()
@@ -71,7 +71,7 @@ Options:
     -p  File to keep track of news that has already been processed 
             (default progress.txt)
     -b  Path to empty, pre-trained faiss index 
-            (default ../saved_indexes/IVF16K_indexes/USE_lite_base_IVF16K.index)
+            (default ../base_indexes/IVF16K_indexes/USE_lite_base_IVF16K.index)
     -m  Minimum number of sentences per batch 
             (default 512*128)
     -r  Bool to toggle prints 

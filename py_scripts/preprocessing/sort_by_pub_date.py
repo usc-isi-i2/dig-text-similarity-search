@@ -9,7 +9,7 @@ parser.add_argument('-c', '--cutoff_date', dest='cutoff_date',
 args = parser.parse_args()
 # </editor-fold>
 
-from dt_sim_api.data_reader.date_sort_funcs import pub_date_split
+from dt_sim.data_reader.date_sort_funcs import pub_date_split
 
 
 if __name__ == '__main__':

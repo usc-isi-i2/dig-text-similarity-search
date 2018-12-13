@@ -13,9 +13,9 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 # </editor-fold>
 
-from dt_sim_api.processor.query_processor import QueryProcessor
-from dt_sim_api.indexer.ivf_index_handlers import DeployShards, RangeShards
-from dt_sim_api.vectorizer.sentence_vectorizer import DockerVectorizer
+from dt_sim.processor.query_processor import QueryProcessor
+from dt_sim.indexer.ivf_index_handlers import DeployShards, RangeShards
+from dt_sim.vectorizer.sentence_vectorizer import DockerVectorizer
 
 from py_scripts.configs.config import std_config, lrg_config
 

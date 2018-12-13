@@ -8,11 +8,11 @@ from typing import List, Tuple, Union
 import numpy as np
 
 from .base_processor import BaseProcessor, BatchReturn
-from dt_sim_api.data_reader.jl_io_funcs import *
-from dt_sim_api.data_reader.npz_io_funcs import *
-from dt_sim_api.data_reader.misc_io_funcs import *
-from dt_sim_api.indexer.index_builder import LargeIndexBuilder
-from dt_sim_api.vectorizer.sentence_vectorizer import SentenceVectorizer
+from dt_sim.data_reader.jl_io_funcs import *
+from dt_sim.data_reader.npz_io_funcs import *
+from dt_sim.data_reader.misc_io_funcs import *
+from dt_sim.indexer.index_builder import LargeIndexBuilder
+from dt_sim.vectorizer.sentence_vectorizer import SentenceVectorizer
 
 
 class CorpusProcessor(BaseProcessor):

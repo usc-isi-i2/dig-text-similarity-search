@@ -35,11 +35,11 @@ if opts.num_threads:
 
 import numpy as np
 
-from dt_sim_api.data_reader.jl_io_funcs import check_training_docs, get_training_docs
-from dt_sim_api.data_reader.npz_io_funcs import save_with_ids
-from dt_sim_api.data_reader.misc_io_funcs import check_unique
-from dt_sim_api.vectorizer.sentence_vectorizer import SentenceVectorizer
-from dt_sim_api.processor.corpus_processor import CorpusProcessor
+from dt_sim.data_reader.jl_io_funcs import check_training_docs, get_training_docs
+from dt_sim.data_reader.npz_io_funcs import save_with_ids
+from dt_sim.data_reader.misc_io_funcs import check_unique
+from dt_sim.vectorizer.sentence_vectorizer import SentenceVectorizer
+from dt_sim.processor.corpus_processor import CorpusProcessor
 
 
 """

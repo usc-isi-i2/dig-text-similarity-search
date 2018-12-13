@@ -8,7 +8,7 @@ import numpy as np
 
 from .base_processor import BaseProcessor, QueryReturn
 from .processor_cache import Memoized
-from dt_sim_api.vectorizer.sentence_vectorizer import DockerVectorizer
+from dt_sim.vectorizer.sentence_vectorizer import DockerVectorizer
 
 __all__ = ['QueryProcessor']
 

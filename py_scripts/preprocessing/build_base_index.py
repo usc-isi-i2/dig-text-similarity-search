@@ -32,7 +32,7 @@ if opts.num_threads:
     os.environ['OMP_NUM_THREADS'] = opts.num_threads
 # </editor-fold>
 
-from dt_sim_api.indexer.index_builder import LargeIndexBuilder
+from dt_sim.indexer.index_builder import LargeIndexBuilder
 
 
 """

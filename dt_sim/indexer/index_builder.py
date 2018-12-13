@@ -5,7 +5,7 @@ from typing import List, Union
 import numpy as np
 import faiss
 
-from dt_sim_api.data_reader.npz_io_funcs import load_training_npz
+from dt_sim.data_reader.npz_io_funcs import load_training_npz
 
 __all__ = ['LargeIndexBuilder']
 

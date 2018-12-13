@@ -1,16 +1,15 @@
-import os
+import os.path as p
 
 __all__ = ['std_config', 'lrg_config']
 
 
 """
-    Note: Universal Sentence Encoder embedding spaces are non-compatible
-          'large_emb_space' = ...
+Note: Universal Sentence Encoder has two different embedding spaces
+      'large_emb_space' = ...
             False --> Deep Averaging Network 
-            True --> Transformer Network
+            True  --> Transformer Network
 """
 
-#### TEMPLATES ####
 # Base config
 base_config = {
     'faiss_index_path': '',     # Must specify
@@ -21,16 +20,13 @@ base_config = {
 }
 
 # Standard faiss index directory (provide full path)
-std_index_path = os.path.abspath('../saved_indexes/shards/')
+std_index_path = p.abspath('../saved_indexes/shards/')
 
-
-#### IMPORTABLE CONFIGS ####
 # Standard config
-std_config = base_config
+std_config = dict(base_config)
 std_config['faiss_index_path'] = std_index_path
-std_config['large_emb_space'] = False
 
 # Large config
-lrg_config = base_config
+lrg_config = dict(base_config)
 lrg_config['faiss_index_path'] = std_index_path
 lrg_config['large_emb_space'] = True

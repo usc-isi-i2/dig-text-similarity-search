@@ -3,83 +3,98 @@
 ## Overview
 #### Text Search without Keywords:
 This is a search engine for ranking news articles from LexisNexis 
-using sentence vectors rather than key words. 
+by using sentence vector similarity rather than key word frequency. 
 
 
 #### Basic Recipe:
-1) Prepare text corpus as sentences with int ids
-2) Vectorize sentences with Google's [Universal Sentence Encoder](https://tfhub.dev/google/universal-sentence-encoder/2)
+1) Prepare text corpus as sentences with unique integer ids
+2) Vectorize sentences with Google's [Universal Sentence Encoder](https://tfhub.dev/google/universal-sentence-encoder-large/3)
 3) Put vectors into a searchable [Faiss index](https://github.com/facebookresearch/faiss)
 4) Search with vectorized query
 
 
 ## Virtual Environment
 #### Initialize:
-```
+```bash
 conda env create .
 source activate dig_text_similarity
 ipython kernel install --user --name=dig_text_similarity
 ```
 
 #### Deactivate:
-```
+```bash
 source deactivate
 ```
 
 
 ## Usage
-Vectorized similarity search does not use key-words. To query the corpus properly, please provide complete 
-sentences as input. 
+Vectorized similarity search does not rely on word frequency to find relevant results. 
+Instead, dig-text-similarity-search will find a query's nearest neighbors within a corpus. 
+In other words, it will return results that are similar to the query in terms of 
+subject matter and structure. 
+
+Empirically, we have found the large Universal Sentence Encoder 
+[(a Deep Transformer Network)](https://tfhub.dev/google/universal-sentence-encoder-large/3) 
+to give more interesting search results than the small Universal Sentence Encoder 
+[(a Deep Averaging Network)](https://tfhub.dev/google/universal-sentence-encoder/2). 
+The Transformer seems to be better at capturing the intent behind a sentence, 
+whereas similar sentences within the DAN embedding space are less sensitive to nuance.
+
+Note: The large USE is much more computationally expensive (preprocessing requires a GPU).
 
 #### To get started:
-Create an on-disk searchable faiss index by running [`streaming_preprocessor.py`](https://github.com/usc-isi-i2/dig-text-similarity-search/blob/master/preprocessing/streaming_preprocessor.py):
-```
-source activate dig_text_similarity
-python preprocessing/streaming_preprocessor.py -i data/example/ -o saved_indexes/ -r -d
+Dig-text-similarity-search is designed for very large text corpora (> 1 billion sentence vectors). 
+Faiss indexes that are searchable on-disk are used to achieve this level of scalability. 
+
+Build a small example index from the file `data/example/sample_news_2018-05-11.jl` by running:
+```bash
+#   Arg1: n news.jl files to index
+#   Arg2: path/to/dir/ containing news.jl files (will select most recent date)
+#   Arg3: path/to/save/ on-disk searchable news.index & news.ivfdata
+
+./vectorize_n_small_shards.sh 1 data/example/ data/shards/
 ```
 
-Note: Every faiss shard should contain absolute partitions of the sentences within the corpus. Using 
-multiple shards that share duplicate `faiss_ids` may give unexpected results. 
+After successfully indexing a news.jl file, its path will be recorded in `progress.txt`.
+
+Note: Every faiss shard should contain absolute partitions of the sentences within the corpus. 
+Using multiple shards that share duplicate `faiss_ids` may give incorrect results. 
 
 #### Query vectorization with docker:
-Before running [`similarity_server.py`](https://github.com/usc-isi-i2/dig-text-similarity-search/blob/master/digtextsimilaritysearch/similarity_server.py), 
-download docker and run two shell scripts:
+Before running the similarity server, encapsulate the Universal Sentence Encoder in a suitable 
+form for running in a docker container with:
 
-1) `$ ./digtextsimilaritysearch/vectorizer/prep_service_model.sh` ([link to script](https://github.com/usc-isi-i2/dig-text-similarity-search/blob/master/digtextsimilaritysearch/vectorizer/prep_service_model.sh))
-2) `$ ./digtextsimilaritysearch/vectorizer/run_service_model.sh` ([link to script](https://github.com/usc-isi-i2/dig-text-similarity-search/blob/master/digtextsimilaritysearch/vectorizer/run_service_model.sh))
-
-The first script will encapsulate the Universal Sentence Encoder (Deep Averaging Network v2) in a suitable 
-form for running in a docker container, and the second script runs the container locally through port `8501` 
-for query vectorization.
-
-Note: Although it is possible to do so, it is not recommended to use the dockerized model for vectorizing
-batches of sentences during preprocessing.
-
-#### Configuration:
-In [`digtextsimilaritysearch/`](https://github.com/usc-isi-i2/dig-text-similarity-search/tree/master/digtextsimilaritysearch), 
-the file [`config.py`](https://github.com/usc-isi-i2/dig-text-similarity-search/blob/master/digtextsimilaritysearch/config.py) 
-holds configuration instructions for running [`similarity_server.py`](https://github.com/usc-isi-i2/dig-text-similarity-search/blob/master/digtextsimilaritysearch/similarity_server.py). 
-
-Note: `config["faiss_index_path"]` should be an absolute path to the directory containing your 
-`{shard_name}.index` files (the DeployShards [index handler](https://github.com/usc-isi-i2/dig-text-similarity-search/blob/master/digtextsimilaritysearch/indexer/IVF_disk_index_handler.py) 
-will load every shard in the directory). Change this path if your faiss index shards are saved elsewhere.
-
-#### Similarity service:
-Run [`similarity_server.py`](https://github.com/usc-isi-i2/dig-text-similarity-search/blob/master/digtextsimilaritysearch/similarity_server.py) 
-and test it with [`call_similarity_service.py`](https://github.com/usc-isi-i2/dig-text-similarity-search/blob/master/digtextsimilaritysearch/call_similarity_service.py). 
-Use the command line argument `-q "What was the question again?"` to input a different query.
-
-Ex: 
-``` 
-$ python digtextsimilaritysearch/call_similarity_service.py -q "What is the air-speed velocity of an unladen swallow?"
+```bash
+./prep_small_USE.sh
 ```
 
-Note: The DocumentProcessor is constructed with `storage_adapter=None`, so `dp.query_text()` will return 
-`faiss_ids` and their approximate difference scores (L2) relative to the query vector. 
+Then run the container locally through port `8501` for online query vectorization with: 
 
-#### Storage (depreciated): 
-Since faiss can only store int64 ids, the storage adapter links these ids to the actual text of the 
-results. Currently, this step of linking `faiss_ids` to sentences within documents is handled outside of 
-the document processor. 
+```bash
+./run_small_USE.sh
+```
 
-Note: All storage components in this repo will be depreciated soon. 
+Note: Although it is possible to do so, it is not recommended to use 
+the dockerized model for preprocessing.
+
+#### Configuration:
+Configuration instructions for the similarity server can be found in `py_scripys/configs/config.py`
+
+#### Similarity Service:
+Run the server with:
+```bash
+python py_scripts/service/similarity_server.py -i data/shards/ 
+```
+
+(The index handler will load every shard in the `-i input/directory/`)
+
+Test the server with: 
+```bash
+python py_scripts/service/call_similarity_service.py \
+-q "What is the air-speed velocity of an unladen swallow?"
+```
+
+(The server log should return 200)
+
+Note: The similarity server returns integer vector ids and their difference scores (L2) 
+relative to the query vector. It does not return text.

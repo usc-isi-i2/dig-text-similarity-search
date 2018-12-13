@@ -7,7 +7,7 @@ __all__ = ['pub_date_split']
 
 
 def pub_date_split(input_file: str, output_dir: str,
-                   cutoff_date: str = '2018-09-01'):
+                   cutoff_date: str = '2018-01-01'):
     """
     Sorts LexisNexis articles by publication date.
     :param input_file: /path/to/LexisNexisCrawlerDump.jl

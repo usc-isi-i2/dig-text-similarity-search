@@ -17,7 +17,7 @@ from dt_sim_api.processor.query_processor import QueryProcessor
 from dt_sim_api.indexer.ivf_index_handlers import DeployShards, RangeShards
 from dt_sim_api.vectorizer.sentence_vectorizer import DockerVectorizer
 
-from scripts.configs.config import std_config, lrg_config
+from py_scripts.configs.config import std_config, lrg_config
 
 from optparse import OptionParser
 options = OptionParser()

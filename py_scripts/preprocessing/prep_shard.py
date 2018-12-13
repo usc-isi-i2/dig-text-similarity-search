@@ -60,7 +60,7 @@ from dt_sim_api.processor.corpus_processor import CorpusProcessor
 """
 To run this script:
     (from dig-text-similarity-search/)
-    $ python scripts/preprocessing/prep_shard.py \ 
+    $ python py_scripts/preprocessing/prep_shard.py \ 
         -i {/path/to/split_sents_dir/} -o {/path/to/shard_index_dir/} -r -d
 
 Options:

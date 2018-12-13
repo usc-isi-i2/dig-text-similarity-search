@@ -1,9 +1,5 @@
-# Connect to TF Env
-source activate dig_text_similarity
-printf "\n"
-
-
-# Update Docker TF Serving 
+#!/usr/bin/env bash
+# Update Docker TF Serving
 docker pull tensorflow/serving
 printf "\n"
 
@@ -11,10 +7,10 @@ printf "\n"
 # Construct Docker Run Instructions
 PORT=8501
 
-VECTORIZER_NAME="USE-lite-v2"
+VECTORIZER_NAME="USE-large-v3"
 
 SHELL_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" > /dev/null && pwd )"
-MODEL_DIR="$SHELL_DIR/service_models/$VECTORIZER_NAME/"
+MODEL_DIR="$SHELL_DIR/dt_sim/vectorizer/service_models/$VECTORIZER_NAME/"
 
 MOUNT_INSTRUCTIONS="type=bind,source=$MODEL_DIR,target=/models/$VECTORIZER_NAME"
 

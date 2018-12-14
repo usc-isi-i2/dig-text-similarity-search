@@ -114,13 +114,18 @@ def get_all_docs(jl_file_path: str, batch_size: int) -> Tuple[List[str], np.arra
         for doc in jl:
             document = json.loads(doc)
             content = document['lexisnexis']['doc_description']
-            if isinstance(content, dict):
-                content = json.dumps(content)
 
             if content and not content == '' and not content == 'DELETED_STORY' \
                     and 'split_sentences' in document and len(document['split_sentences']):
                 text = list()
-                text.append(document['lexisnexis']['doc_title'])
+
+                # Title
+                if 'type' in document and 'v3' in document['type']:
+                    text.append(document['knowledge_graph']['title'][0]['value'])
+                else:
+                    text.append(document['lexisnexis']['doc_title'])
+
+                # Sentences
                 text.extend(document['split_sentences'])
 
                 # Faiss ids

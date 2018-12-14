@@ -26,7 +26,7 @@ def pub_date_split(input_file: str, output_dir: str,
         os.mkdir(old_news)
 
     t_0 = time()
-    new, old = 0, 0
+    new, old, dateless = 0, 0, 0
     with open(input_file, 'r') as srcf:
         for line in srcf:
             article = json.loads(line)
@@ -35,17 +35,19 @@ def pub_date_split(input_file: str, output_dir: str,
                 event_date = article['knowledge_graph']['event_date'][0]['value'].split('T')[0]
             except KeyError:
                 event_date = None
-                print(f'No event_date in article KG \n{json.dumps(article)} \n')
 
-            if event_date:
-                if event_date >= cutoff_date:
-                    targetf = p.join(output_dir, f'{event_date}.jl')
-                    new += 1
-                else:
-                    targetf = p.join(old_news, f'{event_date}.jl')
-                    old += 1
-                with open(targetf, 'a') as trgf:
-                    trgf.write(f'{json.dumps(article)}\n')
+            if event_date >= cutoff_date:
+                targetf = p.join(output_dir, f'{event_date}.jl')
+                new += 1
+            elif event_date:
+                targetf = p.join(old_news, f'{event_date}.jl')
+                old += 1
+            else:
+                targetf = p.join(old_news, 'dateless_articles.jl')
+                dateless += 1
+
+            with open(targetf, 'a') as trgf:
+                trgf.write(f'{json.dumps(article)}\n')
 
     print(f'Sorted {new+old} files in {time()-t_0:0.1f}s '
           f'({100*new/(new+old):0.1f}% published since {cutoff_date})')

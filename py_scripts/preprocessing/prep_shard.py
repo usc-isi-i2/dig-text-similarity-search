@@ -31,7 +31,6 @@ arg_parser.add_option('-r', '--report', action='store_true', default=False)
 arg_parser.add_option('-d', '--delete_tmp_files', action='store_true', default=False)
 arg_parser.add_option('-a', '--add_shard', action='store_true', default=False)
 arg_parser.add_option('-u', '--url', default='http://localhost:5954/faiss')
-arg_parser.add_option('-s', '--skip', type='int', default=0)
 arg_parser.add_option('-T', '--TF_logging', action='store_false', default=True)
 (opts, _) = arg_parser.parse_args()
 # </editor-fold>
@@ -83,11 +82,6 @@ Options:
     -u  If -a is True, -u can be used to specify where to put() the new index 
             (default http://localhost:5954/faiss')
             * Note: url must end with '/faiss'
-
-    -s  Development param: If preprocessing was interrupted after several 
-            sub.index files were created, but before the on-disk shard was merged, 
-            use -s <int:n_files_to_reuse> to reuse existing intermediate files. 
-            * Note: Do NOT reuse partially created intermediate files
 """
 
 
@@ -133,17 +127,10 @@ def main():
         subidx = str(raw_jl.split('/')[-1]).replace('.jl', '_{:03d}_sub.index'.format(i))
         subidx_path = p.join(subidx_dir, subidx)
 
-        if i < opts.skip:
-            assert p.exists(subidx_path), \
-                'Warning: File does not exist: {} \n' \
-                'Aborting...'.format(subidx_path)
-            cp.index_builder.include_subpath(subidx_path)
-
-        elif p.exists(subidx_path):
+        if p.exists(subidx_path):
             print('  File exists: {} \n'
                   '  Skipping...  '.format(subidx_path))
             cp.index_builder.include_subpath(subidx_path)
-
         else:
             # Vectorize
             emb_batch, id_batch = cp.batch_vectorize(

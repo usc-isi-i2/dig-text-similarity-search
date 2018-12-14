@@ -7,7 +7,7 @@ __all__ = ['pub_date_split']
 
 
 def pub_date_split(input_file: str, output_dir: str,
-                   cutoff_date: str = '2018-01-01'):
+                   cutoff_date: str = '0000-00-00'):
     """
     Sorts LexisNexis articles by publication date.
     :param input_file: /path/to/LexisNexisCrawlerDump.jl
@@ -30,12 +30,12 @@ def pub_date_split(input_file: str, output_dir: str,
     with open(input_file, 'r') as srcf:
         for line in srcf:
             article = json.loads(line)
-            pubdate = article['lexisnexis']['metadata']['published_date']
-            if pubdate >= cutoff_date:
-                targetf = p.join(output_dir, f'{pubdate}.jl')
+            ev_date = article['knowledge_graph']['event_date'][0]['value'].split('T')[0]
+            if ev_date >= cutoff_date:
+                targetf = p.join(output_dir, f'{ev_date}.jl')
                 new += 1
             else:
-                targetf = p.join(old_news, f'{pubdate}.jl')
+                targetf = p.join(old_news, f'{ev_date}.jl')
                 old += 1
             with open(targetf, 'a') as trgf:
                 trgf.write(f'{json.dumps(article)}\n')

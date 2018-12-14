@@ -114,13 +114,16 @@ def get_all_docs(jl_file_path: str, batch_size: int) -> Tuple[List[str], np.arra
         for doc in jl:
             document = json.loads(doc)
             content = document['lexisnexis']['doc_description']
+            if isinstance(content, dict):
+                content = json.dumps(content)
+
             if content and not content == '' and not content == 'DELETED_STORY' \
                     and 'split_sentences' in document and len(document['split_sentences']):
                 text = list()
                 text.append(document['lexisnexis']['doc_title'])
                 text.extend(document['split_sentences'])
 
-                # Faiss ids (reliable)
+                # Faiss ids
                 doc_id = document['doc_id']
                 base_sent_id = np.int64(doc_id + '0000')
                 sent_ids = list()

@@ -36,7 +36,7 @@ def pub_date_split(input_file: str, output_dir: str,
             except KeyError:
                 event_date = None
 
-            if event_date >= cutoff_date:
+            if event_date and event_date >= cutoff_date:
                 targetf = p.join(output_dir, f'{event_date}.jl')
                 new += 1
             elif event_date:

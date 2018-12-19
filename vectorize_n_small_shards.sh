@@ -2,7 +2,9 @@
 printf "\n
 Arg1: n shards to process: $1
 Arg2: input file dir:      $2
-Arg3: output index dir:    $3 \n"
+Arg3: output index dir:    $3
+Arg4: using progress file: ${4:progress.txt}
+\n"
 
 printf "\nPreprocessing $1 shard(s) with small Universal Sentence Encoder\n";
 for i in `seq 1 $1`
@@ -10,7 +12,7 @@ do
 	printf "\n\nStarting $i/$1 @ $(date)\n";
 	python -u py_scripts/preprocessing/prep_shard.py -i $2 -o $3 \
 	-b base_indexes/USE_lite_base_IVF16K.index \
-	-p progress.txt -t 2 -r -d;
+	-p $4 -t 2 -r -d;
 done
 
 printf "\n\n\nCompleted @ $(date)\n";

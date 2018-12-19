@@ -48,7 +48,7 @@ class QueryProcessor(BaseProcessor):
 
         # Search            # TODO: date-range search
         t_s = time()
-        k_search = max(500, 10*k)
+        k_search = min(250, 10*k)
         scores, faiss_ids = self.indexer.search(query_vector, k=k_search)
 
         # Aggregate hits into docs -> rerank (soon) -> format

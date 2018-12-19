@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 printf "\n
-Arg1: n shards to process
-Arg2: input file dir
-Arg3: output index dir \n"
+Arg1: n shards to process: $1
+Arg2: input file dir:      $2
+Arg3: output index dir:    $3 \n"
 
 printf "\nPreprocessing $1 shard(s) with large Universal Sentence Encoder\n";
 for i in `seq 1 $1`

@@ -1,4 +1,5 @@
 import os
+import os.path as p
 import json
 import requests
 from time import time
@@ -51,7 +52,7 @@ class SentenceVectorizer(BaseVectorizer):
     def __init__(self, large: bool = False, path_to_model: str = None):
         BaseVectorizer.__init__(self)
 
-        model_parent_dir = os.path.join(os.path.dirname(__file__), 'model/')
+        model_parent_dir = p.abspath(p.join(p.dirname(__file__), 'model/'))
         if large:
             model_dir = '96e8f1d3d4d90ce86b2db128249eb8143a91db73/'
             model_url = 'https://tfhub.dev/google/universal-sentence-encoder-large/3'
@@ -59,16 +60,17 @@ class SentenceVectorizer(BaseVectorizer):
         else:
             model_dir = '1fb57c3ffe1a38479233ee9853ddd7a8ac8a8c47/'
             model_url = 'https://tfhub.dev/google/universal-sentence-encoder/2'
-        model_path = os.path.join(model_parent_dir, model_dir)
+        model_path = p.join(model_parent_dir, model_dir)
 
-        self.path_to_model = path_to_model
-        if not self.path_to_model and os.path.isdir(model_path):
+        if not path_to_model and p.isdir(model_path):
             self.path_to_model = model_path
-        elif not self.path_to_model and os.path.isdir(model_parent_dir):
-            os.environ['TFHUB_CACHE_DIR'] = model_parent_dir
-        if not self.path_to_model:
+        elif not path_to_model:
             self.path_to_model = model_url
-        self.path_to_model = os.path.abspath(self.path_to_model)
+            if not p.isdir(model_parent_dir):
+                os.mkdir(model_parent_dir)
+            os.environ['TFHUB_CACHE_DIR'] = model_parent_dir
+        else:
+            self.path_to_model = p.abspath(path_to_model)
 
         self.graph = None
         self.model = None

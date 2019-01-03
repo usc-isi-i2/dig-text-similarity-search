@@ -52,7 +52,7 @@ Build a small example index from the file `data/example/sample_news_2018-05-11.j
 #   Arg2: path/to/dir/ containing news.jl files (will select most recent date)
 #   Arg3: path/to/save/ on-disk searchable news.index & news.ivfdata
 
-./vectorize_n_small_shards.sh 1 data/example/ data/shards/
+./vectorize_n_small_shards.sh 1 data/example/ data/tmp_idx_files/
 ```
 
 After successfully indexing a news.jl file, its path will be recorded in `progress.txt`.
@@ -83,7 +83,7 @@ Configuration instructions for the similarity server can be found in `py_scripys
 #### Similarity Service:
 Run the server with:
 ```bash
-python py_scripts/service/similarity_server.py -i data/shards/ 
+python py_scripts/service/similarity_server.py -i data/tmp_idx_files/ 
 ```
 
 (The index handler will load every shard in the `-i input/directory/`)

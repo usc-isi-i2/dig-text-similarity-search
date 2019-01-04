@@ -2,7 +2,7 @@
 import os
 import os.path as p
 from time import time
-from optparse import OptionParser
+from argparse import ArgumentParser
 
 import sys
 sys.path.append(p.join(p.dirname(__file__), '..'))
@@ -10,17 +10,22 @@ sys.path.append(p.join(p.dirname(__file__), '../..'))
 # </editor-fold>
 
 # <editor-fold desc="Parse Options">
-arg_parser = OptionParser()
-arg_parser.add_option('-i', '--input_npz_dir')
-arg_parser.add_option('-o', '--output_index_dir')
-arg_parser.add_option('-b', '--base_index_name', default='emptyTrainedIVF.index')
-arg_parser.add_option('-m', '--mmap_name')
-arg_parser.add_option('-n', '--n_centroids', default='4096')
-arg_parser.add_option('-c', '--compression', default='Flat')
-arg_parser.add_option('-v', '--verbose', action='store_true', default=False)
-arg_parser.add_option('-t', '--num_threads')
-arg_parser.add_option('-N', '--N_training_vectors', type='int', default=1000000)
-(opts, _) = arg_parser.parse_args()
+arp = ArgumentParser(description='Train a base IVF index for later use.')
+
+arp.add_argument('input_npz_dir', help='Path to .npz directory.')
+arp.add_argument('output_index_dir', help='Path to index directory.')
+arp.add_argument('mmap_name', help='Filename for mmap training data.')
+arp.add_argument('-b', '--base_index_name', default='emptyTrainedIVF.index',
+                 help='Name of empty index to be trained.')
+arp.add_argument('-m', '--m_training_vectors', type=int, default=1000000, 
+                 help='Number of vectors to train on.')
+arp.add_argument('-n', '--n_centroids', default='4096', 
+                 help='Number of centroids in base IVF index.')
+arp.add_argument('-c', '--compression', default='Flat', 
+                 help='For faiss index constructor.')
+arp.add_argument('-t', '--num_threads', type=int, 
+                 help='Set CPU thread budget for numpy.')
+(opts, _) = arp.parse_args()
 # </editor-fold>
 
 # <editor-fold desc="Limit Numpy Threads">
@@ -34,16 +39,6 @@ if opts.num_threads:
 
 from dt_sim.indexer.index_builder import LargeIndexBuilder
 
-
-"""
-Script for training a base IVF index for later use.
-
-Options:
-    -i  Full path to .npz directory
-    -o  Full path to index directory
-    -b  Name of empty index to be trained
-    -n  Number of .npz files to train on
-"""
 
 # Set up paths
 if not p.isdir(opts.output_index_dir):
@@ -62,7 +57,7 @@ def main():
     idx_bdr.setup_base_index(
         base_index_path=base_index_path,
         centroids=opts.n_centroids, ts_path=training_set_path,
-        npz_dir=opts.input_npz_dir, n_tr_vectors=opts.N_training_vectors
+        npz_dir=opts.input_npz_dir, n_tr_vectors=opts.m_training_vectors
     )
 
     print('\nProcess completed in {:0.2f}s'.format(time()-t_start))

@@ -1,10 +1,11 @@
 import requests
-from optparse import OptionParser
+from argparse import ArgumentParser
 
+arp = ArgumentParser(description='')
+arp.add_argument('-q', '--query', default='What is your Quest?',
+                 help='Search with your own query.')
+(opts, _) = arp.parse_args()
 
-options = OptionParser()
-options.add_option('-q', '--query', default='When will the Parker Solar Probe reach perihelion #1?')
-(opts, _) = options.parse_args()
 
 local_url = 'http://localhost:5954/search'
 payload = {'query': opts.query}

@@ -1,20 +1,21 @@
 # <editor-fold desc="Basic Imports">
-import os
-import sys
+import os.path as p
+from argparse import ArgumentParser
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+import sys
+sys.path.append(p.join(p.dirname(__file__), '..'))
+sys.path.append(p.join(p.dirname(__file__), '../..'))
 # </editor-fold>
 
 # <editor-fold desc="Parse Command Line Options">
-from argparse import ArgumentParser
-parser = ArgumentParser(description='Split a LexisNexis news_dump.jl '
-                                    'by article publication dates.')
-parser.add_argument('-i', '--input_file', dest='input_file')
-parser.add_argument('-o', '--output_dir', dest='output_dir')
-parser.add_argument('-c', '--cutoff_date', dest='cutoff_date',
-                    default='2018-01-01')
-args = parser.parse_args()
+arp = ArgumentParser(description='Split a LexisNexis news_dump.jl '
+                                 'by article publication dates.')
+arp.add_argument('input_file', help='Path to dirtyLexisNexis.jl to be sorted.')
+arp.add_argument('output_dir', help='Dir for saving cleanLexisNexis.jl files.')
+arp.add_argument('-c', '--cutoff_date', default='2018-01-01',
+                 help='Articles published after the cutoff date will be '
+                      'saved in output_dir/old_news/*.jl separately.')
+opts = arp.parse_args()
 # </editor-fold>
 
 from dt_sim.data_reader.date_sort_funcs import pub_date_split
@@ -22,7 +23,7 @@ from dt_sim.data_reader.date_sort_funcs import pub_date_split
 
 if __name__ == '__main__':
     pub_date_split(
-        input_file=args.input_file,
-        output_dir=args.output_dir,
-        cutoff_date=args.cutoff_date
+        input_file=opts.input_file,
+        output_dir=opts.output_dir,
+        cutoff_date=opts.cutoff_date
     )

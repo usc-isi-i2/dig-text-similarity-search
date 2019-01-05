@@ -4,30 +4,37 @@ from flask import Flask, jsonify
 from flask import request
 from flask_cors import CORS
 
-import os
-import sys
+import os.path as p
 import json
 import traceback
+from argparse import ArgumentParser
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+import sys
+sys.path.append(p.join(p.dirname(__file__), '..'))
+sys.path.append(p.join(p.dirname(__file__), '../..'))
 # </editor-fold>
 
+arp = ArgumentParser(description='Deploy multiple faiss index shards '
+                                 'as a RESTful API.')
+
+arp.add_argument('index_dir_path', help='Path to index shards.')
+arp.add_argument('-c', '--centroids', type=int, default=1,
+                 help='Number of centroids to visit during search. '
+                      '(Speed vs. Accuracy trade-off)')
+arp.add_argument('-l', '--large', action='store_true',
+                 help='Toggle large Universal Sentence Encoder (Transformer NN).')
+arp.add_argument('-d', '--debug', action='store_true', default=False,
+                 help='Increases verbosity of Flask app.')
+arp.add_argument('-A', '--AWS', action='store_true',
+                 help='Internal.')
+opts = arp.parse_args()
+
+
 from dt_sim.processor.query_processor import QueryProcessor
-from dt_sim.indexer.ivf_index_handlers import DeployShards, RangeShards
+from dt_sim.indexer.ivf_index_handlers import DeployShards
 from dt_sim.vectorizer.sentence_vectorizer import DockerVectorizer
 
 from py_scripts.configs.config import std_config, lrg_config
-
-from optparse import OptionParser
-options = OptionParser()
-options.add_option('-i', '--index_dir_path', type='str')
-options.add_option('-c', '--centroids', type='int', default=1)
-options.add_option('-r', '--range_search', action='store_true', default=False)
-options.add_option('-l', '--large', action='store_true', default=False)
-options.add_option('-d', '--debug', action='store_true', default=False)
-options.add_option('-A', '--AWS', action='store_true', default=False)   # Internal
-(opts, _) = options.parse_args()
 
 
 ##### CONFIGURE #####
@@ -38,7 +45,7 @@ else:
 
 # Change index paths if necessary
 if opts.index_dir_path:
-    my_config['faiss_index_path'] = os.path.abspath(opts.index_dir_path)
+    my_config['faiss_index_path'] = p.abspath(opts.index_dir_path)
 
 # Internal
 if opts.AWS:
@@ -51,10 +58,7 @@ app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
 print(' * Initializing Faiss Indexes')
-if opts.range_search:
-    faiss_indexer = RangeShards(my_config['faiss_index_path'], nprobe=opts.centroids)
-else:
-    faiss_indexer = DeployShards(my_config['faiss_index_path'], nprobe=opts.centroids)
+faiss_indexer = DeployShards(my_config['faiss_index_path'], nprobe=opts.centroids)
 
 print(' * Initializing Query Vectorizer')
 query_vectorizer = DockerVectorizer(large=my_config['large_emb_space'])
@@ -91,8 +95,8 @@ def text_similarity_search():
 
 @app.route('/faiss', methods=['PUT'])
 def add_shard():
-    shard_path = os.path.abspath(request.args.get('path', None))
-    if not os.path.exists(shard_path):
+    shard_path = p.abspath(request.args.get('path', None))
+    if not p.exists(shard_path):
         return jsonify({'message': 'Path does not exist: {}'.format(shard_path)}), 404
 
     try:

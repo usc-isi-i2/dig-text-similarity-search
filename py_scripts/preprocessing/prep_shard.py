@@ -1,44 +1,50 @@
 # <editor-fold desc="Basic Imports">
 import os
 import os.path as p
-import re
-import sys
-import json
-import datetime
 import requests
 from time import time
-from optparse import OptionParser
+from argparse import ArgumentParser
 
+import sys
 sys.path.append(p.join(p.dirname(__file__), '..'))
 sys.path.append(p.join(p.dirname(__file__), '../..'))
 # </editor-fold>
 
-# <editor-fold desc="Parse Command Line Options">
+# <editor-fold desc="Parse Command Line Args">
 prog_file_path = p.join(p.dirname(__file__), 'progress.txt')
 relative_base_path = '../../base_indexes/USE_lite_base_IVF16K.index'
 base_index_path = p.abspath(p.join(p.dirname(__file__), relative_base_path))
 
-arg_parser = OptionParser()
-arg_parser.add_option('-i', '--input_dir')
-arg_parser.add_option('-o', '--output_dir')
-arg_parser.add_option('-t', '--num_threads')
-arg_parser.add_option('-p', '--progress_file', default=prog_file_path)
-arg_parser.add_option('-b', '--base_index_path', default=base_index_path)
-arg_parser.add_option('-l', '--large', action='store_true', default=False)
-arg_parser.add_option('-m', '--m_per_batch', type='int', default=512*128)
-arg_parser.add_option('-n', '--n_per_minibatch', type='int', default=32)
-arg_parser.add_option('-r', '--report', action='store_true', default=False)
-arg_parser.add_option('-d', '--delete_tmp_files', action='store_true', default=False)
-arg_parser.add_option('-a', '--add_shard', action='store_true', default=False)
-arg_parser.add_option('-u', '--url', default='http://localhost:5954/faiss')
-arg_parser.add_option('-T', '--TF_logging', action='store_false', default=True)
-(opts, _) = arg_parser.parse_args()
-# </editor-fold>
+arp = ArgumentParser(description='Vectorize Sentences for Searchable Index.')
 
-# Suppress TF logging
-if opts.TF_logging:
-    import tensorflow as tf
-    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+arp.add_argument('input_dir', help='Path to raw news dir.')
+arp.add_argument('output_dir', help='Path to saved index dir.')
+arp.add_argument('-p', '--progress_file', default=prog_file_path,
+                 help='For keeping track of news that has been preprocessed. '
+                      'Default: dig-text-similarity-search/progress.txt')
+arp.add_argument('-b', '--base_index_path', default=base_index_path,
+                 help='Path to pre-trained empty faiss index. '
+                      'Default: dig-text-similarity-search/base_indexes/*.index')
+arp.add_argument('-l', '--large', action='store_true',
+                 help='Toggle large Universal Sentence Encoder (Transformer NN).')
+arp.add_argument('-m', '--m_per_batch', type=int, default=512*128,
+                 help='Sentences per batch.')
+arp.add_argument('-n', '--n_per_minibatch', type=int, default=64,
+                 help='Sentences per mini-batch.')
+arp.add_argument('-v', '--verbose', action='store_true',
+                 help='Shows progress of batch vectorization.')
+arp.add_argument('-t', '--num_threads',
+                 help='Set CPU thread budget for numpy.')
+arp.add_argument('-d', '--delete', action='store_false', default=True,
+                 help='Keeps faiss indexes for each batch after merging on-disk.')
+arp.add_argument('-a', '--add_shard', action='store_true',
+                 help='Adds shard to running similarity server.')
+arp.add_argument('-u', '--url', default='http://localhost:5954/faiss',
+                 help='Port handling similarity server.')
+arp.add_argument('-T', '--TF_logging', action='store_false', default=True,
+                 help='Increase verbosity of TensorFlow.')
+opts = arp.parse_args()
+# </editor-fold>
 
 if opts.num_threads:
     print('\nRestricting numpy to {} thread(s)\n'.format(opts.num_threads))
@@ -47,42 +53,15 @@ if opts.num_threads:
     os.environ['MKL_NUM_THREADS'] = opts.num_threads
     os.environ['OMP_NUM_THREADS'] = opts.num_threads
 
-import numpy as np
-
 from dt_sim.data_reader.jl_io_funcs import check_all_docs, get_all_docs
 from dt_sim.data_reader.misc_io_funcs import check_unique, clear_dir
 from dt_sim.vectorizer.sentence_vectorizer import SentenceVectorizer
 from dt_sim.indexer.index_builder import LargeIndexBuilder
 from dt_sim.processor.corpus_processor import CorpusProcessor
 
-
-"""
-To run this script:
-    (from dig-text-similarity-search/)
-    $ python py_scripts/preprocessing/prep_shard.py \ 
-        -i {/path/to/split_sents_dir/} -o {/path/to/shard_index_dir/} -r -d
-
-Options:
-    -i  Path to raw news dir
-    -o  Path to dir for writing merged, on-disk faiss index shard
-    -t  Option to set thread budget for numpy to reduce CPU resource consumption 
-            Useful if other tasks are running 
-    -p  File to keep track of news that has already been processed 
-            (default progress.txt)
-    -b  Path to empty, pre-trained faiss index 
-            (default ../base_indexes/IVF16K_indexes/USE_lite_base_IVF16K.index)
-    -m  Minimum number of sentences per batch 
-            (default 512*128)
-    -r  Bool to toggle prints 
-            (default False)
-    -d  Bool to delete intermediate .index files 
-            (default False)
-    -a  Bool to automatically add the created shard to the similarity server 
-            (default False)
-    -u  If -a is True, -u can be used to specify where to put() the new index 
-            (default http://localhost:5954/faiss')
-            * Note: url must end with '/faiss'
-"""
+# Suppress TF logging
+if opts.TF_logging:
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
 # Init
@@ -92,25 +71,25 @@ cp = CorpusProcessor(vectorizer=sv, index_builder=idx_bdr,
                      progress_file=opts.progress_file)
 
 # Track progress
-prepped_news = cp.track_preprocessing(cp.progress_file, verbose=opts.report)
-raw_news = cp.get_news_paths(opts.input_dir, verbose=opts.report)
-candidates = cp.candidate_files(prepped_news, raw_news, verbose=opts.report)
-file_to_process = candidates[:1]   # Only preprocesses one news.jl
+prepped_news = cp.track_preprocessing(cp.progress_file, verbose=opts.verbose)
+raw_news = cp.get_news_paths(opts.input_dir, verbose=opts.verbose)
+candidates = cp.candidate_files(prepped_news, raw_news, verbose=opts.verbose)
+file_to_process = candidates[:1]   # Preprocesses one news.jl per call
 
 
 def main():
     raw_jl = file_to_process[0]
     subidx_dir, shard_date = cp.init_paths(raw_jl, opts.input_dir)
-    if opts.report:
+    if opts.verbose:
         print('Will process: {}\n'.format(raw_jl))
 
     # Check File Content
-    if opts.report:
+    if opts.verbose:
         print('\nReading file: {}'.format(raw_jl))
 
     jl_stats = check_all_docs(raw_jl, batch_size=opts.m_per_batch)
     (doc_count, line_count, junk, n_batches) = jl_stats
-    if opts.report:
+    if opts.verbose:
         print('* Found {} good documents with {} total sentences\n'
               '* Will skip {} junk documents\n'
               '* Processing {} batches\n'
@@ -121,7 +100,7 @@ def main():
     doc_batch_gen = get_all_docs(raw_jl, batch_size=opts.m_per_batch)
     for i, (batched_sents, batched_ids) in enumerate(doc_batch_gen):
         t_0 = time()
-        if opts.report:
+        if opts.verbose:
             print('  Starting doc batch:  {:3d}'.format(i+1))
 
         subidx = str(raw_jl.split('/')[-1]).replace('.jl', '_{:03d}_sub.index'.format(i))
@@ -138,30 +117,30 @@ def main():
                 n_minibatch=opts.n_per_minibatch, very_verbose=False
             )
             t_vect = time()
-            if opts.report:
+            if opts.verbose:
                 print('  * Vectorized in {:6.2f}s'.format(t_vect - t_0))
 
             # Make faiss subindex
             subidx_path = check_unique(subidx_path)
             cp.index_builder.generate_subindex(subidx_path, emb_batch, id_batch)
             t_subidx = time()
-            if opts.report:
+            if opts.verbose:
                 print('  * Subindexed in {:6.2f}s'.format(t_subidx - t_vect))
 
             # Clear graph
             del emb_batch, batched_sents, id_batch
             cp.vectorizer.close_session()
             t_reset = time()
-            if opts.report:
+            if opts.verbose:
                 print('  * Cleared TF in {:6.2f}s'.format(t_reset - t_subidx))
 
             # Restart TF session if necessary
             if i < n_batches - 1:
                 cp.vectorizer.start_session()
-                if opts.report:
+                if opts.verbose:
                     print('  * Started TF in {:6.2f}s'.format(time() - t_reset))
 
-        if opts.report:
+        if opts.verbose:
             mp, sp = divmod(time() - t_start, 60)
             print('  Completed doc batch: {:3d}/{}      '
                   '  Total time passed: {:3d}m{:0.2f}s\n'
@@ -176,12 +155,12 @@ def main():
     merged_index = shard_date + '_all.index'
     merged_index = p.join(opts.output_dir, merged_index)
     merged_index = check_unique(merged_index)
-    if opts.report:
+    if opts.verbose:
         print('\n  Merging {} on-disk'.format(merged_index.split('/')[-1]))
 
     n_vect = cp.index_builder.merge_IVFs(index_path=merged_index, ivfdata_path=merged_ivfs)
 
-    if opts.report:
+    if opts.verbose:
         mm, sm = divmod(time() - t_merge, 60)
         print('  Merged subindexes ({} vectors) in: {:3d}m{:0.2f}s'
               ''.format(n_vect, int(mm), sm))
@@ -190,9 +169,9 @@ def main():
     cp.record_progress(raw_jl)
 
     # Clear sub.index files after merge
-    if opts.delete_tmp_files:
+    if opts.delete:
         clear_dir(subidx_dir)
-        if opts.report:
+        if opts.verbose:
             print('\n  Cleared sub.index files')
 
     if opts.add_shard:

@@ -42,6 +42,36 @@ whereas similar sentences within the DAN embedding space are less sensitive to n
 
 Note: The large USE is much more computationally expensive (preprocessing requires a GPU).
 
+#### Arguments:
+
+Arguments necessary to run every script in `py_scripts/preprocessing` and `py_scripts/service` can be 
+viewed by running `python *.py -h`. 
+
+Ex: 
+```
+python py_scripts/service/similarity_server.py -h
+```
+
+Returns: 
+```
+usage: similarity_server.py [-h] [-c CENTROIDS] [-l] [-d] [-A] index_dir_path
+
+Deploy multiple faiss index shards as a RESTful API.
+
+positional arguments:
+  index_dir_path        Path to index shards.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -c CENTROIDS, --centroids CENTROIDS
+                        Number of centroids to visit during search. (Speed vs.
+                        Accuracy trade-off)
+  -l, --large           Toggle large Universal Sentence Encoder (Transformer
+                        NN).
+  -d, --debug           Increases verbosity of Flask app.
+  -A, --AWS             Internal.
+```
+
 #### To get started:
 Dig-text-similarity-search is designed for very large text corpora (> 1 billion sentence vectors). 
 Faiss indexes that are searchable on-disk are used to achieve this level of scalability. 
@@ -83,7 +113,7 @@ Configuration instructions for the similarity server can be found in `py_scripys
 #### Similarity Service:
 Run the server with:
 ```bash
-python py_scripts/service/similarity_server.py -i data/tmp_idx_files/ 
+python py_scripts/service/similarity_server.py data/tmp_idx_files/ 
 ```
 
 (The index handler will load every shard in the `-i input/directory/`)

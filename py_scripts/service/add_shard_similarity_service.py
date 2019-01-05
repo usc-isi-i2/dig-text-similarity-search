@@ -1,10 +1,11 @@
 import requests
-from optparse import OptionParser
+from argparse import ArgumentParser
 
-options = OptionParser()
-options.add_option('-i', '--index_path', default=None)
-options.add_option('-u', '--url', default='http://localhost:5954/faiss')
-(opts, _) = options.parse_args()
+arp = ArgumentParser(description='Deploy a faiss index.')
+arp.add_argument('index_path', help='Path to faiss index to be added.')
+arp.add_argument('-u', '--url', default='http://localhost:5954/faiss',
+                 help='Port handling similarity server.')
+opts = arp.parse_args()
 
 
 def add_shard(path=None, url='http://localhost:5954/faiss'):
@@ -17,4 +18,4 @@ if __name__ == '__main__':
     if opts.index_path:
         add_shard(path=opts.index_path, url=opts.url)
     else:
-        print('Please provide path to new shard with: -i /path/to/shard.index')
+        print('Please provide path to a faiss index.')

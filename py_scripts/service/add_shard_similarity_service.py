@@ -5,7 +5,7 @@ arp = ArgumentParser(description='Deploy a faiss index.')
 arp.add_argument('index_path', help='Path to faiss index to be added.')
 arp.add_argument('-u', '--url', default='http://localhost:5954/faiss',
                  help='Port handling similarity server.')
-(opts, _) = arp.parse_args()
+opts = arp.parse_args()
 
 
 def add_shard(path=None, url='http://localhost:5954/faiss'):

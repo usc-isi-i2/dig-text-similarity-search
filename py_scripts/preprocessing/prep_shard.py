@@ -33,7 +33,7 @@ arp.add_argument('-n', '--n_per_minibatch', type=int, default=64,
                  help='Sentences per mini-batch.')
 arp.add_argument('-v', '--verbose', action='store_true',
                  help='Shows progress of batch vectorization.')
-arp.add_argument('-t', '--num_threads', type=int,
+arp.add_argument('-t', '--num_threads',
                  help='Set CPU thread budget for numpy.')
 arp.add_argument('-d', '--delete', action='store_false', default=True,
                  help='Keeps faiss indexes for each batch after merging on-disk.')
@@ -43,7 +43,7 @@ arp.add_argument('-u', '--url', default='http://localhost:5954/faiss',
                  help='Port handling similarity server.')
 arp.add_argument('-T', '--TF_logging', action='store_false', default=True,
                  help='Increase verbosity of TensorFlow.')
-(opts, _) = arp.parse_args()
+opts = arp.parse_args()
 # </editor-fold>
 
 if opts.num_threads:

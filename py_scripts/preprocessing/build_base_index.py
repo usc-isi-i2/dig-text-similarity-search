@@ -23,9 +23,9 @@ arp.add_argument('-n', '--n_centroids', default='4096',
                  help='Number of centroids in base IVF index.')
 arp.add_argument('-c', '--compression', default='Flat', 
                  help='For faiss index constructor.')
-arp.add_argument('-t', '--num_threads', type=int, 
+arp.add_argument('-t', '--num_threads',
                  help='Set CPU thread budget for numpy.')
-(opts, _) = arp.parse_args()
+opts = arp.parse_args()
 # </editor-fold>
 
 # <editor-fold desc="Limit Numpy Threads">

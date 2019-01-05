@@ -26,9 +26,9 @@ arp.add_argument('-m', '--m_per_batch', type=int, default=512*128,
                  help='Sentences per batch.')
 arp.add_argument('-n', '--n_per_minibatch', type=int, default=64,
                  help='Sentences per mini-batch.')
-arp.add_argument('-t', '--num_threads', type=int,
+arp.add_argument('-t', '--num_threads',
                  help='Set CPU thread budget for numpy.')
-(opts, _) = arp.parse_args()
+opts = arp.parse_args()
 # </editor-fold>
 
 if opts.num_threads:

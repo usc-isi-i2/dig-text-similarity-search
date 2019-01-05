@@ -19,9 +19,9 @@ printf "\nPreprocessing $n_shards shard(s) with large Universal Sentence Encoder
 for i in `seq 1 "$n_shards"`
 do
 	printf "\n\nStarting $i/$n_shards @ $(date)\n";
-	python -u py_scripts/preprocessing/prep_shard.py -i "$input_dir" -o "$output_dir" \
-	-b base_indexes/USE_large_base_IVF4K_15M.index \
-	-p "$progress_txt" -t 2 -l -n 64 -r -d;
+	python -u py_scripts/preprocessing/prep_shard.py "$input_dir" "$output_dir" \
+	-p "$progress_txt" -b base_indexes/USE_large_base_IVF4K_15M.index \
+	-l -v -t 2;
 done
 
 printf "\n\n\nCompleted @ $(date)\n\n";

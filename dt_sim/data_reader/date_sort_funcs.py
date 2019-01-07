@@ -60,6 +60,5 @@ def pub_date_split(input_file: str, output_dir: str,
                 trgf.write(f'{json.dumps(article)}\n')
 
     m, s = divmod(time()-t_0, 60)
-    print(f'Sorted {new+old+err+dateless} files in {m:2d}m{s:0.1f}s '
-          f'({100*new/(new+old+err+dateless):0.1f}% published '
-          f'between {date_today} and {cutoff_date})')
+    print(f'Sorted {new+old+err+dateless} files in {int(m):2d}m{s:0.1f}s '
+          f'({100*new/(new+old+err+dateless):0.1f}% published since {cutoff_date})')

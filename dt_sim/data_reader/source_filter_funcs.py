@@ -6,7 +6,7 @@ from typing import Union, List, Tuple
 __all__ = ['news_white_list', 'source_filter']
 
 
-wl_file = p.abspath(p.join(p.dirname(__name__), 'SourceWhiteList.txt'))
+wl_file = p.abspath('dt_sim/data_reader/SourceWhiteList.txt')
 try:
     news_white_list = list()
     with open(wl_file, 'r') as wl:
@@ -15,6 +15,8 @@ try:
     news_white_list = tuple(news_white_list)
 except FileNotFoundError:
     news_white_list = None
+    print('WARNING: dt_sim/data_reader/SourceWhiteList.txt not found. \n'
+          'Must provide custom white list.')
 
 
 def source_filter(input_file, output_file,

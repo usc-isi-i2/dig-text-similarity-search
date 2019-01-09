@@ -97,8 +97,10 @@ class QueryProcessor(BaseProcessor):
             return max(diff_score, cutoff)
         
         docs = dict()
+        unique_scores = set()
         for score, faiss_id in zip(scores[0], faiss_ids[0]):
-            if faiss_id > 0:
+            if score not in unique_scores and faiss_id > 0:
+                unique_scores.add(score)
                 doc_id, sent_id = divmod(faiss_id, 10000)
                 doc_id = str(doc_id)
                 if doc_id not in docs:

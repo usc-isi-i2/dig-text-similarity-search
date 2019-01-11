@@ -14,6 +14,7 @@ sys.path.append(p.join(p.dirname(__file__), '..'))
 sys.path.append(p.join(p.dirname(__file__), '../..'))
 # </editor-fold>
 
+# <editor-fold desc="Parse Command Line Options">
 arp = ArgumentParser(description='Deploy multiple faiss index shards '
                                  'as a RESTful API.')
 
@@ -22,12 +23,12 @@ arp.add_argument('-c', '--centroids', type=int, default=1,
                  help='Number of centroids to visit during search. '
                       '(Speed vs. Accuracy trade-off)')
 arp.add_argument('-l', '--large', action='store_true',
-                 help='Toggle large Universal Sentence Encoder (Transformer NN).')
+                 help='Toggle large Universal Sentence Encoder (Transformer). '
+                      'Note: Encoder and Faiss embedding spaces must match!')
 arp.add_argument('-d', '--debug', action='store_true', default=False,
                  help='Increases verbosity of Flask app.')
-arp.add_argument('-A', '--AWS', action='store_true',
-                 help='Internal.')
 opts = arp.parse_args()
+# </editor-fold>
 
 
 from dt_sim.processor.query_processor import QueryProcessor
@@ -37,7 +38,7 @@ from dt_sim.vectorizer.sentence_vectorizer import DockerVectorizer
 from py_scripts.configs.config import std_config, lrg_config
 
 
-##### CONFIGURE #####
+#### CONFIGURE ####
 if opts.large:
     my_config = lrg_config
 else:
@@ -47,13 +48,8 @@ else:
 if opts.index_dir_path:
     my_config['faiss_index_path'] = p.abspath(opts.index_dir_path)
 
-# Internal
-if opts.AWS:
-    my_config = lrg_config
-    my_config['faiss_index_path'] = '/faiss/news_day_shards/'
 
-
-##### INIT #####
+#### INIT ####
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
@@ -67,7 +63,7 @@ print(' * Initializing Query Processor')
 qp = QueryProcessor(index_handler=faiss_indexer, query_vectorizer=query_vectorizer)
 
 
-##### APP DEF #####
+#### APP DEF ####
 @app.route('/')
 def hello():
     return 'DIG Text Similarity Search\n'
@@ -109,7 +105,7 @@ def add_shard():
         return jsonify({'message': str(e)}), 500
 
 
-##### MAIN #####
+#### MAIN ####
 def main():
     app.run(host=my_config['host'], port=my_config['port'],
             threaded=True, debug=opts.debug)

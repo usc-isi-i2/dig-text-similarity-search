@@ -7,6 +7,11 @@ __all__ = ['check_all_docs', 'get_all_docs',
            'check_training_docs', 'get_training_docs']
 
 
+DocLineJunkBatch_4Count = Tuple[int, int, int, int]
+DocLineGoodJunkTotbatchGoodbatch_6Count = Tuple[int, int, int, int, int, int]
+TextID_Batch = Tuple[List[str], np.array]
+
+
 """
     Funcs for reading LexisNexis news dumps as JSON Lines files.
     
@@ -18,9 +23,9 @@ __all__ = ['check_all_docs', 'get_all_docs',
 """
 
 
-##### Read news.jl #####
+#### Read news.jl ####
 def check_all_docs(jl_file_path: str, batch_size: int = 0
-                   ) -> Tuple[int, int, int, int]:
+                   ) -> DocLineJunkBatch_4Count:
     """
     Reads input news.jl file and returns counts of entities found.
 
@@ -54,7 +59,7 @@ def check_all_docs(jl_file_path: str, batch_size: int = 0
 
 def check_training_docs(jl_file_path: str, batch_size: int = 0,
                         title_char_min: int = 5, sent_len_min: int = 3
-                        ) -> Tuple[int, int, int, int, int, int]:
+                        ) -> DocLineGoodJunkTotbatchGoodbatch_6Count:
     """
     Reads input news.jl file and returns counts of entities found
     that meet criteria for training a base faiss index.
@@ -99,8 +104,8 @@ def check_training_docs(jl_file_path: str, batch_size: int = 0,
     return doc_count, line_count, good_sents, junk_count, n_batches, n_good_batches
 
 
-##### Load news.jl #####
-def get_all_docs(jl_file_path: str, batch_size: int) -> Tuple[List[str], np.array]:
+#### Load news.jl ####
+def get_all_docs(jl_file_path: str, batch_size: int) -> TextID_Batch:
     """
     Reads input news.jl file and yields batches of sentences with matching faiss ids.
 
@@ -155,7 +160,7 @@ def get_all_docs(jl_file_path: str, batch_size: int) -> Tuple[List[str], np.arra
 
 def get_training_docs(jl_file_path: str, batch_size: int,
                       title_char_min: int = 5, sent_len_min: int = 3
-                      ) -> Tuple[List[str], np.array]:
+                      ) -> TextID_Batch:
     """
     Reads input news.jl file and yields batches of sentences with matching faiss ids
     that meet criteria for training a base faiss index.

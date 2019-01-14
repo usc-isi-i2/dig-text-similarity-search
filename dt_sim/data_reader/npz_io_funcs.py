@@ -1,7 +1,7 @@
 import os
 import os.path as p
 from time import time
-from typing import List, Tuple, Union
+from typing import List, Tuple
 
 import numpy as np
 
@@ -10,7 +10,10 @@ __all__ = ['get_all_npz_paths',
            'load_with_ids', 'save_with_ids']
 
 
-##### Misc #####
+Embeddings_IDs_Sents = Tuple[np.array, np.array, np.array]
+
+
+#### Misc ####
 def get_all_npz_paths(npz_parent_dir: str) -> List[str]:
     """
     Finds all .npz files nested anywhere within a parent directory.
@@ -30,7 +33,7 @@ def get_all_npz_paths(npz_parent_dir: str) -> List[str]:
     return sorted(npz_paths)
 
 
-##### Load .npz #####
+#### Load .npz ####
 def load_training_npz(training_set_path: str, npz_top_dir: str = None,
                       n_vectors: int = 1000000, dim: int = 512) -> np.array:
     """
@@ -91,7 +94,7 @@ def load_training_npz(training_set_path: str, npz_top_dir: str = None,
 
 
 def load_with_ids(file_path: str, mmap: bool = True, load_sents=False
-                  ) -> Tuple[np.array, np.array, np.array]:
+                  ) -> Embeddings_IDs_Sents:
     """
     Load preprocessed sentence embeddings with corresponding integer ids.
     Note: Loading sentences is optional
@@ -118,7 +121,7 @@ def load_with_ids(file_path: str, mmap: bool = True, load_sents=False
         return embeddings, sent_ids, np.array([['']], dtype=np.str)
 
 
-##### Save .npz #####
+#### Save .npz ####
 def save_with_ids(file_path: str, embeddings, sent_ids,
                   sentences='', compressed: bool = True):
     """

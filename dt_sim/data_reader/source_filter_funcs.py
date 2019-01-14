@@ -1,27 +1,13 @@
 import json
-import os.path as p
 from time import time
 from typing import Union, List, Tuple
 
 
-__all__ = ['news_white_list', 'source_filter']
-
-
-wl_file = p.abspath('dt_sim/data_reader/SourceWhiteList.txt')
-try:
-    news_white_list = list()
-    with open(wl_file, 'r') as wl:
-        for ln in wl:
-            news_white_list.append(str(ln).replace('\n', ''))
-    news_white_list = tuple(news_white_list)
-except FileNotFoundError:
-    news_white_list = None
-    print('WARNING: dt_sim/data_reader/SourceWhiteList.txt not found. \n'
-          'Must provide custom white list.')
+__all__ = ['source_filter']
 
 
 def source_filter(input_file, output_file,
-                  white_list: Union[List, Tuple] = news_white_list):
+                  white_list: Union[List, Tuple] = None):
     t_0 = time()
     n_files, m_good = 0, 0
     with open(input_file, 'r') as src, open(output_file, 'a') as dst:

@@ -6,6 +6,7 @@ from typing import Dict, List, Tuple, Union
 
 import numpy as np
 
+from dt_sim.faiss_cache import faiss_cache
 from .base_processor import BaseProcessor, QueryReturn
 from dt_sim.vectorizer.sentence_vectorizer import DockerVectorizer
 
@@ -29,6 +30,7 @@ class QueryProcessor(BaseProcessor):
         self.indexer = index_handler
         self.vectorizer = query_vectorizer
 
+    @faiss_cache(32)
     def query_corpus(self, query_str: str, k: int = 5, score_type: int = None,
                      verbose: bool = True) -> SortedScoresIDs:
         """

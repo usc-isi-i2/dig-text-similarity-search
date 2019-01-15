@@ -3,6 +3,8 @@ from typing import List, Tuple
 
 import numpy as np
 
+from dt_sim.faiss_cache import faiss_cache
+
 __all__ = ['BaseIndexer']
 
 
@@ -16,6 +18,7 @@ class BaseIndexer(object):
         self.index = None
         self.dynamic = False
 
+    @faiss_cache(128)
     def search(self, query_vector: np.array, k: int) -> FaissSearch:
         return self.index.search(query_vector, k)
 

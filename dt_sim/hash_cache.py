@@ -11,6 +11,10 @@ class PickleMemo(object):
         Caches a function's return value each time it is called.
         If called later with the same arguments, the cached value
         is returned (not reevaluated).
+
+        Works with kwargs and Faiss index.search()
+
+        Holds maxsize results. Drops the Least Recently Used result.
     """
     def __init__(self, func, maxsize: int = 128):
         self.func = func
@@ -19,7 +23,7 @@ class PickleMemo(object):
         self.maxsize = maxsize
 
     def __call__(self, *args, **kwargs):
-        key = pickle.dumps((args[-1], kwargs))      # Only use embedding arg
+        key = pickle.dumps((args[1:], kwargs))      # Only use embedding arg
         if key in self.cache:
             self.queue.append(self.queue.pop(self.queue.index(key)))
             return self.cache[key]

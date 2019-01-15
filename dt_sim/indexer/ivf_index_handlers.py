@@ -11,7 +11,7 @@ __all__ = ['DeployShards', 'RangeShards']
 
 
 class DeployShards(BaseIndexer):
-    def __init__(self, shard_dir, nprobe: int = 32):
+    def __init__(self, shard_dir, nprobe: int = 4):
         """
         For deploying multiple, pre-made IVF indexes as shards.
             (intended for on-disk indexes that do not fit in memory)
@@ -22,7 +22,7 @@ class DeployShards(BaseIndexer):
         :param nprobe: Number of clusters to visit during search
                        (speed accuracy trade-off)
         """
-        BaseIndexer.__init__(self)
+        super().__init__()
         self.paths_to_shards = self.get_index_paths(shard_dir)
         self.nprobe = nprobe
 
@@ -38,7 +38,7 @@ class DeployShards(BaseIndexer):
             self.index.add_shard(shard)
 
     @staticmethod
-    def load_shard(path_to_shard: str, nprobe: int = 32):
+    def load_shard(path_to_shard: str, nprobe: int = 4):
         shard = faiss.read_index(path_to_shard)
         shard.nprobe = nprobe
         return shard
@@ -53,12 +53,12 @@ class DeployShards(BaseIndexer):
         self.index.add_shard(shard)
 
 
-##### Parallelized Nearest Neighbor Search #####
+#### Parallelized Nearest Neighbor Search ####
 class Shard(Process):
     def __init__(self, shard_name, shard_path, input_pipe, output_queue,
                  nprobe: int = 16, daemon: bool = False):
         """ RangeShards search worker """
-        Process.__init__(self, name=shard_name)
+        super().__init__(name=shard_name)
         self.daemon = daemon
 
         self.input = input_pipe
@@ -86,7 +86,7 @@ class RangeShards(BaseIndexer):
                        (speed accuracy trade-off)
         :param max_radius: Maximum L2 distance neighborhood radius
         """
-        BaseIndexer.__init__(self)
+        super().__init__()
         self.paths_to_shards = self.get_index_paths(shard_dir)
         self.nprobe = nprobe
         self.max_radius = max_radius

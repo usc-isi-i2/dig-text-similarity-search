@@ -1,12 +1,14 @@
 import os
 from typing import List, Tuple
-# from functools import lru_cache
 
 import numpy as np
 
-from .hash_cache import PickleMemo
-
 __all__ = ['BaseIndexer']
+
+
+DiffScores = List[List[np.float32]]
+VectorIDs = List[List[np.int64]]
+FaissSearch = Tuple[DiffScores, VectorIDs]
 
 
 class BaseIndexer(object):
@@ -14,10 +16,7 @@ class BaseIndexer(object):
         self.index = None
         self.dynamic = False
 
-    # @lru_cache(maxsize=128)
-    @PickleMemo
-    def search(self, query_vector: np.array, k: int
-               ) -> Tuple[List[List[float]], List[List[int]]]:
+    def search(self, query_vector: np.array, k: int) -> FaissSearch:
         return self.index.search(query_vector, k)
 
     @staticmethod
@@ -31,8 +30,7 @@ class BaseIndexer(object):
         return sorted(index_paths)
 
     @staticmethod
-    def joint_sort(scores: List[List[float]], ids: List[List[int]]
-                   ) -> Tuple[List[List[float]], List[List[int]]]:
+    def joint_sort(scores: DiffScores, ids: VectorIDs) -> FaissSearch:
         """
         Sorts scores in ascending order while maintaining score::id mapping.
         Checks if input is already sorted.

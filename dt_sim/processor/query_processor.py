@@ -7,7 +7,7 @@ from typing import Dict, List, Tuple, Union
 import numpy as np
 
 from .base_processor import BaseProcessor, QueryReturn
-from .processor_cache import Memoized
+# from .processor_cache import Memoized
 from dt_sim.vectorizer.sentence_vectorizer import DockerVectorizer
 
 __all__ = ['QueryProcessor']
@@ -23,14 +23,15 @@ FinalOutput = List[Dict[str, str]]
 class QueryProcessor(BaseProcessor):
 
     def __init__(self, index_handler: object, query_vectorizer: object = None):
-        BaseProcessor.__init__(self)
+        # BaseProcessor.__init__(self)
+        super().__init__()
         if not query_vectorizer:
             query_vectorizer = DockerVectorizer()
 
         self.indexer = index_handler
         self.vectorizer = query_vectorizer
 
-    @Memoized
+    # @Memoized
     def query_corpus(self, query_str: str, k: int = 5, score_type: int = None,
                      verbose: bool = True) -> FinalOutput:
         """

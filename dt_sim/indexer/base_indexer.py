@@ -5,7 +5,8 @@ import numpy as np
 
 from dt_sim.faiss_cache import faiss_cache
 
-__all__ = ['BaseIndexer']
+__all__ = ['BaseIndexer', 'faiss_cache',
+           'DiffScores', 'VectorIDs', 'FaissSearch']
 
 
 DiffScores = List[List[np.float32]]

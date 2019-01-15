@@ -1,11 +1,10 @@
 from time import sleep
 from multiprocessing import Pipe, Process, Queue
-from typing import List, Tuple
 
 import faiss
 import numpy as np
 
-from .base_indexer import BaseIndexer
+from .base_indexer import *
 
 __all__ = ['DeployShards', 'RangeShards']
 
@@ -66,6 +65,7 @@ class Shard(Process):
         self.index.nprobe = nprobe
         self.output = output_queue
 
+    @faiss_cache(64)
     def run(self):
         if self.input.poll():
             (query_vector, radius) = self.input.recv()
@@ -102,16 +102,9 @@ class RangeShards(BaseIndexer):
             shard.start()
             self.n_shards += 1
 
-    def load_shard(self, shard_path):
-        shard_name = shard_path.replace('.index', '').split('/')[-1]
-        shard_pipe, handler_pipe = Pipe(False)
-        shard = Shard(shard_name, shard_path,
-                      input_pipe=shard_pipe, output_queue=self.results,
-                      nprobe=self.nprobe, daemon=False)
-        self.shards[shard_name] = (handler_pipe, shard)
-
+    @faiss_cache(64)
     def search(self, query_vector: np.array, k: int, radius: float = 0.5
-               ) -> Tuple[List[List[float]], List[List[int]]]:
+               ) -> FaissSearch:
 
         if len(query_vector.shape) < 2 or query_vector.shape[0] > 1:
             query_vector = np.reshape(query_vector, (1, query_vector.shape[0]))
@@ -141,12 +134,21 @@ class RangeShards(BaseIndexer):
             D, I = self.search(query_vector, k, radius=new_radius)
         return self.joint_sort(D, I)
 
+    def load_shard(self, shard_path):
+        shard_name = shard_path.replace('.index', '').split('/')[-1]
+        shard_pipe, handler_pipe = Pipe(False)
+        shard = Shard(shard_name, shard_path,
+                      input_pipe=shard_pipe, output_queue=self.results,
+                      nprobe=self.nprobe, daemon=False)
+        self.shards[shard_name] = (handler_pipe, shard)
+
     def add_shard(self, new_shard_path: str):
         # Lock search while loading shard
         self.lock = True
 
         shard_name = new_shard_path.replace('.index', '').split('/')[-1]
-        if new_shard_path in self.paths_to_shards or shard_name in self.shards:
+        if new_shard_path in self.paths_to_shards or \
+                shard_name in self.shards:
             print('WARNING: This shard is already online \n'
                   '         Aborting...')
         else:

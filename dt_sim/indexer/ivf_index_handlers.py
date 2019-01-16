@@ -65,11 +65,18 @@ class Shard(Process):
         self.index.nprobe = nprobe
         self.output = output_queue
 
-    @faiss_cache(64)
+    # @faiss_cache(64)      # Cache cannot be used here because run takes no input args, kwargs
     def run(self):
+
+        @faiss_cache(64)
+        def neighborhood(index, query, radius):
+            _, ddd, iii = index.range_search(query, radius)
+            return ddd, iii
+
         if self.input.poll():
-            (query_vector, radius) = self.input.recv()
-            _, dd, ii = self.index.range_search(query_vector, radius)
+            (query_vector, radius_limit) = self.input.recv()
+            # _, dd, ii = self.index.range_search(query_vector, radius_limit)
+            dd, ii = neighborhood(self.index, query_vector, radius_limit)
             self.output.put((dd, ii), block=False)
 
 

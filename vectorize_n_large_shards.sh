@@ -21,7 +21,7 @@ do
 	printf "\n\nStarting $i/$n_shards @ $(date)\n";
 	python -u py_scripts/preprocessing/prep_shard.py "$input_dir" "$output_dir" \
 	-p "$progress_txt" -b base_indexes/USE_large_base_IVF4K_15M.index \
-	-l -v -t 2;
+	-l -n 128 -v -t 2;
 done
 
 printf "\n\n\nCompleted @ $(date)\n\n";

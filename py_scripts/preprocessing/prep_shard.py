@@ -35,7 +35,7 @@ arp.add_argument('-v', '--verbose', action='store_true',
                  help='Shows progress of batch vectorization.')
 arp.add_argument('-t', '--num_threads',
                  help='Set CPU thread budget for numpy.')
-arp.add_argument('-d', '--delete', action='store_false', default=True,
+arp.add_argument('-d', '--no_delete', action='store_false', default=True,
                  help='Keeps faiss indexes for each batch after merging on-disk.')
 arp.add_argument('-a', '--add_shard', action='store_true',
                  help='Adds shard to running similarity server.')
@@ -169,7 +169,7 @@ def main():
     cp.record_progress(raw_jl)
 
     # Clear sub.index files after merge
-    if opts.delete:
+    if opts.no_delete:
         clear_dir(subidx_dir)
         if opts.verbose:
             print('\n  Cleared sub.index files')

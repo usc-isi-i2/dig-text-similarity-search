@@ -138,7 +138,7 @@ class RangeShards(BaseIndexer):
         # Ensure len(results) > k
         if radius < self.max_radius and len(D[0]) < k:
             new_radius = radius + 0.3
-            D, I = self.search(query_vector, k, radius=new_radius)
+            D, I = self.search(query_vector, int(k/2), radius=new_radius)
         return self.joint_sort(D, I)
 
     def load_shard(self, shard_path):

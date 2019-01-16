@@ -118,7 +118,7 @@ class RangeShards(BaseIndexer):
 
         # Lock search while loading index
         if self.lock:
-            sleep(0.5)
+            sleep(2)
             return self.search(query_vector, k, radius)
 
         # Start parallel range search
@@ -142,7 +142,7 @@ class RangeShards(BaseIndexer):
         return self.joint_sort(D, I)
 
     def load_shard(self, shard_path):
-        shard_name = shard_path.replace('.index', '').split('/')[-1]
+        shard_name = shard_path.replace('.index', '')
         shard_pipe, handler_pipe = Pipe(False)
         shard = Shard(shard_name, shard_path,
                       input_pipe=shard_pipe, output_queue=self.results,
@@ -150,10 +150,10 @@ class RangeShards(BaseIndexer):
         self.shards[shard_name] = (handler_pipe, shard)
 
     def add_shard(self, new_shard_path: str):
-        # Lock search while loading shard
+        # Lock search while deploying a new shard
         self.lock = True
 
-        shard_name = new_shard_path.replace('.index', '').split('/')[-1]
+        shard_name = new_shard_path.replace('.index', '')
         if new_shard_path in self.paths_to_shards or \
                 shard_name in self.shards:
             print('WARNING: This shard is already online \n'

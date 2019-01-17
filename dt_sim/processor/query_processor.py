@@ -6,33 +6,33 @@ from typing import Dict, List, Tuple, Union
 
 import numpy as np
 
+from dt_sim.faiss_cache import faiss_cache
 from .base_processor import BaseProcessor, QueryReturn
-from .processor_cache import Memoized
 from dt_sim.vectorizer.sentence_vectorizer import DockerVectorizer
 
 __all__ = ['QueryProcessor']
 
-DiffScores = List[List[np.float32]]
-VectIDList = List[List[np.int64]]
-SentHitList = List[Tuple[np.float32, np.int64]]
-DocPayload = Dict[str, SentHitList]
 
-FinalOutput = List[Dict[str, str]]
+DiffScores = List[List[np.float32]]
+VectorIDs = List[List[np.int64]]
+SentHitPairs = List[Tuple[np.float32, np.int64]]
+DocPayload = Dict[str, SentHitPairs]
+SortedScoresIDs = List[Dict[str, str]]
 
 
 class QueryProcessor(BaseProcessor):
 
     def __init__(self, index_handler: object, query_vectorizer: object = None):
-        BaseProcessor.__init__(self)
+        super().__init__()
         if not query_vectorizer:
             query_vectorizer = DockerVectorizer()
 
         self.indexer = index_handler
         self.vectorizer = query_vectorizer
 
-    @Memoized
+    @faiss_cache(32)
     def query_corpus(self, query_str: str, k: int = 5, score_type: int = None,
-                     verbose: bool = True) -> FinalOutput:
+                     verbose: bool = True) -> SortedScoresIDs:
         """
         Vectorize query -> Search faiss index handler -> Format doc payload
         Expects to receive only one query per call.
@@ -85,7 +85,7 @@ class QueryProcessor(BaseProcessor):
         return query_vector
 
     @staticmethod
-    def aggregate_docs(scores: DiffScores, faiss_ids: VectIDList
+    def aggregate_docs(scores: DiffScores, faiss_ids: VectorIDs
                        ) -> DocPayload:
         """
         Collects outputs from faiss search into document entities.
@@ -109,7 +109,7 @@ class QueryProcessor(BaseProcessor):
         return docs
 
     @staticmethod
-    def format_payload(doc_hits: DocPayload) -> FinalOutput:
+    def format_payload(doc_hits: DocPayload) -> SortedScoresIDs:
         """
         TMP payload formatting for current sandpaper implementation
 
@@ -126,7 +126,7 @@ class QueryProcessor(BaseProcessor):
         return sorted(payload, key=lambda sc_id: sc_id['score'])
 
     @staticmethod
-    def title_rerank(doc_hits: DocPayload, new_score_type: int) -> FinalOutput:
+    def title_rerank(doc_hits: DocPayload, new_score_type: int) -> SortedScoresIDs:
         titles = dict()
         for doc_id, faiss_diff_ids in doc_hits.items():
             for i, (_, faiss_id) in enumerate(faiss_diff_ids):
@@ -135,16 +135,16 @@ class QueryProcessor(BaseProcessor):
                     titles[doc_id] = faiss_diff_ids
                     break
 
-        def hard_score(score, hits: SentHitList):
+        def hard_score(score, hits: SentHitPairs):
             boosted_score = score / min(5, len(hits))
             return boosted_score
 
-        def soft_score2(title_score, hits: SentHitList):
+        def soft_score2(title_score, hits: SentHitPairs):
             avg_score = (title_score + hits[0][0])/2
             boosted_score = avg_score / min(5, len(hits))
             return boosted_score
 
-        def soft_score(all_hits: SentHitList):
+        def soft_score(all_hits: SentHitPairs):
             avg_score = sum(all_hits[j][0] for j in range(len(all_hits)))/len(all_hits)
             boosted_score = avg_score / min(5, len(all_hits))
             return boosted_score

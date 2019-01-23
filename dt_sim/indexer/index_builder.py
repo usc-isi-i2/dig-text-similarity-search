@@ -20,20 +20,34 @@ class LargeIndexBuilder(object):
         self.path_to_base_index = p.abspath(path_to_base_index)
         self.subindex_path_totals = dict()
 
-    def mv_index_and_ivfdata(self, index_path: str, ivfdata_path: str, new_dir: str):
+    def mv_index_and_ivfdata(self, index_path: str, ivfdata_path: str,
+                             new_dir: str, mkdir: bool = False):
         """ Use this function for moving on-disk indexes (DO NOT: $ mv ...) """
         index_path, ivfdata_path = p.abspath(index_path), p.abspath(ivfdata_path)
         assert p.isfile(index_path), f'Could not find: {index_path}'
         assert p.isfile(ivfdata_path), f'Could not find: {ivfdata_path}'
 
-        new_index_path = p.abspath(p.join(new_dir, index_path.split('/')[-1]))
-        new_ivfdata_path = p.abspath(p.join(new_dir, ivfdata_path.split('/')[-1]))
-        n_vectors_mvd = self.merge_IVFs(new_index_path, new_ivfdata_path,
-                                        ivfindex_paths=[index_path])
+        new_dir = p.abspath(new_dir)
+        if not p.isdir(new_dir) and mkdir:
+            os.mkdir(new_dir)
 
-        os.remove(ivfdata_path), os.remove(index_path)
-        print(f'Moved: {index_path} and its .ivfdata file \n'
-              f'To:    {new_index_path} ({n_vectors_mvd} vectors)')
+        if p.isdir(new_dir):
+            new_index_path = p.join(new_dir, index_path.split('/')[-1])
+            new_ivfdata_path = p.join(new_dir, ivfdata_path.split('/')[-1])
+            n_vectors_mvd = self.merge_IVFs(
+                p.abspath(new_index_path), p.abspath(new_ivfdata_path),
+                ivfindex_paths=[index_path]
+            )
+            os.remove(ivfdata_path), os.remove(index_path)
+            print(f'Moved: {index_path} and its .ivfdata file \n'
+                  f'To:    {new_index_path} ({n_vectors_mvd} vectors)')
+        else:
+            print(f'Unable to move index: {index_path} \n'
+                  f'  * {new_dir} exists: {p.isdir(new_dir)} \n'
+                  f'  * mkdir: {mkdir}')
+
+    def zip_indexes(self, mv_dir: str, to_dir: str):
+        pass
 
     def merge_IVFs(self, index_path: str, ivfdata_path: str,
                    ivfindex_paths: List[str] = None) -> int:

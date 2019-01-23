@@ -46,7 +46,10 @@ class LargeIndexBuilder(object):
                   f'  * {new_dir} exists: {p.isdir(new_dir)} \n'
                   f'  * mkdir: {mkdir}')
 
-    def zip_indexes(self, mv_dir: str, to_dir: str):
+    def zip_indexes(self, mv_dir: str, to_dir: str, recursive: bool = False):
+        moving_indexes = self.find_indexes(mv_dir, recursive)
+        target_indexes = self.find_indexes(to_dir)
+
         pass
 
     def merge_IVFs(self, index_path: str, ivfdata_path: str,
@@ -63,9 +66,6 @@ class LargeIndexBuilder(object):
         :param ivfindex_paths: 
         :return: Number of vectors indexed
         """
-        assert self.index_path_clear(index_path)
-        assert self.index_path_clear(ivfdata_path, '.ivfdata')
-
         # Collect IVF data from subindexes
         ivfs = list()
         if not ivfindex_paths:
@@ -173,6 +173,17 @@ class LargeIndexBuilder(object):
         faiss.write_index(index, save_path)
         print(f' Index saved as {save_path}')
         # TODO: index_metadata.txt
+
+    @staticmethod
+    def find_indexes(check_dir: str, recursive: bool = False):
+        index_paths = list()
+        for (parent_dir, nested_dirs, files) in os.walk(p.abspath(check_dir)):
+            for f in files:
+                if f.endswith('.index'):
+                    index_paths.append(p.abspath(p.join(parent_dir, f)))
+            if not recursive:
+                break
+        return index_paths
 
     @staticmethod
     def index_path_clear(index_path: str, file_suffix: str = '.index'):

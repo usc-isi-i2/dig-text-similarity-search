@@ -149,16 +149,20 @@ def main():
     # Merge
     # TODO: Title indexes
     t_merge = time()
-    merged_ivfs = shard_date + '_all.ivfdata'
-    merged_ivfs = p.join(opts.output_dir, merged_ivfs)
-    merged_ivfs = check_unique(merged_ivfs)
-    merged_index = shard_date + '_all.index'
-    merged_index = p.join(opts.output_dir, merged_index)
-    merged_index = check_unique(merged_index)
+    merged_index_path = shard_date + '_all.index'
+    merged_index_path = p.join(opts.output_dir, merged_index_path)
+    merged_index_path = check_unique(merged_index_path)
+    merged_ivfdata_path = shard_date + '_all.ivfdata'
+    merged_ivfdata_path = p.join(opts.output_dir, merged_ivfdata_path)
+    merged_ivfdata_path = check_unique(merged_ivfdata_path)
     if opts.verbose:
-        print('\n  Merging {} on-disk'.format(merged_index.split('/')[-1]))
+        print('\n  Merging {} on-disk'.format(merged_index_path.split('/')[-1]))
 
-    n_vect = cp.index_builder.merge_IVFs(index_path=merged_index, ivfdata_path=merged_ivfs)
+    assert cp.index_builder.index_path_clear(merged_index_path)
+    assert cp.index_builder.index_path_clear(merged_ivfdata_path, '.ivfdata')
+
+    n_vect = cp.index_builder.merge_IVFs(index_path=merged_index_path,
+                                         ivfdata_path=merged_ivfdata_path)
 
     if opts.verbose:
         mm, sm = divmod(time() - t_merge, 60)
@@ -177,7 +181,7 @@ def main():
     if opts.add_shard:
         try:
             url = opts.url
-            payload = {'path': merged_index}
+            payload = {'path': merged_index_path}
             r = requests.put(url, params=payload)
             print(r.text)
         except Exception as e:

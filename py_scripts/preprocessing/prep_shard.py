@@ -109,7 +109,7 @@ def main():
         if p.exists(subidx_path):
             print('  File exists: {} \n'
                   '  Skipping...  '.format(subidx_path))
-            cp.index_builder.include_subpath(subidx_path)
+            cp.index_builder.include_subidx_path(subidx_path)
         else:
             # Vectorize
             emb_batch, id_batch = cp.batch_vectorize(

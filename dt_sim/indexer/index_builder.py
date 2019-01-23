@@ -18,7 +18,7 @@ class LargeIndexBuilder(object):
     """
     def __init__(self, path_to_base_index: str):
         self.path_to_base_index = p.abspath(path_to_base_index)
-        self.subindex_paths = list()
+        self.subindex_path_totals = dict()
 
     def mv_index_and_ivfdata(self, index_path: str, ivfdata_path: str, new_dir: str):
         """ Use this function for moving on-disk indexes (DO NOT: $ mv ...) """
@@ -55,7 +55,7 @@ class LargeIndexBuilder(object):
         # Collect IVF data from subindexes
         ivfs = list()
         if not ivfindex_paths:
-            ivfindex_paths = self.subindex_paths
+            ivfindex_paths = list(self.subindex_path_totals.keys())
         for subindex_path in ivfindex_paths:
             index = faiss.read_index(subindex_path, faiss.IO_FLAG_MMAP)
             ivfs.append(index.invlists)
@@ -82,8 +82,8 @@ class LargeIndexBuilder(object):
                           embeddings: np.array, faiss_ids: np.array):
         if self.index_path_clear(subindex_path):
             index = self.load_base_idx()
-            self.index_embs_and_ids(index, embeddings, faiss_ids)
-            self.subindex_paths.append(subindex_path)
+            index = self.index_embs_and_ids(index, embeddings, faiss_ids)
+            self.subindex_path_totals[subindex_path] = index.ntotal
             faiss.write_index(index, subindex_path)
 
     @staticmethod
@@ -99,18 +99,19 @@ class LargeIndexBuilder(object):
         """ Useful if subindexes already exist """
         if isinstance(paths_to_add, str):
             paths_to_add = [paths_to_add]
-        for subindex_path in paths_to_add:
-            if p.isfile(subindex_path) and subindex_path.endswith('.index'):
-                self.subindex_paths.append(subindex_path)
+        for subidx_path in paths_to_add:
+            if p.isfile(subidx_path) and subidx_path.endswith('.index'):
+                n_vect = faiss.read_index(subidx_path).ntotal
+                self.subindex_path_totals[subidx_path] = n_vect
             else:
-                print(f'Unable to add index: {subindex_path}')
+                print(f'Unable to add index: {subidx_path}')
         self.print_n_subindexes()
 
     def print_n_subindexes(self):
         n_vectors = 0
-        for subidx in self.subindex_paths:
-            n_vectors += faiss.read_index(subidx).ntotal
-        print(f' {len(self.subindex_paths)} subindexes ({n_vectors} vectors)')
+        for subidx_path, n_vect in self.subindex_path_totals.items():
+            n_vectors += n_vect
+        print(f' {len(self.subindex_path_totals)} subindexes ({n_vectors} vectors)')
 
     def load_base_idx(self):
         base_index = faiss.read_index(self.path_to_base_index)

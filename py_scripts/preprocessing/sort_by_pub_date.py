@@ -14,7 +14,8 @@ arp.add_argument('input_file', help='Path to dirtyLexisNexis.jl to be sorted.')
 arp.add_argument('output_dir', help='Dir for saving cleanLexisNexis.jl files.')
 arp.add_argument('-c', '--cutoff_date', default='2018-01-01',
                  help='Articles published after the cutoff date will be '
-                      'saved in output_dir/old_news/*.jl separately.')
+                      'saved in output_dir/old_news/*.jl separately. '
+                      '(Default: 2018-01-01)')
 opts = arp.parse_args()
 # </editor-fold>
 

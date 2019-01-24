@@ -1,5 +1,6 @@
 import os
 import os.path as p
+import re
 from time import time
 from typing import List, Union
 
@@ -16,26 +17,120 @@ class LargeIndexBuilder(object):
     For building IVF indexes that do not fit in memory (searched on-disk).
     Building an on-disk index requires an empty, pre-trained base index.
     """
+
     def __init__(self, path_to_base_index: str):
         self.path_to_base_index = p.abspath(path_to_base_index)
         self.subindex_path_totals = dict()
 
-    def mv_index_and_ivfdata(self, index_path: str, ivfdata_path: str,
-                             new_dir: str, mkdir: bool = False):
-        """ Use this function for moving on-disk indexes (DO NOT: $ mv ...) """
+    def zip_indexes(self, mv_dir: str, to_dir: str,
+                    recursive: bool = False, mkdir: bool = False,
+                    del_intermediates: bool = True):
+        """
+        Use this function to add freshly indexed news to an existing pub_date.index
+
+        Naming Convention: Assumes all faiss.index and faiss.ivfdata files share
+            the same name (i.e. they only differ by file extension)
+
+        :param mv_dir: Move faiss.index & corresponding .ivfdata files from here
+        :param to_dir: Zip with existing pub_date.index & .ivfdata files here
+                    (groups by ISO publication date)
+        :param recursive: Bool to search for nested faiss.index files in mv_dir
+        :param mkdir: Bool to make to_dir if it does not exist
+        :param del_intermediates: Bool to delete intermediate files
+                    (if False, cp files without deleting)
+        """
+        t_start = time()
+
+        mv_dir, to_dir = p.abspath(mv_dir), p.abspath(to_dir)
+        if not p.isdir(to_dir) and mkdir:
+            os.mkdir(to_dir)
+
+        moving_indexes = self.find_indexes(mv_dir, recursive)
+        target_indexes = self.find_indexes(to_dir)
+
+        # Must be able to group multiple index paths by group_seed
+        group_seed = str('\d{4}[-/]\d{2}[-/]\d{2}')     # ISO-date
+        stale_files = list(moving_indexes)
+        moving_groups = dict()
+        while len(moving_indexes):
+            index_path = moving_indexes.pop()
+            check_date = re.search(group_seed, index_path).group()
+
+            group = list()
+            group.append(index_path)
+            for idx_path in moving_indexes:
+                if check_date in idx_path:
+                    group.append(idx_path)
+                    moving_indexes.pop(moving_indexes.index(idx_path))
+            moving_groups[check_date] = group
+
+        # Do not overwrite existing files
+        tmp_indexes = list()
+        tmp_dir = p.join(to_dir, 'tmp')
+        for tgt_idx in target_indexes:
+            for pub_date, _ in moving_groups.items():
+                if pub_date in tgt_idx:
+                    self.mv_index_and_ivfdata(
+                        index_path=tgt_idx,
+                        ivfdata_path=tgt_idx.replace('.index', '.ivfdata'),
+                        to_dir=tmp_dir, mkdir=True
+                    )
+                    tmp_index_path = p.join(tmp_dir, tgt_idx.split('/')[-1])
+                    tmp_indexes.append(tmp_index_path)
+                    moving_groups[pub_date].append(tmp_index_path)
+
+        # Merge moving & tmp faiss indexes in target dir
+        for tgt_idx in target_indexes:
+            if not p.isfile(tgt_idx):
+                for pub_date, group in moving_groups.items():
+                    if pub_date in tgt_idx:
+                        self.merge_IVFs(
+                            index_path=tgt_idx,
+                            ivfdata_path=tgt_idx.replace('.index', '.ivfdata'),
+                            ivfindex_paths=group
+                        )
+
+        # Delete intermediate files
+        n_files = len(stale_files)
+        n_existing = len(tmp_indexes)
+        if del_intermediates:
+            tmp_indexes.extend(stale_files)
+            for tmp_idx in tmp_indexes:
+                os.remove(tmp_idx)
+                os.remove(tmp_idx.replace('.index', '.ivfdata'))
+            os.rmdir(tmp_dir)
+
+        print(f'\nMerged {n_files} file(s) with {n_existing} existing indexes '
+              f'in {time()-t_start:0.2f}s')
+
+    def mv_index_and_ivfdata(self, index_path: str, ivfdata_path: str, to_dir: str,
+                             mkdir: bool = False):
+        """
+        Use this function for moving an on-disk faiss.index and its
+        corresponding .ivfdata file.
+
+        DO NOT: $ mv my_faiss.index /new/dir/my_faiss.index
+            The reference to its corresponding .ivfdata file will be lost!
+
+        :param index_path: Move this faiss.index ...
+        :param ivfdata_path: ... and this corresponding faiss.ivfdata ...
+        :param to_dir: ... to this directory
+        :param mkdir: Bool to make to_dir if it does not exist
+        """
         index_path, ivfdata_path = p.abspath(index_path), p.abspath(ivfdata_path)
         assert p.isfile(index_path), f'Could not find: {index_path}'
         assert p.isfile(ivfdata_path), f'Could not find: {ivfdata_path}'
 
-        new_dir = p.abspath(new_dir)
-        if not p.isdir(new_dir) and mkdir:
-            os.mkdir(new_dir)
+        to_dir = p.abspath(to_dir)
+        if not p.isdir(to_dir) and mkdir:
+            os.mkdir(to_dir)
 
-        if p.isdir(new_dir):
-            new_index_path = p.join(new_dir, index_path.split('/')[-1])
-            new_ivfdata_path = p.join(new_dir, ivfdata_path.split('/')[-1])
+        if p.isdir(to_dir):
+            new_index_path = p.join(to_dir, index_path.split('/')[-1])
+            new_ivfdata_path = p.join(to_dir, ivfdata_path.split('/')[-1])
             n_vectors_mvd = self.merge_IVFs(
-                p.abspath(new_index_path), p.abspath(new_ivfdata_path),
+                index_path=p.abspath(new_index_path),
+                ivfdata_path=p.abspath(new_ivfdata_path),
                 ivfindex_paths=[index_path]
             )
             os.remove(ivfdata_path), os.remove(index_path)
@@ -43,14 +138,8 @@ class LargeIndexBuilder(object):
                   f'To:    {new_index_path} ({n_vectors_mvd} vectors)')
         else:
             print(f'Unable to move index: {index_path} \n'
-                  f'  * {new_dir} exists: {p.isdir(new_dir)} \n'
+                  f'  * {to_dir} exists: {p.isdir(to_dir)} \n'
                   f'  * mkdir: {mkdir}')
-
-    def zip_indexes(self, mv_dir: str, to_dir: str, recursive: bool = False):
-        moving_indexes = self.find_indexes(mv_dir, recursive)
-        target_indexes = self.find_indexes(to_dir)
-
-        pass
 
     def merge_IVFs(self, index_path: str, ivfdata_path: str,
                    ivfindex_paths: List[str] = None) -> int:
@@ -61,9 +150,9 @@ class LargeIndexBuilder(object):
 
         Note: Use self.mv_index_and_ivfdata() to move these files.
 
-        :param ivfdata_path: Path to on-disk searchable IVF data
-        :param index_path: Path to .index file (load this)
-        :param ivfindex_paths: 
+        :param index_path: Path to output.index file
+        :param ivfdata_path: Path to output.ivfdata file (on-disk searchable data)
+        :param ivfindex_paths: Paths to indexes to be merged
         :return: Number of vectors indexed
         """
         # Collect IVF data from subindexes

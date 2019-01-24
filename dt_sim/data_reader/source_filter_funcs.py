@@ -2,7 +2,6 @@ import json
 from time import time
 from typing import Union, List, Tuple
 
-
 __all__ = ['source_filter']
 
 

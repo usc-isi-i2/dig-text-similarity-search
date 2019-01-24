@@ -1,13 +1,15 @@
-import os
+import os.path as p
 import tensorflow as tf
 import tensorflow_hub as hub
 from optparse import OptionParser
+
 # <editor-fold desc="Parse Command Line Options">
 options = OptionParser()
 options.add_option('-l', '--large', action='store_true', default=False)
 options.add_option('-v', '--version', default='001')
 (opts, _) = options.parse_args()
 # </editor-fold>
+
 
 """
 Makes file to run Universal Sentence Encoder with docker 
@@ -42,6 +44,7 @@ Options:
     -v Version number of model (highest version number will be deployed)
 """
 
+
 # Find model
 if opts.large:
     model_dir = 'model/96e8f1d3d4d90ce86b2db128249eb8143a91db73'
@@ -51,21 +54,20 @@ else:
     model_dir = 'model/1fb57c3ffe1a38479233ee9853ddd7a8ac8a8c47'
     model_url = 'https://tfhub.dev/google/universal-sentence-encoder/2'
     model_name = 'USE-lite-v2'
-model_dir = os.path.join(os.path.dirname(__file__), model_dir)
-if os.path.isdir(model_dir):
-    model_link = os.path.abspath(model_dir)
-    print('Using local model: {}'.format(model_link))
+model_dir = p.join(p.dirname(__file__), model_dir)
+if p.isdir(model_dir):
+    model_link = p.abspath(model_dir)
+    print(f'Using local model: {model_link}')
 else:
     model_link = model_url
-    print('Downloading model: {}'.format(model_link))
+    print(f'Downloading model: {model_link}')
 
 # Model type and version
 MODEL_LINK = model_link
 MODEL_NAME = model_name
 VERSION = opts.version
-SERVE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                          './service_models/{}/{}'
-                                          ''.format(MODEL_NAME, VERSION)))
+SERVE_PATH = p.abspath(p.join(p.dirname(__file__),
+                              f'./service_models/{MODEL_NAME}/{VERSION}'))
 
 # Build MetaGraph
 # TODO: Make metagraph with both models

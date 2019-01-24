@@ -3,7 +3,6 @@ import os
 __all__ = ['check_unique', 'clear_dir']
 
 
-##### Misc #####
 def check_unique(test_path: str, count_mod: int = 0) -> str:
     """
     Checks for path uniqueness.

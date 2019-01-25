@@ -117,9 +117,8 @@ class RangeShards(BaseIndexer):
             query_vector = np.reshape(query_vector, (1, query_vector.shape[0]))
 
         # Lock search while loading index
-        if self.lock:
+        while self.lock:
             sleep(2)
-            return self.search(query_vector, k, radius)
 
         # Start parallel range search
         for shard_name, (hpipe, shard) in self.shards.items():
@@ -137,7 +136,7 @@ class RangeShards(BaseIndexer):
 
         # Ensure len(results) > k
         if radius < self.max_radius and len(D[0]) < k:
-            new_radius = radius + 0.3
+            new_radius = radius + 0.5
             D, I = self.search(query_vector, int(k/2), radius=new_radius)
         return self.joint_sort(D, I)
 

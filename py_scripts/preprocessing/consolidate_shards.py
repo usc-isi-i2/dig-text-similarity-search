@@ -56,13 +56,17 @@ idx_bdr = OnDiskIVFBuilder(p.abspath(opts.base_index))
 
 # Main
 def main():
-    if opts.move or opts.copy:
+    if opts.mv or opts.cp:
         idx_bdr.mv_indexes(
             mv_dir=p.abspath(opts.mv_dir), to_dir=p.abspath(opts.to_dir),
-            mkdir=True, only_cp=opts.cp
+            mkdir=not opts.dont_mkdir, only_cp=opts.cp
         )
     else:
         idx_bdr.zip_indexes(
             mv_dir=p.abspath(opts.mv_dir), to_dir=p.abspath(opts.to_dir),
-            mkdir=True, recursive=opts.recursive
+            mkdir=not opts.dont_mkdir, recursive=opts.recursive
         )
+
+
+if __name__ == '__main__':
+    main()

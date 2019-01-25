@@ -109,7 +109,7 @@ class OnDiskIVFBuilder(object):
         Use this function for moving an on-disk faiss.index and its
         corresponding .ivfdata file.
 
-        DO NOT: $ mv my_faiss.index /new/dir/my_faiss.index
+        DO NOT: $ mv my_faiss.index /new/dir/my_faiss.index or any parent dirs!
             The reference to its corresponding .ivfdata file will be lost!
 
         :param index_path: Move this faiss.index ...
@@ -128,14 +128,19 @@ class OnDiskIVFBuilder(object):
         if p.isdir(to_dir):
             new_index_path = p.join(to_dir, index_path.split('/')[-1])
             new_ivfdata_path = p.join(to_dir, ivfdata_path.split('/')[-1])
+            assert not p.isfile(new_index_path) and not p.isfile(new_ivfdata_path), \
+                f'Paths not clear: {new_index_path} & {new_ivfdata_path}'
+
             n_vectors_mvd = self.merge_IVFs(
                 index_path=p.abspath(new_index_path),
                 ivfdata_path=p.abspath(new_ivfdata_path),
                 ivfindex_paths=[index_path]
             )
+
             os.remove(ivfdata_path), os.remove(index_path)
             print(f'Moved: {index_path} and its .ivfdata file \n'
                   f'To:    {new_index_path} ({n_vectors_mvd} vectors)')
+
         else:
             print(f'Unable to move index: {index_path} \n'
                   f'  * {to_dir} exists: {p.isdir(to_dir)} \n'

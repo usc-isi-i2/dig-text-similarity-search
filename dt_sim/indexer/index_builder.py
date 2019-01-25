@@ -96,7 +96,8 @@ class OnDiskIVFBuilder(object):
         n_files = len(stale_files)
         n_existing = len(tmp_indexes)
         sleep(0.1)
-        if del_intermediates:
+        if del_intermediates and \
+                'y' == input('Delete intermediate files? y/[n]').lower():
             tmp_indexes.extend(stale_files)
             for tmp_idx in tmp_indexes:
                 os.remove(tmp_idx)

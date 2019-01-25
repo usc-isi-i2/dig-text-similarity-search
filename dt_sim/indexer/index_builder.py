@@ -103,11 +103,42 @@ class OnDiskIVFBuilder(object):
         print(f'\nMerged {n_files} file(s) with {n_existing} existing indexes '
               f'in {time()-t_start:0.2f}s')
 
-    def mv_index_and_ivfdata(self, index_path: str, ivfdata_path: str, to_dir: str,
-                             mkdir: bool = False):
+    def mv_indexes(self, mv_dir: str, to_dir: str,
+                   mkdir: bool = False, only_cp: bool = False):
         """
-        Use this function for moving an on-disk faiss.index and its
-        corresponding .ivfdata file.
+        Uses self.mv_index_and_ivfdata() to move (or copy) all on-disk, IVF
+        indexes in mv_dir to to_dir.
+
+        Note: Assumes filename.index and its corresponding filename.ivfdata
+            only differ by file extension.
+
+        DO NOT: $ mv my_faiss.index /new/dir/my_faiss.index or any parent dirs!
+            The reference to its corresponding .ivfdata file will be lost!
+
+        :param mv_dir: Move all faiss indexes (and .ivfdata files) from here ...
+        :param to_dir: ... to this folder
+        :param mkdir: Bool to make to_dir if it does not exist
+        :param only_cp: Bool to prevent deletion of original files
+                (i.e. $ mv ... acts like $ cp ...)
+        """
+        mv_dir, to_dir = p.abspath(mv_dir), p.abspath(to_dir)
+        if not p.isdir(to_dir) and mkdir:
+            os.mkdir(to_dir)
+
+        moving_indexes = self.find_indexes(mv_dir)
+
+        for idx in moving_indexes:
+            self.mv_index_and_ivfdata(
+                index_path=idx,
+                ivfdata_path=idx.replace('.index', '.ivfdata'),
+                to_dir=to_dir, mkdir=mkdir, only_cp=only_cp
+            )
+
+    def mv_index_and_ivfdata(self, index_path: str, ivfdata_path: str, to_dir: str,
+                             mkdir: bool = False, only_cp: bool = False):
+        """
+        This function moves a specific on-disk faiss.index and its
+        corresponding .ivfdata file into to_dir.
 
         DO NOT: $ mv my_faiss.index /new/dir/my_faiss.index or any parent dirs!
             The reference to its corresponding .ivfdata file will be lost!
@@ -116,6 +147,8 @@ class OnDiskIVFBuilder(object):
         :param ivfdata_path: ... and this corresponding faiss.ivfdata ...
         :param to_dir: ... to this directory
         :param mkdir: Bool to make to_dir if it does not exist
+        :param only_cp: Bool to prevent deletion of original files
+                (i.e. $ mv ... acts like $ cp ...)
         """
         index_path, ivfdata_path = p.abspath(index_path), p.abspath(ivfdata_path)
         assert p.isfile(index_path), f'Could not find: {index_path}'
@@ -129,7 +162,7 @@ class OnDiskIVFBuilder(object):
             new_index_path = p.join(to_dir, index_path.split('/')[-1])
             new_ivfdata_path = p.join(to_dir, ivfdata_path.split('/')[-1])
             assert not p.isfile(new_index_path) and not p.isfile(new_ivfdata_path), \
-                f'Paths not clear: {new_index_path} & {new_ivfdata_path}'
+                f'Paths not clear! Check: {new_index_path} & {new_ivfdata_path}'
 
             n_vectors_mvd = self.merge_IVFs(
                 index_path=p.abspath(new_index_path),
@@ -137,9 +170,13 @@ class OnDiskIVFBuilder(object):
                 ivfindex_paths=[index_path]
             )
 
-            os.remove(ivfdata_path), os.remove(index_path)
-            print(f'Moved: {index_path} and its .ivfdata file \n'
-                  f'To:    {new_index_path} ({n_vectors_mvd} vectors)')
+            if only_cp:
+                print(f'Copied: {index_path} and its .ivfdata file \n'
+                      f'To:     {new_index_path} ({n_vectors_mvd} vectors)')
+            else:
+                os.remove(ivfdata_path), os.remove(index_path)
+                print(f'Moved: {index_path} and its .ivfdata file \n'
+                      f'To:    {new_index_path} ({n_vectors_mvd} vectors)')
 
         else:
             print(f'Unable to move index: {index_path} \n'

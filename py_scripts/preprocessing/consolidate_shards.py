@@ -40,10 +40,6 @@ action.add_argument('-c', '--cp', '--copy', action='store_true', default=False,
                     help='Copies indexes from mv_dir to to_dir (does NOT delete '
                          'anything in mv_dir). Fails if existing filenames conflict! '
                          '(Note: may fail after partial completion)')
-
-arp.add_argument('-D', '--dont_mkdir', action='store_true', default=False,
-                 help='Flag to prevent python from making to_dir if it '
-                      'does not already exist.')
 opts = arp.parse_args()
 # </editor-fold>
 
@@ -59,12 +55,12 @@ def main():
     if opts.mv or opts.cp:
         idx_bdr.mv_indexes(
             mv_dir=p.abspath(opts.mv_dir), to_dir=p.abspath(opts.to_dir),
-            mkdir=not opts.dont_mkdir, only_cp=opts.cp
+            mkdir=True, only_cp=opts.cp
         )
     else:
         idx_bdr.zip_indexes(
             mv_dir=p.abspath(opts.mv_dir), to_dir=p.abspath(opts.to_dir),
-            mkdir=not opts.dont_mkdir, recursive=opts.recursive
+            mkdir=True, recursive=opts.recursive
         )
 
 

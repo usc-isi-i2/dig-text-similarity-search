@@ -81,14 +81,13 @@ class OnDiskIVFBuilder(object):
 
         # Merge moving & tmp faiss indexes in target dir
         for tgt_idx in target_indexes:
-            if not p.isfile(tgt_idx):
-                for pub_date, group in moving_groups.items():
-                    if pub_date in tgt_idx:
-                        self.merge_IVFs(
-                            index_path=tgt_idx,
-                            ivfdata_path=tgt_idx.replace('.index', '.ivfdata'),
-                            ivfindex_paths=group
-                        )
+            for pub_date, group in moving_groups.items():
+                if pub_date in tgt_idx:
+                    self.merge_IVFs(
+                        index_path=tgt_idx,
+                        ivfdata_path=tgt_idx.replace('.index', '.ivfdata'),
+                        ivfindex_paths=group
+                    )
 
         # Delete intermediate files
         n_files = len(stale_files)

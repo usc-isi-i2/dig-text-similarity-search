@@ -1,7 +1,7 @@
 import os
 import os.path as p
 import re
-from time import time
+from time import time, sleep
 from typing import List, Union
 
 import numpy as np
@@ -67,6 +67,8 @@ class OnDiskIVFBuilder(object):
         # Do not overwrite existing files
         tmp_indexes = list()
         tmp_dir = p.join(to_dir, 'tmp')
+        os.mkdir(tmp_dir)
+        sleep(0.1)
         for tgt_idx in target_indexes:
             for pub_date, _ in moving_groups.items():
                 if pub_date in tgt_idx:
@@ -80,6 +82,7 @@ class OnDiskIVFBuilder(object):
                     moving_groups[pub_date].append(tmp_index_path)
 
         # Merge moving & tmp faiss indexes in target dir
+        sleep(0.1)
         for tgt_idx in target_indexes:
             for pub_date, group in moving_groups.items():
                 if pub_date in tgt_idx:
@@ -92,6 +95,7 @@ class OnDiskIVFBuilder(object):
         # Delete intermediate files
         n_files = len(stale_files)
         n_existing = len(tmp_indexes)
+        sleep(0.1)
         if del_intermediates:
             tmp_indexes.extend(stale_files)
             for tmp_idx in tmp_indexes:

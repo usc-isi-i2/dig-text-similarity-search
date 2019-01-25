@@ -9,10 +9,10 @@ import faiss
 
 from dt_sim.data_reader.npz_io_funcs import load_training_npz
 
-__all__ = ['LargeIndexBuilder']
+__all__ = ['OnDiskIVFBuilder']
 
 
-class LargeIndexBuilder(object):
+class OnDiskIVFBuilder(object):
     """
     For building IVF indexes that do not fit in memory (searched on-disk).
     Building an on-disk index requires an empty, pre-trained base index.

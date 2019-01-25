@@ -56,7 +56,7 @@ if opts.num_threads:
 from dt_sim.data_reader.jl_io_funcs import check_all_docs, get_all_docs
 from dt_sim.data_reader.misc_io_funcs import check_unique, clear_dir
 from dt_sim.vectorizer.sentence_vectorizer import SentenceVectorizer
-from dt_sim.indexer.index_builder import LargeIndexBuilder
+from dt_sim.indexer.index_builder import OnDiskIVFBuilder
 from dt_sim.processor.corpus_processor import CorpusProcessor
 
 # Suppress TF logging
@@ -66,7 +66,7 @@ if opts.TF_logging:
 
 # Init
 sv = SentenceVectorizer(large=opts.large)
-idx_bdr = LargeIndexBuilder(path_to_base_index=opts.base_index_path)
+idx_bdr = OnDiskIVFBuilder(path_to_base_index=opts.base_index_path)
 cp = CorpusProcessor(vectorizer=sv, index_builder=idx_bdr,
                      progress_file=opts.progress_file)
 

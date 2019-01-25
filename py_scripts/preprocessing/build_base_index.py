@@ -37,7 +37,7 @@ if opts.num_threads:
     os.environ['OMP_NUM_THREADS'] = opts.num_threads
 # </editor-fold>
 
-from dt_sim.indexer.index_builder import LargeIndexBuilder
+from dt_sim.indexer.index_builder import OnDiskIVFBuilder
 
 
 # Set up paths
@@ -47,7 +47,7 @@ base_index_path = p.abspath(p.join(opts.output_index_dir, opts.base_index_name))
 training_set_path = p.abspath(p.join(opts.input_npz_dir, opts.mmap_name))
 
 # Init
-idx_bdr = LargeIndexBuilder(path_to_base_index=base_index_path)
+idx_bdr = OnDiskIVFBuilder(path_to_base_index=base_index_path)
 
 
 # Main

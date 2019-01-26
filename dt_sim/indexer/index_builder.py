@@ -1,7 +1,7 @@
 import os
 import os.path as p
 import re
-from time import time, sleep
+from time import time
 from typing import List, Union
 
 import numpy as np
@@ -22,7 +22,7 @@ class OnDiskIVFBuilder(object):
         self.path_to_base_index = p.abspath(path_to_base_index)
         self.subindex_path_totals = dict()
 
-    def zip_indexes(self, mv_dir: str, to_dir: str,
+    def zip_indexes(self, mv_dir: str, to_dir: str, partial_filename: str = '',
                     recursive: bool = False, mkdir: bool = False,
                     del_intermediates: bool = True):
         """
@@ -34,13 +34,13 @@ class OnDiskIVFBuilder(object):
         :param mv_dir: Move faiss.index & corresponding .ivfdata files from here
         :param to_dir: Zip with existing pub_date.index & .ivfdata files here
                     (groups by ISO publication date)
+        :param partial_filename: The editable component of the new filenames.
+                    (i.e. YYYY-MM-DD_partial_filename.index)
         :param recursive: Bool to search for nested faiss.index files in mv_dir
         :param mkdir: Bool to make to_dir if it does not exist
         :param del_intermediates: Bool to delete intermediate files
                     (if False, cp files without deleting)
         """
-        t_start = time()
-
         mv_dir, to_dir = p.abspath(mv_dir), p.abspath(to_dir)
         if not p.isdir(to_dir) and mkdir:
             os.mkdir(to_dir)
@@ -68,7 +68,6 @@ class OnDiskIVFBuilder(object):
         tmp_indexes = list()
         tmp_dir = p.join(to_dir, 'tmp')
         os.mkdir(tmp_dir)
-        sleep(0.1)
         for tgt_idx in target_indexes:
             for pub_date, _ in moving_groups.items():
                 if pub_date in tgt_idx:
@@ -82,30 +81,26 @@ class OnDiskIVFBuilder(object):
                     moving_groups[pub_date].append(tmp_index_path)
 
         # Merge moving & tmp faiss indexes in target dir
-        sleep(0.1)
-        for tgt_idx in target_indexes:
-            for pub_date, group in moving_groups.items():
-                if pub_date in tgt_idx:
-                    self.merge_IVFs(
-                        index_path=tgt_idx,
-                        ivfdata_path=tgt_idx.replace('.index', '.ivfdata'),
-                        ivfindex_paths=group
-                    )
+        for pub_date, group in moving_groups.items():
+            new_idx_path = p.join(to_dir, f'{pub_date}_{partial_filename}.index')
+            self.merge_IVFs(
+                index_path=new_idx_path,
+                ivfdata_path=new_idx_path.replace('.index', '.ivfdata'),
+                ivfindex_paths=group
+            )
 
         # Delete intermediate files
         n_files = len(stale_files)
         n_existing = len(tmp_indexes)
-        sleep(0.1)
         if del_intermediates and \
-                'y' == input('Delete intermediate files? y/[n]').lower():
+                'y' == input('\n\nDelete intermediate files? [y/N]: ').lower():
             tmp_indexes.extend(stale_files)
             for tmp_idx in tmp_indexes:
                 os.remove(tmp_idx)
                 os.remove(tmp_idx.replace('.index', '.ivfdata'))
             os.rmdir(tmp_dir)
 
-        print(f'\nMerged {n_files} file(s) with {n_existing} existing indexes '
-              f'in {time()-t_start:0.2f}s')
+        print(f'\nMerged {n_files} file(s) with {n_existing} existing indexes')
 
     def mv_indexes(self, mv_dir: str, to_dir: str,
                    mkdir: bool = False, only_cp: bool = False):
@@ -318,7 +313,7 @@ class OnDiskIVFBuilder(object):
                     index_paths.append(p.abspath(p.join(parent_dir, f)))
             if not recursive:
                 break
-        return index_paths
+        return sorted(index_paths)
 
     @staticmethod
     def index_path_clear(index_path: str, file_suffix: str = '.index'):

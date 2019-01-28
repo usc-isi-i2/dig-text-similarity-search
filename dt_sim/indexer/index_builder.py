@@ -166,17 +166,17 @@ class OnDiskIVFBuilder(object):
 
             if only_cp:
                 print(f'Copied: {index_path} and its .ivfdata file \n'
-                      f'To:     {new_index_path} ({n_vectors_mvd} vectors)')
+                      f'To:     {new_index_path} ({n_vectors_mvd} vectors) \n')
             else:
                 os.remove(ivfdata_path), os.remove(index_path)
                 print(f'Moved: {index_path} and its .ivfdata file \n'
-                      f'To:    {new_index_path} ({n_vectors_mvd} vectors)')
+                      f'To:    {new_index_path} ({n_vectors_mvd} vectors) \n')
             return n_vectors_mvd
 
         else:
             print(f'Unable to move index: {index_path} \n'
                   f' * {to_dir} exists: {p.isdir(to_dir)} \n'
-                  f' * mkdir: {mkdir} \n * only_cp: {only_cp}')
+                  f' * mkdir: {mkdir} \n * only_cp: {only_cp} \n')
 
     def merge_IVFs(self, index_path: str, ivfdata_path: str,
                    ivfindex_paths: List[str] = None) -> int:

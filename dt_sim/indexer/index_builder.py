@@ -60,7 +60,7 @@ class OnDiskIVFBuilder(object):
         while len(moving_indexes):
             index_path = moving_indexes.pop()
             check_date = re.search(ISO_seed, index_path).group()
-
+            # Note: This will fail if any paths have a second ISO-date
             group = list()
             group.append(index_path)
             for idx_path in moving_indexes:
@@ -69,7 +69,7 @@ class OnDiskIVFBuilder(object):
                     moving_indexes.pop(moving_indexes.index(idx_path))
             moving_groups[check_date] = group
 
-        # Merge faiss indexes in target dir
+        # Merge faiss indexes into target dir
         n_vect = 0
         for pub_date, group in moving_groups.items():
             new_idx_path = p.join(to_dir, f'{pub_date}_{partial_filename}.index')
@@ -86,7 +86,7 @@ class OnDiskIVFBuilder(object):
         print('\n'
               f' * Zipped {n_moved} indexes with {n_existing} '
               f'existing file(s) in {time()-t_0:0.2f}s \n'
-              f' * Final count: {n_new} indexes with {n_vect} vectors total \n')
+              f' * Final count: {n_new} indexes with {n_vect} vectors in total \n')
 
         # Delete intermediate files
         if 'y' == input('\nDelete intermediate files? [y/N]: ').lower():

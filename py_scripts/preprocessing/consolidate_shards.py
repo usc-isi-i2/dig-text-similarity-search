@@ -60,10 +60,12 @@ idx_bdr = OnDiskIVFBuilder(p.abspath(opts.base_index))
 # Main
 def main():
     if opts.mv or opts.cp:
-        idx_bdr.mv_indexes(
+        n_vect = idx_bdr.mv_indexes(
             mv_dir=p.abspath(opts.mv_dir), to_dir=p.abspath(opts.to_dir),
             mkdir=True, only_cp=opts.cp
         )
+        print(f'\n * Final count: {len(idx_bdr.find_indexes(opts.to_dir))} indexes '
+              f'with {n_vect} vectors in total \n')
     else:
         idx_bdr.zip_indexes(
             mv_dir=p.abspath(opts.mv_dir), to_dir=p.abspath(opts.to_dir),

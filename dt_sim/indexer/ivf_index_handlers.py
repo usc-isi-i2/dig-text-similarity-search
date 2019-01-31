@@ -110,15 +110,15 @@ class RangeShards(BaseIndexer):
             self.n_shards += 1
 
     @faiss_cache(64)
-    def search(self, query_vector: np.array, k: int, radius: float = 0.5
-               ) -> FaissSearch:
+    def search(self, query_vector: np.array, k: int,
+               radius: float = 1.0) -> FaissSearch:
 
         if len(query_vector.shape) < 2 or query_vector.shape[0] > 1:
             query_vector = np.reshape(query_vector, (1, query_vector.shape[0]))
 
         # Lock search while loading index
         while self.lock:
-            sleep(2)
+            sleep(1)
 
         # Start parallel range search
         for shard_name, (hpipe, shard) in self.shards.items():
@@ -132,13 +132,8 @@ class RangeShards(BaseIndexer):
             dd, ii = self.results.get()
             D.extend(dd), I.extend(ii)
             n_results += 1
-        D, I = [D], [I]
 
-        # Ensure len(results) > k
-        if radius < self.max_radius and len(D[0]) < k:
-            new_radius = radius + 0.5
-            D, I = self.search(query_vector, int(k/2), radius=new_radius)
-        return self.joint_sort(D, I)
+        return self.joint_sort([D], [I])
 
     def load_shard(self, shard_path):
         shard_name = shard_path.replace('.index', '')

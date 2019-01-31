@@ -55,7 +55,7 @@ class DeployShards(BaseIndexer):
 #### Parallelized Nearest Neighbor Search ####
 class Shard(Process):
     def __init__(self, shard_name, shard_path, input_pipe, output_queue,
-                 nprobe: int = 16, daemon: bool = False):
+                 nprobe: int = 4, daemon: bool = False):
         """ RangeShards search worker """
         super().__init__(name=shard_name)
         self.daemon = daemon
@@ -65,7 +65,6 @@ class Shard(Process):
         self.index.nprobe = nprobe
         self.output = output_queue
 
-    # @faiss_cache(64)      # Cache cannot be used here because run takes no input args, kwargs
     def run(self):
 
         @faiss_cache(64)
@@ -75,13 +74,12 @@ class Shard(Process):
 
         if self.input.poll():
             (query_vector, radius_limit) = self.input.recv()
-            # _, dd, ii = self.index.range_search(query_vector, radius_limit)
             dd, ii = neighborhood(self.index, query_vector, radius_limit)
             self.output.put((dd, ii), block=False)
 
 
 class RangeShards(BaseIndexer):
-    def __init__(self, shard_dir, nprobe: int = 16, max_radius: float = 1.0):
+    def __init__(self, shard_dir, nprobe: int = 4):
         """
         For deploying multiple, pre-made IVF indexes as shards.
             (intended for on-disk indexes that do not fit in memory)
@@ -91,12 +89,10 @@ class RangeShards(BaseIndexer):
         :param shard_dir: Dir containing faiss index shards
         :param nprobe: Number of clusters to visit during search
                        (speed accuracy trade-off)
-        :param max_radius: Maximum L2 distance neighborhood radius
         """
         super().__init__()
         self.paths_to_shards = self.get_index_paths(shard_dir)
         self.nprobe = nprobe
-        self.max_radius = max_radius
         self.dynamic = False
         self.lock = False
 
@@ -111,14 +107,17 @@ class RangeShards(BaseIndexer):
 
     @faiss_cache(64)
     def search(self, query_vector: np.array, k: int,
-               radius: float = 1.0) -> FaissSearch:
+               radius: float = 0.75) -> FaissSearch:
 
         if len(query_vector.shape) < 2 or query_vector.shape[0] > 1:
             query_vector = np.reshape(query_vector, (1, query_vector.shape[0]))
 
-        # Lock search while loading index
+        # Lock search while loading index or actively searching
         while self.lock:
             sleep(1)
+
+        # Lock out other searches
+        self.lock = True
 
         # Start parallel range search
         for shard_name, (hpipe, shard) in self.shards.items():
@@ -133,6 +132,7 @@ class RangeShards(BaseIndexer):
             D.extend(dd), I.extend(ii)
             n_results += 1
 
+        self.lock = False
         return self.joint_sort([D], [I])
 
     def load_shard(self, shard_path):

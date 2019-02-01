@@ -33,7 +33,7 @@ def faiss_cache(cacheable_func, limit: int = None):
             except KeyError:
                 cache_q[key] = cacheable_func(*args, **kwargs)
                 if limit and len(cache_q) > limit:
-                    cache_q.popitem()
+                    cache_q.popitem(0)
 
         return cache_q[key]
 

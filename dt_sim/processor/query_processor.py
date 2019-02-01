@@ -48,7 +48,7 @@ class QueryProcessor(BaseProcessor):
 
         # Search            # TODO: date-range search
         t_s = time()
-        k_search = min(250, 10*k)
+        k_search = min(64, 10*k)
         scores, faiss_ids = self.indexer.search(query_vector, k=k_search)
 
         # Aggregate hits into docs -> rerank (soon) -> format
@@ -65,7 +65,7 @@ class QueryProcessor(BaseProcessor):
             print('  Index searched in ----- {:0.4f}s'.format(t_p - t_s))
             print('  Payload formatted in -- {:0.4f}s'.format(t_r - t_p))
 
-        return similar_docs[:k]
+        return similar_docs[:k_search]
 
     def vectorize(self, query: Union[str, List[str]]) -> QueryReturn:
         """

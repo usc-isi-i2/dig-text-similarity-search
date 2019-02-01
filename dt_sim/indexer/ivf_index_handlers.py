@@ -121,20 +121,20 @@ class RangeShards(BaseIndexer):
         self.lock = True
 
         # Start parallel range search
+        n_results = 0
         for shard_name, (hpipe, shard) in self.shards.items():
-            hpipe.send((query_vector, radius))
-            shard.run()
             shard_date = shard_name.split('/')[-1]   # maybe search with re
-            print(f'Shard date: {shard_date} in range ({newest <= shard_date <= oldest})')
-            # if newest <= shard_date <= oldest:
+            if newest <= shard_date <= oldest:
+                hpipe.send((query_vector, radius))
+                shard.run()
+                n_results += 1
 
         # Aggregate results
         D, I = list(), list()
-        n_results = 0
-        while n_results < self.n_shards or not self.results.empty():
+        while n_results > 0 or not self.results.empty():
             dd, ii = self.results.get()
             D.extend(dd), I.extend(ii)
-            n_results += 1
+            n_results -= 1
 
         self.lock = False
         return self.joint_sort([D], [I])

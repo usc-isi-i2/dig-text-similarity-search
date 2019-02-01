@@ -107,7 +107,7 @@ class RangeShards(BaseIndexer):
 
     @faiss_cache(64)
     def search(self, query_vector: np.array, k: int, radius: float = 0.75,
-               newest: str = '2018-12-01', oldest: str = '9999-99-99'
+               newest: str = '9999-99-99', oldest: str = '2018-11-01'
                ) -> FaissSearch:
 
         if len(query_vector.shape) < 2 or query_vector.shape[0] > 1:
@@ -124,7 +124,7 @@ class RangeShards(BaseIndexer):
         n_results = 0
         for shard_name, (hpipe, shard) in self.shards.items():
             shard_date = shard_name.split('/')[-1]   # maybe search with re
-            if newest <= shard_date <= oldest:
+            if oldest <= shard_date <= newest:
                 hpipe.send((query_vector, radius))
                 shard.run()
                 n_results += 1

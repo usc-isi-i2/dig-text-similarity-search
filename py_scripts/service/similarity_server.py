@@ -7,6 +7,7 @@ from flask_cors import CORS
 import os.path as p
 import json
 import traceback
+from datetime import date, timedelta
 from argparse import ArgumentParser
 
 import sys
@@ -81,13 +82,17 @@ def hello():
 def text_similarity_search():
     query = request.args.get('query', None)
     k = request.args.get('k', 10)
+    # Date-range: default search last 30 days
+    start = str(date.isoformat(date.today() - timedelta(30)))
+    end = '9999-99-99'  # Placeholder
     # rerank_by_doc = request.args.get('rerank_by_doc', 'false')
     # rerank_by_doc = str(rerank_by_doc).lower() == 'true'
+
     if not query:
         return jsonify({'message': 'The service is not able to process null requests'}), 400
 
     try:
-        results = qp.query_corpus(query, int(k))
+        results = qp.query_corpus(query, k=int(k), start=start, end=end)
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         lines = traceback.format_exception(exc_type, exc_value, exc_traceback)

@@ -24,13 +24,14 @@ class BaseIndexer(object):
         return self.index.search(query_vector, k)
 
     @staticmethod
-    def get_index_paths(index_dir_path):
+    def get_index_paths(index_dir_path, recursive: bool = False) -> List[str]:
         index_paths = list()
-        for (dir_path, _, index_files) in os.walk(index_dir_path):
+        for (parent_dir, nested_dirs, index_files) in os.walk(index_dir_path):
             for f in index_files:
                 if f.endswith('.index'):
-                    index_paths.append(os.path.join(dir_path, f))
-            break
+                    index_paths.append(os.path.join(parent_dir, f))
+            if not recursive:
+                break
         return sorted(index_paths)
 
     @staticmethod

@@ -4,6 +4,8 @@ import traceback
 from time import time
 from typing import Dict, List, Tuple, Union
 
+os.environ['OMP_WAIT_POLICY'] = 'PASSIVE'
+
 import numpy as np
 
 from dt_sim.faiss_cache import faiss_cache

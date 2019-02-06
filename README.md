@@ -54,7 +54,7 @@ python py_scripts/service/similarity_server.py -h
 
 Returns: 
 ```
-usage: similarity_server.py [-h] [-c CENTROIDS] [-l] [-d] index_dir_path
+usage: similarity_server.py [-h] [-c CENTROIDS] [-l] [-d] [-r] index_dir_path
 
 Deploy multiple faiss index shards as a RESTful API.
 
@@ -69,6 +69,8 @@ optional arguments:
   -l, --large           Toggle large Universal Sentence Encoder (Transformer).
                         Note: Encoder and Faiss embedding spaces must match!
   -d, --debug           Increases verbosity of Flask app.
+  -r, --range_search    Performs query-vector proximity search within an L2
+                        radius of 1.2 (instead of the default faiss k-search)
 ```
 
 #### To get started:

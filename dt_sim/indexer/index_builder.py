@@ -8,6 +8,7 @@ import numpy as np
 import faiss
 
 from dt_sim.data_reader.npz_io_funcs import load_training_npz
+from dt_sim.indexer.base_indexer import BaseIndexer
 
 __all__ = ['OnDiskIVFBuilder']
 
@@ -304,15 +305,8 @@ class OnDiskIVFBuilder(object):
         # TODO: index_metadata.txt
 
     @staticmethod
-    def find_indexes(check_dir: str, recursive: bool = False):
-        index_paths = list()
-        for (parent_dir, nested_dirs, files) in os.walk(p.abspath(check_dir)):
-            for f in files:
-                if f.endswith('.index'):
-                    index_paths.append(p.abspath(p.join(parent_dir, f)))
-            if not recursive:
-                break
-        return sorted(index_paths)
+    def find_indexes(check_dir: str, recursive: bool = False) -> List[str]:
+        return BaseIndexer.get_index_paths(check_dir, recursive=recursive)
 
     @staticmethod
     def index_path_clear(index_path: str, file_suffix: str = '.index'):

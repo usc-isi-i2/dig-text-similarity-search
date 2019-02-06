@@ -1,11 +1,10 @@
 from time import sleep
 from multiprocessing import Pipe, Process, Queue
-from typing import List, Tuple
 
 import faiss
 import numpy as np
 
-from .base_indexer import BaseIndexer
+from .base_indexer import *
 
 __all__ = ['DeployShards', 'RangeShards']
 
@@ -56,7 +55,7 @@ class DeployShards(BaseIndexer):
 #### Parallelized Nearest Neighbor Search ####
 class Shard(Process):
     def __init__(self, shard_name, shard_path, input_pipe, output_queue,
-                 nprobe: int = 16, daemon: bool = False):
+                 nprobe: int = 4, daemon: bool = False):
         """ RangeShards search worker """
         super().__init__(name=shard_name)
         self.daemon = daemon
@@ -67,14 +66,20 @@ class Shard(Process):
         self.output = output_queue
 
     def run(self):
+
+        @faiss_cache(64)
+        def neighborhood(index, query, radius):
+            _, ddd, iii = index.range_search(query, radius)
+            return ddd, iii
+
         if self.input.poll():
-            (query_vector, radius) = self.input.recv()
-            _, dd, ii = self.index.range_search(query_vector, radius)
+            (query_vector, radius_limit) = self.input.recv()
+            dd, ii = neighborhood(self.index, query_vector, radius_limit)
             self.output.put((dd, ii), block=False)
 
 
 class RangeShards(BaseIndexer):
-    def __init__(self, shard_dir, nprobe: int = 16, max_radius: float = 1.0):
+    def __init__(self, shard_dir, nprobe: int = 4):
         """
         For deploying multiple, pre-made IVF indexes as shards.
             (intended for on-disk indexes that do not fit in memory)
@@ -84,12 +89,10 @@ class RangeShards(BaseIndexer):
         :param shard_dir: Dir containing faiss index shards
         :param nprobe: Number of clusters to visit during search
                        (speed accuracy trade-off)
-        :param max_radius: Maximum L2 distance neighborhood radius
         """
         super().__init__()
         self.paths_to_shards = self.get_index_paths(shard_dir)
         self.nprobe = nprobe
-        self.max_radius = max_radius
         self.dynamic = False
         self.lock = False
 
@@ -102,51 +105,55 @@ class RangeShards(BaseIndexer):
             shard.start()
             self.n_shards += 1
 
+    @faiss_cache(64)
+    def search(self, query_vector: np.array, k: int, radius: float = 0.75,
+               start: str = '0000-00-00', end: str = '9999-99-99'
+               ) -> FaissSearch:
+
+        if len(query_vector.shape) < 2 or query_vector.shape[0] > 1:
+            query_vector = np.reshape(query_vector, (1, query_vector.shape[0]))
+
+        # Lock search while loading index or actively searching
+        while self.lock:
+            sleep(1)
+
+        # Lock out other searches
+        self.lock = True
+
+        # Start parallel range search
+        n_results = 0
+        for shard_name, (hpipe, shard) in self.shards.items():
+            shard_date = shard_name.split('/')[-1]   # maybe search with re
+            if start <= shard_date <= end:
+                hpipe.send((query_vector, radius))
+                shard.run()
+                n_results += 1
+
+        # Aggregate results
+        D, I = list(), list()
+        while n_results > 0 or not self.results.empty():
+            dd, ii = self.results.get()
+            D.extend(dd), I.extend(ii)
+            n_results -= 1
+
+        self.lock = False
+        return self.joint_sort([D], [I])
+
     def load_shard(self, shard_path):
-        shard_name = shard_path.replace('.index', '').split('/')[-1]
+        shard_name = shard_path.replace('.index', '')
         shard_pipe, handler_pipe = Pipe(False)
         shard = Shard(shard_name, shard_path,
                       input_pipe=shard_pipe, output_queue=self.results,
                       nprobe=self.nprobe, daemon=False)
         self.shards[shard_name] = (handler_pipe, shard)
 
-    def search(self, query_vector: np.array, k: int, radius: float = 0.5
-               ) -> Tuple[List[List[float]], List[List[int]]]:
-
-        if len(query_vector.shape) < 2 or query_vector.shape[0] > 1:
-            query_vector = np.reshape(query_vector, (1, query_vector.shape[0]))
-
-        # Lock search while loading index
-        if self.lock:
-            sleep(0.5)
-            return self.search(query_vector, k, radius)
-
-        # Start parallel range search
-        for shard_name, (hpipe, shard) in self.shards.items():
-            hpipe.send((query_vector, radius))
-            shard.run()
-
-        # Aggregate results
-        D, I = list(), list()
-        n_results = 0
-        while n_results < self.n_shards or not self.results.empty():
-            dd, ii = self.results.get()
-            D.extend(dd), I.extend(ii)
-            n_results += 1
-        D, I = [D], [I]
-
-        # Ensure len(results) > k
-        if radius < self.max_radius and len(D[0]) < k:
-            new_radius = radius + 0.3
-            D, I = self.search(query_vector, k, radius=new_radius)
-        return self.joint_sort(D, I)
-
     def add_shard(self, new_shard_path: str):
-        # Lock search while loading shard
+        # Lock search while deploying a new shard
         self.lock = True
 
-        shard_name = new_shard_path.replace('.index', '').split('/')[-1]
-        if new_shard_path in self.paths_to_shards or shard_name in self.shards:
+        shard_name = new_shard_path.replace('.index', '')
+        if new_shard_path in self.paths_to_shards or \
+                shard_name in self.shards:
             print('WARNING: This shard is already online \n'
                   '         Aborting...')
         else:

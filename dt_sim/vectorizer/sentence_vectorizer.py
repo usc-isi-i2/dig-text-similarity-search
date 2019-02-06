@@ -12,7 +12,7 @@ import tensorflow_hub as hub
 from .base_vectorizer import BaseVectorizer
 
 
-##### Query Vectorization #####
+#### Query Vectorization ####
 class DockerVectorizer(BaseVectorizer):
     """
     Intended for fast Query Vectorization.
@@ -44,7 +44,7 @@ class DockerVectorizer(BaseVectorizer):
         return response.json()['outputs']
 
 
-##### Corpus Vectorization #####
+#### Corpus Vectorization ####
 class SentenceVectorizer(BaseVectorizer):
     """
     Intended for batch Corpus Vectorization

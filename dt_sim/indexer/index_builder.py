@@ -44,14 +44,10 @@ class OnDiskIVFBuilder(object):
         if not p.isdir(to_dir) and mkdir:
             os.mkdir(to_dir)
 
-        # Do not overwrite existing files
-        tmp_dir = p.join(to_dir, 'tmp')
-        self.mv_indexes(mv_dir=to_dir, to_dir=tmp_dir, mkdir=True)
-        tmp_indexes = self.find_indexes(tmp_dir)
-
         # Gather all moving file paths
+        current_indexes = self.find_indexes(to_dir)
         moving_indexes = self.find_indexes(mv_dir, recursive)
-        moving_indexes.extend(tmp_indexes)
+        moving_indexes.extend(current_indexes)
         stale_files = list(moving_indexes)  # To rm after mv
 
         # Must group multiple index paths by ISO-date (YYYY-MM-DD)
@@ -69,6 +65,13 @@ class OnDiskIVFBuilder(object):
                     moving_indexes.pop(moving_indexes.index(idx_path))
             moving_groups[check_date] = group
 
+        # Assert all paths are clear first
+        for pub_date, _ in moving_groups.items():
+            new_idx_path = p.join(to_dir, f'{pub_date}_{partial_filename}.index')
+            new_data_path = new_idx_path.replace('.index', '.ivfdata')
+            assert not p.isfile(new_idx_path), f'Path not clear {new_idx_path}'
+            assert not p.isfile(new_data_path), f'Path not clear {new_data_path}'
+
         # Merge faiss indexes into target dir
         n_vect = 0
         for pub_date, group in moving_groups.items():
@@ -82,7 +85,7 @@ class OnDiskIVFBuilder(object):
         # Report
         n_new = len(moving_groups)
         n_moved = len(stale_files)
-        n_existing = len(tmp_indexes)
+        n_existing = len(current_indexes)
         print('\n'
               f' * Zipped {n_moved} indexes with {n_existing} '
               f'existing file(s) in {time()-t_0:0.2f}s \n'

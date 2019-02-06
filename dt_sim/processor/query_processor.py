@@ -92,28 +92,39 @@ class QueryProcessor(BaseProcessor):
         return query_vector
 
     @staticmethod
-    def aggregate_docs(scores: DiffScores, faiss_ids: VectorIDs
-                       ) -> DocPayload:
+    def aggregate_docs(scores: DiffScores, faiss_ids: VectorIDs,
+                       require_unique_score: bool = True) -> DocPayload:
         """
         Collects outputs from faiss search into document entities.
         :param scores: Faiss query/hit vector L2 distances
         :param faiss_ids: Faiss vector ids
+        :param require_unique_score: Discard docs with duplicate sum(scores)
         :return: Dict of docs (key: document id, val: doc with sentence hits)
         """
         def min_diff_cutoff(diff_score, cutoff=0.01):
             return max(diff_score, cutoff)
-        
+
         docs = dict()
-        unique_scores = set()
         for score, faiss_id in zip(scores[0], faiss_ids[0]):
-            if score not in unique_scores and faiss_id > 0:
-                unique_scores.add(score)
+            if faiss_id > 0:
                 doc_id, sent_id = divmod(faiss_id, 10000)
                 doc_id = str(doc_id)
                 if doc_id not in docs:
                     docs[doc_id] = list()
-                docs[doc_id].append((min_diff_cutoff(score), faiss_id))
-        return docs
+                docs[doc_id].append((min_diff_cutoff(score), sent_id))
+
+        if require_unique_score:
+            doc_hits = dict()
+            unique_doc_scores = set()
+            for doc_id, score_ids in docs.items():
+                doc_score = sum([sc_id[0] for sc_id in score_ids])
+                if doc_score not in unique_doc_scores:
+                    unique_doc_scores.add(doc_score)
+                    doc_hits[doc_id] = score_ids
+        else:
+            doc_hits = dict(docs)
+
+        return doc_hits
 
     @staticmethod
     def format_payload(doc_hits: DocPayload) -> SortedScoresIDs:
@@ -123,6 +134,7 @@ class QueryProcessor(BaseProcessor):
         Old payload structure:
             [ { 'score': str(faiss_diff), 'sentence_id': str(faiss_id) } ]
         """
+        # TODO: Include all sents
         payload = list()
         for doc_id, faiss_diff_ids in doc_hits.items():
             for faiss_diff, faiss_id in faiss_diff_ids:

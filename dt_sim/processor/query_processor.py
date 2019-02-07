@@ -2,6 +2,7 @@ import os
 import sys
 import traceback
 from time import time
+from pickle import dumps as phash
 from typing import Dict, List, Tuple, Union
 
 os.environ['OMP_WAIT_POLICY'] = 'PASSIVE'
@@ -100,8 +101,8 @@ class QueryProcessor(BaseProcessor):
         :param require_unique_score: Discard docs with duplicate sum(scores)
         :return: Dict of docs (key: document id, val: doc with sentence hits)
         """
-        def min_diff_cutoff(diff_score, cutoff=0.01):
-            return max(diff_score, cutoff)
+        def min_diff_cutoff(diff_score, cutoff=0.01) -> str:
+            return str(max(diff_score, cutoff))
 
         docs = dict()
         for score, faiss_id in zip(scores[0], faiss_ids[0]):
@@ -110,12 +111,15 @@ class QueryProcessor(BaseProcessor):
                 doc_id = str(doc_id)
                 if doc_id not in docs:
                     docs[doc_id] = list()
-                docs[doc_id].append((min_diff_cutoff(score), str(sent_id)))
+                docs[doc_id].append((min_diff_cutoff(score), str(faiss_id)))
 
         if require_unique_score:
             doc_hits = dict()
             unique_doc_scores = set()
             for doc_id, score_ids in docs.items():
+                # doc_score_hash = phash(sorted([sc_id[0] for sc_id in score_ids]))
+                # if doc_score_hash not in unique_doc_scores:
+                #     unique_doc_scores.add(doc_score_hash)
                 doc_score = sum([sc_id[0] for sc_id in score_ids])
                 if doc_score not in unique_doc_scores:
                     unique_doc_scores.add(doc_score)

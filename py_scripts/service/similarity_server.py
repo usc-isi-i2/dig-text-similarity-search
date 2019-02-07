@@ -81,18 +81,22 @@ def hello():
 @app.route('/search', methods=['GET'])
 def text_similarity_search():
     query = request.args.get('query', None)
-    k = request.args.get('k', 10)
-    # Date-range: default search last 30 days
-    start = str(date.isoformat(date.today() - timedelta(30)))
-    end = '9999-99-99'  # Placeholder
-    # rerank_by_doc = request.args.get('rerank_by_doc', 'false')
-    # rerank_by_doc = str(rerank_by_doc).lower() == 'true'
-
+    k = int(request.args.get('k', 10))
     if not query:
         return jsonify({'message': 'The service is not able to process null requests'}), 400
 
+    # Date-range: default search last 30 days
+    start = str(date.isoformat(date.today() - timedelta(30)))
+    end = '9999-99-99'  # Placeholder
+
+    # Specify payload format
+    rerank_by_doc = request.args.get('rerank_by_doc', 'false')
+    rerank_by_doc = str(rerank_by_doc).lower() == 'true'
+
     try:
-        results = qp.query_corpus(query, k=int(k), start=start, end=end)
+        results = qp.query_corpus(query, k=k,
+                                  start=start, end=end,
+                                  rerank_by_doc=rerank_by_doc)
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         lines = traceback.format_exception(exc_type, exc_value, exc_traceback)

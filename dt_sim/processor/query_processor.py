@@ -35,7 +35,7 @@ class QueryProcessor(BaseProcessor):
     @faiss_cache(32)
     def query_corpus(self, query_str: str, k: int = 5, verbose: bool = True,
                      start: str = '0000-00-00', end: str = '9999-99-99',
-                     rerank: bool = True) -> SortedScoresIDs:
+                     rerank_by_doc: bool = True) -> SortedScoresIDs:
         """
         Vectorize query -> Search faiss index handler -> Format doc payload
         Expects to receive only one query per call.
@@ -45,7 +45,7 @@ class QueryProcessor(BaseProcessor):
         :param start: Search shards corresponding to this date and beyond
             (Requires shards with names containing an ISO-date-string)
         :param end: Limit date-range search up to this YYYY-MM-DD
-        :param rerank: TODO: kwarg description
+        :param rerank_by_doc: Returns all hits within a document (score = best)
         :return: k sorted document hits
         """
         # Vectorize
@@ -60,10 +60,10 @@ class QueryProcessor(BaseProcessor):
         # Aggregate hits into docs -> rerank (soon) -> format
         t_p = time()
         doc_hits = self.aggregate_docs(scores, faiss_ids)
-        if rerank:
-            similar_docs = self.format_payload(doc_hits)
+        if rerank_by_doc:
+            similar_docs = self.format_payload_docs(doc_hits)
         else:
-            similar_docs = self.format_payload_old(doc_hits)
+            similar_docs = self.format_payload_singles(doc_hits)
 
         t_r = time()
         if verbose:
@@ -126,7 +126,7 @@ class QueryProcessor(BaseProcessor):
         return doc_hits
 
     @staticmethod
-    def format_payload(doc_hits: DocPayload) -> SortedScoresIDs:
+    def format_payload_docs(doc_hits: DocPayload) -> SortedScoresIDs:
         """
         :return:
             [
@@ -147,7 +147,7 @@ class QueryProcessor(BaseProcessor):
         return sorted(payload, key=lambda doc_hit: doc_hit['score'])
 
     @staticmethod
-    def format_payload_old(doc_hits: DocPayload) -> SortedScoresIDs:
+    def format_payload_singles(doc_hits: DocPayload) -> SortedScoresIDs:
         """
         TMP payload formatting for current sandpaper implementation
 

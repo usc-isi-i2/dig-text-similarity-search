@@ -33,7 +33,7 @@ arp.add_argument('-n', '--n_per_minibatch', type=int, default=64,
                  help='Sentences per mini-batch.')
 arp.add_argument('-v', '--verbose', action='store_true',
                  help='Shows progress of batch vectorization.')
-arp.add_argument('-t', '--num_threads',
+arp.add_argument('-t', '--num_threads', default='2',
                  help='Set CPU thread budget for numpy.')
 arp.add_argument('-d', '--no_delete', action='store_false', default=True,
                  help='Keeps faiss indexes for each batch after merging on-disk.')

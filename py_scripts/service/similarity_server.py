@@ -85,9 +85,19 @@ def text_similarity_search():
     if not query:
         return jsonify({'message': 'The service is not able to process null requests'}), 400
 
-    # Date-range: default search last 30 days
-    start = str(date.isoformat(date.today() - timedelta(30)))
-    end = '9999-99-99'  # Placeholder
+    # Default date-range search: past 30 days
+    start_date = request.args.get('start_date', date.isoformat(date.today() - timedelta(30)))
+    end_date = request.args.get('end_date', date.isoformat(date.today()))
+    if end_date > date.isoformat(date.today()):     # Handles erroneous future dates
+        end_date = date.isoformat(date.today())
+    if not start_date < end_date:
+        return jsonify({'message': 'Start-date must occur before end-date'}), 400
+
+    # Max date-range: 100 day-span
+    end_dt_obj = date(*tuple(int(ymd) for ymd in end_date.split('-')))
+    max_range = date.isoformat(end_dt_obj - timedelta(100))
+    if max_range > start_date:
+        start_date = max_range
 
     # Specify payload format
     rerank_by_doc = request.args.get('rerank_by_doc', 'false')
@@ -95,7 +105,7 @@ def text_similarity_search():
 
     try:
         results = qp.query_corpus(query, k=k,
-                                  start=start, end=end,
+                                  start=start_date, end=end_date,
                                   rerank_by_doc=rerank_by_doc)
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()

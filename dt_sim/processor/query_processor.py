@@ -117,12 +117,9 @@ class QueryProcessor(BaseProcessor):
             doc_hits = dict()
             unique_doc_scores = set()
             for doc_id, score_ids in docs.items():
-                # doc_score_hash = phash(sorted([sc_id[0] for sc_id in score_ids]))
-                # if doc_score_hash not in unique_doc_scores:
-                #     unique_doc_scores.add(doc_score_hash)
-                doc_score = sum([sc_id[0] for sc_id in score_ids])
-                if doc_score not in unique_doc_scores:
-                    unique_doc_scores.add(doc_score)
+                doc_score_hash = phash(sorted([sc_id[0] for sc_id in score_ids]))
+                if doc_score_hash not in unique_doc_scores:
+                    unique_doc_scores.add(doc_score_hash)
                     doc_hits[doc_id] = score_ids
         else:
             doc_hits = dict(docs)

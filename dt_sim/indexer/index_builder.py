@@ -97,7 +97,6 @@ class OnDiskIVFBuilder(object):
             for tmp_idx in stale_files:
                 os.remove(tmp_idx)
                 os.remove(tmp_idx.replace('.index', '.ivfdata'))
-            os.rmdir(tmp_dir)
 
     def mv_indexes(self, mv_dir: str, to_dir: str,
                    mkdir: bool = False, only_cp: bool = False):

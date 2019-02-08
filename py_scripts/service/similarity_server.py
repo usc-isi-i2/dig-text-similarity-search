@@ -31,6 +31,8 @@ arp.add_argument('-d', '--debug', action='store_true', default=False,
 arp.add_argument('-r', '--range_search', action='store_true', default=False,
                  help='Performs query-vector proximity search within an '
                       'L2 radius of 1.2 (instead of the default faiss k-search)')
+arp.add_argument('-a', '--also_load_nested', action='store_true', default=False,
+                 help='Load indexes nested in sub directories of index_dir_path')
 opts = arp.parse_args()
 # </editor-fold>
 
@@ -60,7 +62,8 @@ CORS(app, supports_credentials=True)
 print(' * Initializing Faiss Indexes')
 if opts.range_search:
     faiss_indexer = RangeShards(my_config['faiss_index_path'],
-                                nprobe=opts.centroids)
+                                nprobe=opts.centroids,
+                                get_nested=opts.also_load_nested)
 else:
     faiss_indexer = DeployShards(my_config['faiss_index_path'],
                                  nprobe=opts.centroids)

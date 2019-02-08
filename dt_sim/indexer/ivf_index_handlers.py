@@ -79,7 +79,7 @@ class Shard(Process):
 
 
 class RangeShards(BaseIndexer):
-    def __init__(self, shard_dir, nprobe: int = 4):
+    def __init__(self, shard_dir, nprobe: int = 4, get_nested: bool = False):
         """
         For deploying multiple, pre-made IVF indexes as shards.
             (intended for on-disk indexes that do not fit in memory)
@@ -89,11 +89,12 @@ class RangeShards(BaseIndexer):
         :param shard_dir: Dir containing faiss index shards
         :param nprobe: Number of clusters to visit during search
                        (speed accuracy trade-off)
+        :param get_nested: Load indexes in sub directories of shard_dir
         """
         super().__init__()
-        self.paths_to_shards = self.get_index_paths(shard_dir)
+        self.paths_to_shards = self.get_index_paths(shard_dir, recursive=get_nested)
         self.nprobe = nprobe
-        self.dynamic = False
+        self.dynamic = True
         self.lock = False
 
         self.results = Queue()

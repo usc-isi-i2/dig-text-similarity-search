@@ -1,4 +1,5 @@
 # <editor-fold desc="Basic Imports">
+import os
 import os.path as p
 from argparse import ArgumentParser
 
@@ -38,6 +39,8 @@ large_base_path = p.join(base_dir_path, 'USE_large_base_IVF4K_15M.index')
 init.add_argument('-b', '--base_index', default=large_base_path,
                   help='This path must point to the same base index used for '
                        f'building the IVFs in mv_dir. (Default: {large_base_path})')
+init.add_argument('-t', '--num_threads', default='2',
+                  help='Set CPU thread budget for numpy.')
 
 zipped = arp.add_argument_group()
 zipped.add_argument('-p', '--PIN', '--partial-idx-name', default='zipped',
@@ -49,6 +52,13 @@ zipped.add_argument('-r', '--recursive', action='store_true', default=False,
                          'nested under mv_dir. Only applies for --zip.')
 opts = arp.parse_args()
 # </editor-fold>
+
+if opts.num_threads:
+    print('\nRestricting numpy to {} thread(s)\n'.format(opts.num_threads))
+    os.environ['OPENBLAS_NUM_THREADS'] = opts.num_threads
+    os.environ['NUMEXPR_NUM_THREADS'] = opts.num_threads
+    os.environ['MKL_NUM_THREADS'] = opts.num_threads
+    os.environ['OMP_NUM_THREADS'] = opts.num_threads
 
 from dt_sim.indexer.index_builder import OnDiskIVFBuilder
 

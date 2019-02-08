@@ -133,8 +133,8 @@ class QueryProcessor(BaseProcessor):
             [
               {
                 'doc_id': str(doc_id),
-                'id_score_tups': [(str(sent_id), diff_score <float32>) ],
-                'score': doc_relevance <float32>
+                'id_score_tups': [ (str(faiss_id), str(diff_score)), (.., ..), ... ],
+                'score': str(lowest_diff_score)
               }
             ]
         """
@@ -142,7 +142,7 @@ class QueryProcessor(BaseProcessor):
         for doc_id, score_ids in doc_hits.items():
             out = dict()
             out['doc_id'] = doc_id
-            out['id_score_tups'] = [(sid, diff) for diff, sid in score_ids]
+            out['id_score_tups'] = [(fid, diff) for diff, fid in score_ids]
             out['score'] = min([diff for diff, _ in score_ids])
             payload.append(out)
         return sorted(payload, key=lambda doc_hit: doc_hit['score'])

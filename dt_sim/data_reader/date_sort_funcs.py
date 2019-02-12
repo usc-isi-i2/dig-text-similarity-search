@@ -18,7 +18,7 @@ def pub_date_split(input_file: str, output_dir: str,
     :param ingest_date: Separate articles with erroneous future publication dates
     """
 
-    assert p.isfile(input_file) and input_file.endswith('.jl')
+    assert p.isfile(input_file) and '.jl' in input_file
 
     output_dir = p.abspath(output_dir)
     if not p.isdir(output_dir):

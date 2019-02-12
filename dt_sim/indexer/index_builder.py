@@ -48,6 +48,9 @@ class OnDiskIVFBuilder(object):
         # Gather all moving file paths
         current_indexes = self.find_indexes(to_dir)
         moving_indexes = self.find_indexes(mv_dir, recursive)
+        if not len(moving_indexes):
+            print(f'Nothing to process: {moving_indexes}')
+            return 0
         moving_indexes.extend(current_indexes)
         stale_files = list(moving_indexes)  # To rm after mv
 
@@ -97,6 +100,7 @@ class OnDiskIVFBuilder(object):
             for tmp_idx in stale_files:
                 os.remove(tmp_idx)
                 os.remove(tmp_idx.replace('.index', '.ivfdata'))
+        return 1
 
     def mv_indexes(self, mv_dir: str, to_dir: str,
                    mkdir: bool = False, only_cp: bool = False):

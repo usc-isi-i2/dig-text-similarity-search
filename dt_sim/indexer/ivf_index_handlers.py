@@ -1,3 +1,4 @@
+import re
 from time import sleep
 from multiprocessing import Pipe, Process, Queue
 
@@ -96,6 +97,7 @@ class RangeShards(BaseIndexer):
         self.nprobe = nprobe
         self.dynamic = True
         self.lock = False
+        self.date_seed = str('\d{4}[-/]\d{2}[-/]\d{2}')
 
         self.results = Queue()
         self.shards = dict()
@@ -107,7 +109,7 @@ class RangeShards(BaseIndexer):
             self.n_shards += 1
 
     @faiss_cache(64)
-    def search(self, query_vector: np.array, k: int, radius: float = 0.75,
+    def search(self, query_vector: np.array, k: int, radius: float = 0.65,
                start: str = '0000-00-00', end: str = '9999-99-99'
                ) -> FaissSearch:
 
@@ -124,7 +126,7 @@ class RangeShards(BaseIndexer):
         # Start parallel range search
         n_results = 0
         for shard_name, (hpipe, shard) in self.shards.items():
-            shard_date = shard_name.split('/')[-1]   # maybe search with re
+            shard_date = re.search(self.date_seed, shard_name).group()
             if start <= shard_date <= end:
                 hpipe.send((query_vector, radius))
                 shard.run()

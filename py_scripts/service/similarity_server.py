@@ -89,15 +89,15 @@ def text_similarity_search():
         return jsonify({'message': 'The service is not able to process null requests'}), 400
 
     # Default date-range search: past 30 days
-    start_date = request.args.get('start_date', date.isoformat(date.today() - timedelta(30)))
     end_date = request.args.get('end_date', date.isoformat(date.today()))
     if end_date > date.isoformat(date.today()):     # Handles erroneous future dates
         end_date = date.isoformat(date.today())
-    if not start_date < end_date:
+    end_dt_obj = date(*tuple(int(ymd) for ymd in end_date.split('-')))
+    start_date = request.args.get('start_date', date.isoformat(end_dt_obj - timedelta(30)))
+    if not start_date <= end_date:
         return jsonify({'message': 'Start-date must occur before end-date'}), 400
 
     # Max date-range: 100 day-span
-    end_dt_obj = date(*tuple(int(ymd) for ymd in end_date.split('-')))
     max_range = date.isoformat(end_dt_obj - timedelta(100))
     if max_range > start_date:
         start_date = max_range

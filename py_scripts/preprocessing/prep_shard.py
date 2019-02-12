@@ -77,19 +77,23 @@ candidates = cp.candidate_files(prepped_news, raw_news, verbose=opts.verbose)
 file_to_process = candidates[:1]   # Preprocesses one news.jl per call
 
 
-def main():
-    raw_jl = file_to_process[0]
-    subidx_dir, shard_date = cp.init_paths(raw_jl, opts.input_dir)
-    if opts.verbose:
+def main(raw_jl,
+         input_dir: str = opts.input_dir, output_dir: str = opts.output_dir,
+         m_per_batch: int = opts.m_per_batch, n_per_minibatch: int = opts.n_per_minibatch,
+         no_delete: bool = opts.no_delete, verbose: bool = opts.verbose,
+         add_shard: bool = opts.add_shard, url: str = opts.url):
+
+    subidx_dir, shard_date = cp.init_paths(raw_jl, input_dir)
+    if verbose:
         print('Will process: {}\n'.format(raw_jl))
 
     # Check File Content
-    if opts.verbose:
+    if verbose:
         print('\nReading file: {}'.format(raw_jl))
 
-    jl_stats = check_all_docs(raw_jl, batch_size=opts.m_per_batch)
+    jl_stats = check_all_docs(raw_jl, batch_size=m_per_batch)
     (doc_count, line_count, junk, n_batches) = jl_stats
-    if opts.verbose:
+    if verbose:
         print('* Found {} good documents with {} total sentences\n'
               '* Will skip {} junk documents\n'
               '* Processing {} batches\n'
@@ -97,10 +101,10 @@ def main():
 
     # Preprocess
     t_start = time()
-    doc_batch_gen = get_all_docs(raw_jl, batch_size=opts.m_per_batch)
+    doc_batch_gen = get_all_docs(raw_jl, batch_size=m_per_batch)
     for i, (batched_sents, batched_ids) in enumerate(doc_batch_gen):
         t_0 = time()
-        if opts.verbose:
+        if verbose:
             print('  Starting doc batch:  {:3d}'.format(i+1))
 
         subidx = str(raw_jl.split('/')[-1]).replace('.jl', '_{:03d}_sub.index'.format(i))
@@ -114,33 +118,33 @@ def main():
             # Vectorize
             emb_batch, id_batch = cp.batch_vectorize(
                 text_batch=batched_sents, id_batch=batched_ids,
-                n_minibatch=opts.n_per_minibatch, very_verbose=False
+                n_minibatch=n_per_minibatch, very_verbose=False
             )
             t_vect = time()
-            if opts.verbose:
+            if verbose:
                 print('  * Vectorized in {:6.2f}s'.format(t_vect - t_0))
 
             # Make faiss subindex
             subidx_path = check_unique(subidx_path)
             cp.index_builder.generate_subindex(subidx_path, emb_batch, id_batch)
             t_subidx = time()
-            if opts.verbose:
+            if verbose:
                 print('  * Subindexed in {:6.2f}s'.format(t_subidx - t_vect))
 
             # Clear graph
             del emb_batch, batched_sents, id_batch
             cp.vectorizer.close_session()
             t_reset = time()
-            if opts.verbose:
+            if verbose:
                 print('  * Cleared TF in {:6.2f}s'.format(t_reset - t_subidx))
 
             # Restart TF session if necessary
             if i < n_batches - 1:
                 cp.vectorizer.start_session()
-                if opts.verbose:
+                if verbose:
                     print('  * Started TF in {:6.2f}s'.format(time() - t_reset))
 
-        if opts.verbose:
+        if verbose:
             mp, sp = divmod(time() - t_start, 60)
             print('  Completed doc batch: {:3d}/{}      '
                   '  Total time passed: {:3d}m{:0.2f}s\n'
@@ -150,12 +154,12 @@ def main():
     # TODO: Title indexes
     t_merge = time()
     merged_index_path = shard_date + '_all.index'
-    merged_index_path = p.join(opts.output_dir, merged_index_path)
+    merged_index_path = p.join(output_dir, merged_index_path)
     merged_index_path = check_unique(merged_index_path)
     merged_ivfdata_path = shard_date + '_all.ivfdata'
-    merged_ivfdata_path = p.join(opts.output_dir, merged_ivfdata_path)
+    merged_ivfdata_path = p.join(output_dir, merged_ivfdata_path)
     merged_ivfdata_path = check_unique(merged_ivfdata_path)
-    if opts.verbose:
+    if verbose:
         print('\n  Merging {} on-disk'.format(merged_index_path.split('/')[-1]))
 
     assert cp.index_builder.index_path_clear(merged_index_path)
@@ -164,7 +168,7 @@ def main():
     n_vect = cp.index_builder.merge_IVFs(index_path=merged_index_path,
                                          ivfdata_path=merged_ivfdata_path)
 
-    if opts.verbose:
+    if verbose:
         mm, sm = divmod(time() - t_merge, 60)
         print('  Merged subindexes ({} vectors) in: {:3d}m{:0.2f}s'
               ''.format(n_vect, int(mm), sm))
@@ -173,14 +177,14 @@ def main():
     cp.record_progress(raw_jl)
 
     # Clear sub.index files after merge
-    if opts.no_delete:
+    if no_delete:
         clear_dir(subidx_dir)
-        if opts.verbose:
+        if verbose:
             print('\n  Cleared sub.index files')
 
-    if opts.add_shard:
+    if add_shard:
         try:
-            url = opts.url
+            url = url
             payload = {'path': merged_index_path}
             r = requests.put(url, params=payload)
             print(r.text)
@@ -190,6 +194,7 @@ def main():
 
 if __name__ == '__main__':
     if len(file_to_process):
-        main()
+        jl = file_to_process[0]
+        main(raw_jl=jl)
     else:
         print('Nothing to process.')

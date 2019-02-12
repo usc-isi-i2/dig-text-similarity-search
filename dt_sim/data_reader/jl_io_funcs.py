@@ -125,26 +125,24 @@ def get_all_docs(jl_file_path: str, batch_size: int) -> TextID_Batch:
                 text = list()
 
                 # Title
-                if 'type' in document and 'v3' in document['type']:
+                if isinstance(document['knowledge_graph']['title'][0]['value'], str):
                     text.append(document['knowledge_graph']['title'][0]['value'])
-                else:
-                    text.append(document['lexisnexis']['doc_title'])
 
-                # Sentences
-                text.extend(document['split_sentences'])
+                    # Sentences
+                    text.extend(document['split_sentences'])
 
-                # Faiss ids
-                doc_id = document['doc_id']
-                base_sent_id = np.int64(doc_id + '0000')
-                sent_ids = list()
-                for jj, _ in enumerate(text):
-                    sent_ids.append(base_sent_id + jj)
-                sent_ids = np.vstack(sent_ids).astype(np.int64)
-                assert sent_ids.shape[0] == len(text), \
-                    'Something went wrong while making sent_ids'
+                    # Faiss ids
+                    doc_id = document['doc_id']
+                    base_sent_id = np.int64(doc_id + '0000')
+                    sent_ids = list()
+                    for jj, _ in enumerate(text):
+                        sent_ids.append(base_sent_id + jj)
+                    sent_ids = np.vstack(sent_ids).astype(np.int64)
+                    assert sent_ids.shape[0] == len(text), \
+                        'Something went wrong while making sent_ids'
 
-                batched_text.extend(text)
-                batched_ids.append(sent_ids)
+                    batched_text.extend(text)
+                    batched_ids.append(sent_ids)
 
             # Stack and yield batch
             if len(batched_text) >= batch_size:

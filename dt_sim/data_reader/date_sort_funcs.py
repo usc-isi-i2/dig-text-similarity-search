@@ -8,12 +8,14 @@ __all__ = ['pub_date_split']
 
 
 def pub_date_split(input_file: str, output_dir: str,
-                   cutoff_date: str = '0000-00-00'):
+                   cutoff_date: str = '0000-00-00',
+                   ingest_date: str = str(date.today())):
     """
     Sorts LexisNexis articles by publication date.
     :param input_file: /path/to/LexisNexisCrawlerDump.jl
     :param output_dir: Output destination of pub_date.jl files
     :param cutoff_date: Separate articles older than cutoff_date
+    :param ingest_date: Separate articles with erroneous future publication dates
     """
 
     assert p.isfile(input_file) and input_file.endswith('.jl')
@@ -31,7 +33,6 @@ def pub_date_split(input_file: str, output_dir: str,
         os.mkdir(date_error_dir)
 
     t_0 = time()
-    date_today = str(date.today())
     new, old, err, dateless = 0, 0, 0, 0
     with open(input_file, 'r') as srcf:
         for line in srcf:
@@ -42,13 +43,13 @@ def pub_date_split(input_file: str, output_dir: str,
             except KeyError:
                 event_date = None
 
-            if event_date and date_today >= event_date >= cutoff_date:
+            if event_date and ingest_date >= event_date >= cutoff_date:
                 targetf = p.join(output_dir, f'{event_date}.jl')
                 new += 1
             elif event_date and event_date < cutoff_date:
                 targetf = p.join(old_news_dir, f'{event_date}.jl')
                 old += 1
-            elif event_date and date_today < event_date:
+            elif event_date and ingest_date < event_date:
                 targetf = p.join(date_error_dir, f'{event_date}.jl')
                 err += 1
             else:

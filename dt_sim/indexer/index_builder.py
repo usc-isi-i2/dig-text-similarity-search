@@ -51,24 +51,27 @@ class OnDiskIVFBuilder(object):
         if not len(moving_indexes):
             print(f'Nothing to process: {moving_indexes}')
             return 0
-        moving_indexes.extend(current_indexes)
         stale_files = list(moving_indexes)  # To rm after mv
 
-        # Must group multiple index paths by ISO-date (YYYY-MM-DD)
+        # Group multiple index paths by ISO-date (YYYY-MM-DD)
         ISO_seed = str('\d{4}[-/]\d{2}[-/]\d{2}')
         moving_groups = dict()
         while len(moving_indexes):
             index_path = moving_indexes.pop()
-            check_date = re.search(ISO_seed, index_path).group()
             # Note: This will fail if any paths have a second ISO-date
+            check_date = re.search(ISO_seed, index_path).group()
+
             group = list()
             group.append(index_path)
             for idx_path in moving_indexes:
                 if check_date in idx_path:
                     group.append(idx_path)
                     moving_indexes.pop(moving_indexes.index(idx_path))
-            if len(group) > 1 or to_dir not in group[0]:
-                moving_groups[check_date] = group
+            # Skips rewriting an existing index if nothing will zip into it
+            for idx_path in current_indexes:
+                if check_date in idx_path:
+                    group.append(idx_path)
+            moving_groups[check_date] = group
 
         # Assert all paths are clear first
         for pub_date, _ in moving_groups.items():

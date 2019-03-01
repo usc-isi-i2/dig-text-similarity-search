@@ -52,6 +52,7 @@ class OnDiskIVFBuilder(object):
             print(f'Nothing to process: {moving_indexes}')
             return 0
         stale_files = list(moving_indexes)  # To rm after mv
+        stale_files.extend(current_indexes)
 
         # Group multiple index paths by ISO-date (YYYY-MM-DD)
         ISO_seed = str('\d{4}[-/]\d{2}[-/]\d{2}')

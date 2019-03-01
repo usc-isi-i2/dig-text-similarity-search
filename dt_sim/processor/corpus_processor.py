@@ -13,6 +13,7 @@ from dt_sim.data_reader.npz_io_funcs import *
 from dt_sim.data_reader.misc_io_funcs import *
 from dt_sim.indexer.index_builder import OnDiskIVFBuilder
 from dt_sim.vectorizer.sentence_vectorizer import SentenceVectorizer
+# TODO: Remove dead wood
 
 
 class CorpusProcessor(BaseProcessor):

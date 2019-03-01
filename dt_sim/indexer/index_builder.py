@@ -67,7 +67,8 @@ class OnDiskIVFBuilder(object):
                 if check_date in idx_path:
                     group.append(idx_path)
                     moving_indexes.pop(moving_indexes.index(idx_path))
-            moving_groups[check_date] = group
+            if len(group) > 1 or to_dir not in group[0]:
+                moving_groups[check_date] = group
 
         # Assert all paths are clear first
         for pub_date, _ in moving_groups.items():

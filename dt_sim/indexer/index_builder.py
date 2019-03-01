@@ -93,15 +93,15 @@ class OnDiskIVFBuilder(object):
 
         # Report
         n_new = len(moving_groups)
-        n_moved = len(stale_files)
+        n_moved = sum([len(group) for _, group in moving_groups.items()])
         n_existing = len(current_indexes)
         print('\n'
               f' * Zipped {n_moved} indexes with {n_existing} '
               f'existing file(s) in {time()-t_0:0.2f}s \n'
-              f' * Final count: {n_new} indexes with {n_vect} vectors in total \n')
+              f' * Manipulated {n_new} indexes with {n_vect} vectors in total \n')
 
         # Delete intermediate files
-        if 'y' == input('\nDelete intermediate files? [y/N]: ').lower():
+        if 'y' in input('\nDelete intermediate files? [y/N]: ').lower():
             for tmp_idx in stale_files:
                 os.remove(tmp_idx)
                 os.remove(tmp_idx.replace('.index', '.ivfdata'))

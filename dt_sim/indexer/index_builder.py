@@ -51,8 +51,8 @@ class OnDiskIVFBuilder(object):
         if not len(moving_indexes):
             print(f'Nothing to process: {moving_indexes}')
             return 0
-        stale_files = list(moving_indexes)  # To rm after mv
-        stale_files.extend(current_indexes)
+        stale_files = list()                    # To rm after zip
+        optional_del = list(moving_indexes)     # Optionally rm after zip
 
         # Group multiple index paths by ISO-date (YYYY-MM-DD)
         ISO_seed = str('\d{4}[-/]\d{2}[-/]\d{2}')
@@ -72,6 +72,7 @@ class OnDiskIVFBuilder(object):
             for idx_path in current_indexes:
                 if check_date in idx_path:
                     group.append(idx_path)
+                    stale_files.append(idx_path)
             moving_groups[check_date] = group
 
         # Assert all paths are clear first
@@ -93,18 +94,23 @@ class OnDiskIVFBuilder(object):
 
         # Report
         n_new = len(moving_groups)
+        n_existing = len(stale_files)
         n_moved = sum([len(group) for _, group in moving_groups.items()])
-        n_existing = len(current_indexes)
-        print('\n'
-              f' * Zipped {n_moved} indexes with {n_existing} '
-              f'existing file(s) in {time()-t_0:0.2f}s \n'
-              f' * Manipulated {n_new} indexes with {n_vect} vectors in total \n')
+        print(f'\n * Zipped {n_new} indexes with {n_existing} existing file(s) '
+              f'in {time()-t_0:0.2f}s \n'
+              f' * Manipulated {n_moved} indexes with {n_vect} vectors in total \n')
 
-        # Delete intermediate files
-        if 'y' in input('\nDelete intermediate files? [y/N]: ').lower():
-            for tmp_idx in stale_files:
+        # Delete intermediate files that were zipped into
+        for tmp_idx in stale_files:
+            os.remove(tmp_idx)
+            os.remove(tmp_idx.replace('.index', '.ivfdata'))
+
+        # Optionally delete daily indexes
+        if 'y' in input('\nDelete newly vectorized daily indexes? [y/N]: ').lower():
+            for tmp_idx in optional_del:
                 os.remove(tmp_idx)
                 os.remove(tmp_idx.replace('.index', '.ivfdata'))
+
         return 1
 
     def mv_indexes(self, mv_dir: str, to_dir: str,

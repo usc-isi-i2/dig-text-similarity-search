@@ -319,6 +319,34 @@ class OnDiskIVFBuilder(object):
         # TODO: index_metadata.txt
 
     @staticmethod
+    def get_vector_count(index_dir: str,
+                         start_date: str = '0000-00-00', end_date: str = '9999-99-99',
+                         recursive: bool = False) -> int:
+        """
+        Easy way to check how many vectors are indexed (defaults to all in dir)
+
+        :param index_dir: /path/to/files.index
+        :param start_date: Index ISO date to start counting from
+        :param end_date: Index ISO date to end vector count
+        :param recursive: Bool to also check indexes nested in subdirectories
+        :return n_vect: Total number of vectors counted <int>
+        """
+        n_vect = 0
+        ISO_seed = str('\d{4}[-/]\d{2}[-/]\d{2}')
+        for (p_dir, _, files) in os.walk(index_dir):
+            for f in files:
+                if f.endswith('.index'):
+                    index_path = p.join(p_dir, f)
+                    check_date = re.search(ISO_seed, index_path).group()
+                    # Dates are inclusive
+                    if start_date <= check_date <= end_date:
+                        n_vect += faiss.read_index(index_path).ntotal
+            if not recursive:
+                break
+
+        return n_vect
+
+    @staticmethod
     def find_indexes(check_dir: str, recursive: bool = False) -> List[str]:
         return BaseIndexer.get_index_paths(check_dir, recursive=recursive)
 

@@ -24,7 +24,7 @@ class OnDiskIVFBuilder(object):
         self.subindex_path_totals = dict()
 
     def zip_indexes(self, mv_dir: str, to_dir: str, partial_filename: str = '',
-                    recursive: bool = False, mkdir: bool = False):
+                    recursive: bool = False, mkdir: bool = False) -> int:
         """
         Use this function to add freshly indexed news to an existing pub_date.index
 
@@ -114,7 +114,7 @@ class OnDiskIVFBuilder(object):
         return 1
 
     def mv_indexes(self, mv_dir: str, to_dir: str,
-                   mkdir: bool = False, only_cp: bool = False):
+                   mkdir: bool = False, only_cp: bool = False) -> int:
         """
         Uses self.mv_index_and_ivfdata() to move (or copy) all on-disk, IVF
         indexes in mv_dir to to_dir.
@@ -147,7 +147,7 @@ class OnDiskIVFBuilder(object):
         return n_vect
 
     def mv_index_and_ivfdata(self, index_path: str, ivfdata_path: str, to_dir: str,
-                             mkdir: bool = False, only_cp: bool = False):
+                             mkdir: bool = False, only_cp: bool = False) -> int:
         """
         This function moves a specific on-disk faiss.index and its
         corresponding .ivfdata file into to_dir.
@@ -245,7 +245,8 @@ class OnDiskIVFBuilder(object):
             faiss.write_index(index, subindex_path)
 
     @staticmethod
-    def index_embs_and_ids(index, embeddings: np.array, faiss_ids: np.array):
+    def index_embs_and_ids(index: object,
+                           embeddings: np.array, faiss_ids: np.array) -> object:
         assert embeddings.shape[0] == faiss_ids.shape[0], \
             f'Found {embeddings.shape[0]} embeddings ' \
             f'and {faiss_ids.shape[0]} faiss_ids'
@@ -271,7 +272,7 @@ class OnDiskIVFBuilder(object):
             n_vectors += n_vect
         print(f' {len(self.subindex_path_totals)} subindexes ({n_vectors} vectors)')
 
-    def load_base_idx(self):
+    def load_base_idx(self) -> object:
         base_index = faiss.read_index(self.path_to_base_index)
         if base_index.is_trained and base_index.ntotal == 0:
             return base_index
@@ -297,7 +298,7 @@ class OnDiskIVFBuilder(object):
 
     @staticmethod
     def make_base_index(idx_type: str, centroids: int, compression: str,
-                        training_set: np.ndarray, dim: int = 512):
+                        training_set: np.ndarray, dim: int = 512) -> object:
 
         index_type = f'{idx_type}{centroids},{compression}'
         print(f'\nCreating base faiss index: {index_type}')
@@ -351,7 +352,7 @@ class OnDiskIVFBuilder(object):
         return BaseIndexer.get_index_paths(check_dir, recursive=recursive)
 
     @staticmethod
-    def index_path_clear(index_path: str, file_suffix: str = '.index'):
+    def index_path_clear(index_path: str, file_suffix: str = '.index') -> bool:
         if not p.isfile(index_path) and index_path.endswith(file_suffix):
             return True
         elif p.isfile(index_path) and index_path.endswith(file_suffix):

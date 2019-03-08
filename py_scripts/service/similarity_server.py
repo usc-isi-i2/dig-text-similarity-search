@@ -28,9 +28,6 @@ arp.add_argument('-l', '--large', action='store_true',
                       'Note: Encoder and Faiss embedding spaces must match!')
 arp.add_argument('-d', '--debug', action='store_true', default=False,
                  help='Increases verbosity of Flask app.')
-arp.add_argument('-r', '--range_search', action='store_true', default=False,
-                 help='Performs query-vector proximity search within an '
-                      'L2 radius of 1.2 (instead of the default faiss k-search)')
 arp.add_argument('-a', '--also_load_nested', action='store_true', default=False,
                  help='Load indexes nested in sub directories of index_dir_path')
 opts = arp.parse_args()
@@ -38,7 +35,7 @@ opts = arp.parse_args()
 
 
 from dt_sim.processor.query_processor import QueryProcessor
-from dt_sim.indexer.ivf_index_handlers import DeployShards, RangeShards
+from dt_sim.indexer.ivf_index_handlers import RangeShards
 from dt_sim.vectorizer.sentence_vectorizer import DockerVectorizer
 
 from py_scripts.configs.config import std_config, lrg_config
@@ -60,13 +57,9 @@ app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
 print(' * Initializing Faiss Indexes')
-if opts.range_search:
-    faiss_indexer = RangeShards(my_config['faiss_index_path'],
-                                nprobe=opts.centroids,
-                                get_nested=opts.also_load_nested)
-else:
-    faiss_indexer = DeployShards(my_config['faiss_index_path'],
-                                 nprobe=opts.centroids)
+faiss_indexer = RangeShards(my_config['faiss_index_path'],
+                            nprobe=opts.centroids,
+                            get_nested=opts.also_load_nested)
 
 print(' * Initializing Query Vectorizer')   # Emb space Bool toggle
 query_vectorizer = DockerVectorizer(large=my_config['large_emb_space'])

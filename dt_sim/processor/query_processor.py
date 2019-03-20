@@ -18,9 +18,10 @@ __all__ = ['QueryProcessor']
 
 DiffScores = List[List[np.float32]]
 VectorIDs = List[List[np.int64]]
-SentHitPairs = List[Tuple[np.float32, str]]
+SentHitPairs = List[Tuple[Union[np.float32, str], str]]
 DocPayload = Dict[str, SentHitPairs]
-SortedScoresIDs = List[Dict[str, str]]
+rawScoreIDs = List[Tuple[str, str]]
+SortedScoresIDs = List[Dict[str, Union[str, rawScoreIDs]]]
 
 
 class QueryProcessor(BaseProcessor):
@@ -101,8 +102,16 @@ class QueryProcessor(BaseProcessor):
         :param require_unique_score: Discard docs with duplicate sum(scores)
         :return: Dict of docs (key: document id, val: doc with sentence hits)
         """
+
         def min_diff_cutoff(diff_score, cutoff=0.01) -> str:
             return str(max(diff_score, cutoff))
+
+        def sort_score_ids(sc_ids: rawScoreIDs) -> rawScoreIDs:
+            # Checks if already sorted
+            if not all(sc_ids[i][0] <= sc_ids[i+1][0] for i in range(len(sc_ids)-1)):
+                sc_ids.sort(key=lambda sc_id_tup: sc_id_tup[0])
+
+            return sc_ids
 
         docs = dict()
         for score, faiss_id in zip(scores[0], faiss_ids[0]):
@@ -120,9 +129,11 @@ class QueryProcessor(BaseProcessor):
                 doc_score_hash = phash(sorted([sc_id[0] for sc_id in score_ids]))
                 if doc_score_hash not in unique_doc_scores:
                     unique_doc_scores.add(doc_score_hash)
-                    doc_hits[doc_id] = score_ids
+                    doc_hits[doc_id] = sort_score_ids(score_ids)
         else:
-            doc_hits = dict(docs)
+            doc_hits = dict()
+            for doc_id, score_ids in docs.items():
+                doc_hits[doc_id] = sort_score_ids(score_ids)
 
         return doc_hits
 
@@ -135,34 +146,45 @@ class QueryProcessor(BaseProcessor):
                 'doc_id': str(doc_id),
                 'id_score_tups': [ (str(faiss_id), str(diff_score)), (.., ..), ... ],
                 'score': str(lowest_diff_score)
-              }
+              },
+              ...   # One dict per doc
             ]
         """
         payload = list()
         for doc_id, score_ids in doc_hits.items():
+            # Assumes score_ids is a pre-sorted list
             out = dict()
-            out['doc_id'] = doc_id
-            out['id_score_tups'] = [(fid, diff) for diff, fid in score_ids]
+            out['doc_id'] = str(doc_id)
+            out['id_score_tups'] = [(str(fid), str(diff)) for diff, fid in score_ids]
             out['score'] = min([diff for diff, _ in score_ids])
             payload.append(out)
+
         return sorted(payload, key=lambda doc_hit: doc_hit['score'])
 
     @staticmethod
     def format_payload_singles(doc_hits: DocPayload) -> SortedScoresIDs:
         """
-        TMP payload formatting for current sandpaper implementation
-
-        Old payload structure:
-            [ { 'score': str(faiss_diff), 'sentence_id': str(faiss_id) } ]
+        :return:
+            [
+              {
+                'doc_id': str(doc_id),
+                'score': str(diff_score),
+                'sentence_id': str(faiss_id)
+              },
+              ...   # One dict per doc
+            ]
         """
         payload = list()
-        for doc_id, faiss_diff_ids in doc_hits.items():
-            for faiss_diff, faiss_id in faiss_diff_ids:
-                out = dict()
-                out['score'] = str(faiss_diff)
-                out['sentence_id'] = str(faiss_id)
-                payload.append(out)
-        return sorted(payload, key=lambda sc_id: sc_id['score'])
+        for doc_id, score_ids in doc_hits.items():
+            # Assumes score_ids is a pre-sorted list
+            diff_score, faiss_id = score_ids[0]
+            out = dict()
+            out['doc_id'] = str(doc_id)
+            out['score'] = str(diff_score)
+            out['sentence_id'] = str(faiss_id)
+            payload.append(out)
+
+        return sorted(payload, key=lambda sc_id_dict: sc_id_dict['score'])
 
     def add_shard(self, shard_path: str):
         """

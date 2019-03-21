@@ -3,7 +3,7 @@
 n_shards=$1
 input_dir=$2
 output_dir=$3
-progress_txt=${4:-progress.txt}
+progress_txt=${4:-data/example/progress.txt}
 
 
 printf "\n
@@ -21,7 +21,7 @@ do
 	printf "\n\nStarting $i/$n_shards @ $(date)\n";
 	python -u py_scripts/preprocessing/prep_shard.py "$input_dir" "$output_dir" \
 	-p "$progress_txt" -b base_indexes/USE_lite_base_IVF16K.index \
-	-n 256 -v -t 2;
+	-m 16384 -n 256 -v -t 2;
 done
 
 printf "\n\n\nCompleted @ $(date)\n\n";

@@ -23,7 +23,7 @@ arp.add_argument('index_dir_path', help='Path to index shards.')
 arp.add_argument('-c', '--centroids', type=int, default=1,
                  help='Number of centroids to visit during search. '
                       'Speed vs. Accuracy trade-off. (Default = 1)')
-arp.add_argument('-r', '--radius', type=int, default=0.65,
+arp.add_argument('-r', '--radius', type=float, default=0.65,
                  help='Specify the maximum L2 distance from the query vector. '
                       '(Default = 0.65, determined empirically)')
 arp.add_argument('-l', '--large', action='store_true',

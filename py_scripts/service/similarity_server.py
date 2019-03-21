@@ -22,14 +22,17 @@ arp = ArgumentParser(description='Deploy multiple faiss index shards '
 arp.add_argument('index_dir_path', help='Path to index shards.')
 arp.add_argument('-c', '--centroids', type=int, default=1,
                  help='Number of centroids to visit during search. '
-                      '(Speed vs. Accuracy trade-off)')
+                      'Speed vs. Accuracy trade-off. (Default = 1)')
+arp.add_argument('-r', '--radius', type=float, default=0.65,
+                 help='Specify the maximum L2 distance from the query vector. '
+                      '(Default = 0.65, determined empirically)')
 arp.add_argument('-l', '--large', action='store_true',
                  help='Toggle large Universal Sentence Encoder (Transformer). '
                       'Note: Encoder and Faiss embedding spaces must match!')
+arp.add_argument('-a', '--also_load_nested', action='store_true', default=False,
+                 help='Load indexes nested in sub directories of index_dir_path. ')
 arp.add_argument('-d', '--debug', action='store_true', default=False,
                  help='Increases verbosity of Flask app.')
-arp.add_argument('-a', '--also_load_nested', action='store_true', default=False,
-                 help='Load indexes nested in sub directories of index_dir_path')
 opts = arp.parse_args()
 # </editor-fold>
 
@@ -100,7 +103,7 @@ def text_similarity_search():
     rerank_by_doc = str(rerank_by_doc).lower() == 'true'
 
     try:
-        results = qp.query_corpus(query, k=k,
+        results = qp.query_corpus(query, k=k, radius=opts.radius,
                                   start=start_date, end=end_date,
                                   rerank_by_doc=rerank_by_doc)
     except Exception as e:

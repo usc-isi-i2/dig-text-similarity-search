@@ -54,7 +54,8 @@ python py_scripts/service/similarity_server.py -h
 
 Returns: 
 ```
-usage: similarity_server.py [-h] [-c CENTROIDS] [-l] [-d] index_dir_path
+usage: similarity_server.py [-h] [-c CENTROIDS] [-r RADIUS] [-l] [-a] [-d]
+                            index_dir_path
 
 Deploy multiple faiss index shards as a RESTful API.
 
@@ -64,12 +65,20 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -c CENTROIDS, --centroids CENTROIDS
-                        Number of centroids to visit during search. (Speed vs.
-                        Accuracy trade-off)
+                        Number of centroids to visit during search. Speed vs.
+                        Accuracy trade-off. (Default = 1)
+  -r RADIUS, --radius RADIUS
+                        Specify the maximum L2 distance from the query vector.
+                        (Default = 0.65, determined empirically)
   -l, --large           Toggle large Universal Sentence Encoder (Transformer).
                         Note: Encoder and Faiss embedding spaces must match!
+  -a, --also_load_nested
+                        Load indexes nested in sub directories of
+                        index_dir_path.
   -d, --debug           Increases verbosity of Flask app.
 ```
+
+###### Note: The L2 radius of 0.65 was determined empirically on ISI's internal LexisNexis news corpus. 
 
 #### To get started:
 Dig-text-similarity-search is designed for very large text corpora (> 1 billion sentence vectors). 
@@ -129,4 +138,4 @@ python py_scripts/service/call_similarity_service.py \
 ```
 
 The similarity server returns integer vector ids and their difference scores (L2) relative to the query vector. 
-##### It does not return text.
+##### Dig-Text-Similarity-Search does not return text.

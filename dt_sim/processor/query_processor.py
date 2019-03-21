@@ -35,14 +35,16 @@ class QueryProcessor(BaseProcessor):
         self.vectorizer = query_vectorizer
 
     @faiss_cache(32)
-    def query_corpus(self, query_str: str, k: int = 5, verbose: bool = True,
+    def query_corpus(self, query_str: str, k: int = 5, radius: float = 0.65,
                      start: str = '0000-00-00', end: str = '9999-99-99',
-                     rerank_by_doc: bool = True) -> SortedScoresIDs:
+                     rerank_by_doc: bool = True, verbose: bool = True
+                     ) -> SortedScoresIDs:
         """
         Vectorize query -> Search faiss index handler -> Format doc payload
         Expects to receive only one query per call.
         :param query_str: Query to vectorize
         :param k: Number of nearest neighboring documents to return
+        :param radius: Maximum L2 distance between the query and a result
         :param verbose: Prints time spent on each step
         :param start: Search shards corresponding to this date and beyond
             (Requires shards with names containing an ISO-date-string)
@@ -56,7 +58,8 @@ class QueryProcessor(BaseProcessor):
 
         # Search
         t_s = time()
-        scores, faiss_ids = self.indexer.search(query_vector, k=k,
+        scores, faiss_ids = self.indexer.search(query_vector,
+                                                k=k, radius=radius,
                                                 start=start, end=end)
 
         # Aggregate hits into docs -> rerank (soon) -> format

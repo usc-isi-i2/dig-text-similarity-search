@@ -10,7 +10,7 @@ by using sentence vector similarity rather than key word frequency.
 1) Prepare text corpus as sentences with unique integer ids
 2) Vectorize sentences with Google's [Universal Sentence Encoder](https://tfhub.dev/google/universal-sentence-encoder-large/3)
 3) Put vectors into a searchable [Faiss index](https://github.com/facebookresearch/faiss)
-4) Search with vectorized query
+4) Find the vectorized query's nearest neighbors
 
 
 ## Virtual Environment
@@ -54,7 +54,7 @@ python py_scripts/service/similarity_server.py -h
 
 Returns: 
 ```
-usage: similarity_server.py [-h] [-c CENTROIDS] [-l] [-d] [-r] index_dir_path
+usage: similarity_server.py [-h] [-c CENTROIDS] [-l] [-d] index_dir_path
 
 Deploy multiple faiss index shards as a RESTful API.
 
@@ -69,8 +69,6 @@ optional arguments:
   -l, --large           Toggle large Universal Sentence Encoder (Transformer).
                         Note: Encoder and Faiss embedding spaces must match!
   -d, --debug           Increases verbosity of Flask app.
-  -r, --range_search    Performs query-vector proximity search within an L2
-                        radius of 1.2 (instead of the default faiss k-search)
 ```
 
 #### To get started:
@@ -86,10 +84,11 @@ Build a small example index from the file `data/example/sample_news_2018-05-11.j
 ./vectorize_n_small_shards.sh 1 data/example/ data/tmp_idx_files/
 ```
 
-After successfully indexing a news.jl file, its path will be recorded in `progress.txt`.
+###### Note: Multi-Batch Vectorization usually uses larger batches of 65,536 sentences (i.e. 16,384 was chosen for illustrative purposes). 
 
-Note: Every faiss shard should contain absolute partitions of the sentences within the corpus. 
-Using multiple shards that share duplicate `faiss_ids` may give incorrect results. 
+After successfully indexing a `news.jl` file, its path will be recorded in `progress.txt`.
+
+##### Every faiss shard should contain absolute partitions of the sentences within the corpus. Shards with conflicting `faiss_ids` may give incorrect results. 
 
 #### Query vectorization with docker:
 Before running the similarity server, encapsulate the Universal Sentence Encoder in a suitable 
@@ -114,18 +113,20 @@ Configuration instructions for the similarity server can be found in `py_scripys
 #### Similarity Service:
 Run the server with:
 ```bash
-python py_scripts/service/similarity_server.py data/tmp_idx_files/ 
+python py_scripts/service/similarity_server.py data/tmp_idx_files/ -c 32
 ```
 
-(The index handler will load every shard in the `-i input/directory/`)
+The index handler will load every shard in the `data/tmp_idx_files/` directory. The `-c` option specifies the number of 
+data clusters to visit at query time and serves as the search Speed vs. Accuracy trade-off. Generally `-c 32` is 
+appropriate for testing while in practice a service with numerous large indexes should use `-c 6`.
+
+###### Note: There are 16384 neighborhoods in the pre-trained base index for the small USE embedding space (DAN), while the pre-trained base for the large USE (Transformer) has 4096 centroids (admittedly counterintuitive).
 
 Test the server with: 
 ```bash
 python py_scripts/service/call_similarity_service.py \
--q "What is the air-speed velocity of an unladen swallow?"
+-q "What will be the short-term interest rate of Tesla stock in 2019?"
 ```
 
-(The server log should return 200)
-
-Note: The similarity server returns integer vector ids and their difference scores (L2) 
-relative to the query vector. It does not return text.
+The similarity server returns integer vector ids and their difference scores (L2) relative to the query vector. 
+##### It does not return text.

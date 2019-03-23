@@ -1,10 +1,12 @@
 import os
 import os.path as p
 import json
+import gzip
 from time import time
+from pathlib import Path
 from datetime import date
 
-__all__ = ['pub_date_split']
+__all__ = ['pub_date_split', 'gz_date_split']
 
 
 def pub_date_split(input_file: str, output_dir: str,
@@ -62,3 +64,70 @@ def pub_date_split(input_file: str, output_dir: str,
     m, s = divmod(time()-t_0, 60)
     print(f'Sorted {new+old+err+dateless} files in {int(m):2d}m{s:0.1f}s '
           f'({100*new/(new+old+err+dateless):0.1f}% published since {cutoff_date})')
+
+
+def gz_date_split(input_file: Path, output_dir: Path,
+                  first_date: str = '0000-00-00', final_date: str = '9999-99-99'):
+    """
+    Sorts articles by publication date.
+    :param input_file: /path/to/LexisNexisNewsDump.jl (or .jl.gz)
+    :param output_dir: Output destination of pub_date.jl files
+    :param first_date: Include articles >= first_date
+    :param final_date: Include articles <= final_date
+    """
+
+    assert p.isfile(input_file), f'File not found: {input_file}'
+    assert '.jl' in input_file, f'Incorrect file format: {input_file}'
+
+    old_news_dir = output_dir/'old_news'
+    date_error_dir = output_dir/'date_error'
+    os.makedirs(p.abspath(old_news_dir))
+    os.makedirs(p.abspath(date_error_dir))
+
+    t_0 = time()
+    news_by_date = dict()
+    new, old, err, dateless = 0, 0, 0, 0
+    if str(input_file).endswith('.gz'):
+        srcf = gzip.open(input_file, 'r')
+    else:
+        srcf = open(str(input_file), 'r')
+
+    # Sort article's target file by date
+    for line in srcf:
+        article = json.loads(line)
+
+        try:    # to find publication date
+            event_date = article['knowledge_graph']['event_date'][0]['value'].split('T')[0]
+        except KeyError:
+            event_date = None
+
+        if event_date and first_date <= event_date <= final_date:
+            targetf = output_dir/f'{event_date}.jl'
+            new += 1
+        elif event_date and event_date < first_date:
+            targetf = old_news_dir/f'{event_date}.jl'
+            old += 1
+        elif event_date and event_date > final_date:
+            targetf = date_error_dir/f'{event_date}.jl'
+            err += 1
+        else:
+            targetf = date_error_dir/'dateless_articles.jl'
+            dateless += 1
+
+        try:    # to see if list() has been instantiated
+            _ = len(news_by_date[targetf])
+        except KeyError:
+            news_by_date[targetf] = list()
+        news_by_date[targetf].append(article)
+
+    srcf.close()
+
+    # Flush articles to destination files
+    for targetf, article_list in news_by_date.items():
+        with open(str(targetf), 'a') as tgtf:
+            for article in article_list:
+                tgtf.write(f'{json.dumps(article)}\n')
+
+    m, s = divmod(time()-t_0, 60)
+    print(f'Sorted {new+old+err+dateless} files in {int(m):2d}m{s:0.1f}s '
+          f'({100*new/(new+old+err+dateless):0.1f}% published since {first_date})')

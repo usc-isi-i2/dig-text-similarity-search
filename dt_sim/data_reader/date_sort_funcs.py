@@ -76,6 +76,14 @@ def gz_date_split(input_file: Path, output_dir: Path,
     :param final_date: Include articles <= final_date
     """
 
+    def flush(news: dict):
+        # Flushes articles to destination files
+        for tgtf, article_list in news.items():
+            with open(tgtf, 'a') as f:
+                for art in article_list:
+                    f.write(f'{json.dumps(art)}\n')
+        return dict()
+
     assert p.isfile(input_file), f'File not found: {input_file}'
     assert '.jl' in input_file, f'Incorrect file format: {input_file}'
 
@@ -85,7 +93,6 @@ def gz_date_split(input_file: Path, output_dir: Path,
     os.makedirs(p.abspath(date_error_dir))
 
     t_0 = time()
-    news_by_date = dict()
     new, old, err, dateless = 0, 0, 0, 0
     if str(input_file).endswith('.gz'):
         srcf = gzip.open(input_file, 'r')
@@ -93,7 +100,8 @@ def gz_date_split(input_file: Path, output_dir: Path,
         srcf = open(str(input_file), 'r')
 
     # Sort article's target file by date
-    for line in srcf:
+    news_by_date = dict()
+    for i, line in enumerate(srcf, start=1):
         article = json.loads(line)
 
         try:    # to find publication date
@@ -121,13 +129,12 @@ def gz_date_split(input_file: Path, output_dir: Path,
             news_by_date[targetf] = list()
         news_by_date[targetf].append(article)
 
+        if i % 10000 == 0:
+            news_by_date = flush(news_by_date)
+
     srcf.close()
 
-    # Flush articles to destination files
-    for targetf, article_list in news_by_date.items():
-        with open(targetf, 'a') as tgtf:
-            for article in article_list:
-                tgtf.write(f'{json.dumps(article)}\n')
+    _ = flush(news_by_date)
 
     m, s = divmod(time()-t_0, 60)
     print(f'Sorted {new+old+err+dateless} files in {int(m):2d}m{s:0.1f}s '

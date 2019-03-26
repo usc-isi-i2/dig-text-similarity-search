@@ -14,17 +14,19 @@ MAIN_IDXS="/faiss/faiss_index_shards/deployment_full/"
 TMP_IDXS="/green_room/idx_deploy_B/"
 
 echo "Main: $MAIN_IDXS has $(ls "$MAIN_IDXS" | wc -l) shards"
-echo "Tmp: $TMP_IDXS has $(ls "$TMP_IDXS" | wc -l) shards"
+echo "Tmp: $TMP_IDXS has $(ls "$TMP_IDXS" | wc -l) shards
+"
 
 # Get file to process
 FILE=$(ls "${NEWS_DIR}" | head -1)
 
 if [[ -z "$FILE" ]]; then
-    echo "Nothing to process..."
+    echo "Nothing to process...
+    "
     exit 1
 else
-    echo "
-    Processing $FILE"
+    echo "Processing $FILE
+    "
 fi
 
 # Get YYYY-MM-DD
@@ -34,29 +36,29 @@ YYYY=$(echo "$YYYYMMDD" | cut -d "-" -f1)
 MM=$(echo "$YYYYMMDD" | cut -d "-" -f2)
 DD=$(echo "$YYYYMMDD" | cut -d "-" -f3)
 
-echo "Year: $YYYY   Month: $MM      Day: $DD"
+echo "  * Year: $YYYY   * Month: $MM    * Day: $DD
+"
 
 # New working dirs
 DATE_SPLIT="${PUB_DATES}${YYYY}_extraction_${MM}-${DD}/"
 DAILY_IDXS="${DAILY_DIR}${YYYY}_indexes_${MM}-${DD}/"
 
 if [[ -d "$DATE_SPLIT" ]] || [[ -d "$DAILY_IDXS" ]]; then
-    echo "
-    $FILE has already been processed!
-    Exiting..."
+    echo "$FILE has already been processed!
+Exiting...
+"
     exit 1
 else
     mkdir "$DATE_SPLIT"
     mkdir "$DAILY_IDXS"
-    echo "
-    Using $DATE_SPLIT
-    and $DAILY_IDXS dirs"
+    echo "Using $DATE_SPLIT
+and $DAILY_IDXS dirs
+"
 fi
 
 
 ## Split
-echo "
-Splitting articles in $FILE by publication dates between
+echo "Splitting articles in $FILE by publication dates between
 $(date -d "-45 days" -I) and $YYYYMMDD..."
 python -u "${PY_SCRIPTS}sort_by_pub_date.py" \
 "${NEWS_DIR}${FILE}" "$DATE_SPLIT" \
@@ -65,11 +67,12 @@ python -u "${PY_SCRIPTS}sort_by_pub_date.py" \
 
 ## Vectorize
 n_shards=$(ls "$DATE_SPLIT"*.jl | wc -l)
-echo "Found $n_shards to vectorize"
+echo "Found $n_shards to vectorize
+"
 
 if [[ "$n_shards" < 1 ]]; then
-    echo "
-    Exiting..."
+    echo "Exiting...
+    "
     exit 1
 fi
 

@@ -95,11 +95,21 @@ mv "${NEWS_DIR}${FILE}" "${DONE_DIR}${FILE}"
 
 
 ## Save backup (new)
+# If not in BEFORE --> upload
 B4=" ${BEFORE[*]} "
 for item in ${AFTER[@]}; do
-    if [[ $B4 =~ " $item " ]]; then
-        echo "WIP"
-    else
-        echo "WIP"
+    if [[ ! $B4 =~ " $item " ]]; then
+        /faiss/dig-text-similarity-search/s3cp.sh "${MAIN_IDXS}${item}"
     fi
 done
+
+# If not in AFTER --> delete
+AF7=" ${AFTER[*]} "
+for item in ${BEFORE[@]}; do
+    if [[ ! $AF7 =~ " $item " ]]; then
+        /faiss/dig-text-similarity-search/s3rm.sh "${MAIN_IDXS}${item}"
+    fi
+done
+
+echo "Finished @$(date)"
+exit 1

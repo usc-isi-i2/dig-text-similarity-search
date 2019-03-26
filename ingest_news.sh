@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 ## Prep
 # Constant working dirs
 NEWS_DIR="/faiss/sage_news_data/raw/LN_WLFilt_extractions_IN/"
@@ -70,11 +69,13 @@ kill -15 $(ps -ef | grep "[s]imilarity_server" | awk \'{print $2}\'); sleep 1;
 python -u "${SERVICE}similarity_server.py" "$TMP_IDXS" -l -c 6 &
 
 # Zip-merge into main indexes
-BEFORE=$(ls "$MAIN_IDXS")
+cd "$MAIN_IDXS"
+BEFORE=$(*.i*); cd -
 echo "n" | python -u "${PY_SCRIPTS}consolidate_shards.py" \
 "$DAILY_IDXS" "$MAIN_IDXS" --zip -p "zip_to_${MM}${DD}" -t 2;
 
-AFTER=$(ls "$MAIN_IDXS")
+cd "$MAIN_IDXS"
+AFTER=$(*.i*); cd -
 
 # Switch back to main service
 LOG_FILE="/faiss/dig-text-similarity-search/logs/service/deploy_${MM}${DD}.out"
@@ -94,7 +95,11 @@ mv "${NEWS_DIR}${FILE}" "${DONE_DIR}${FILE}"
 
 
 ## Save backup (new)
-
-
-
-
+B4=" ${BEFORE[*]} "
+for item in ${AFTER[@]}; do
+    if [[ $B4 =~ " $item " ]]; then
+        echo "WIP"
+    else
+        echo "WIP"
+    fi
+done

@@ -102,18 +102,19 @@ def gz_date_split(input_file: Path, output_dir: Path,
             event_date = None
 
         if event_date and first_date <= event_date <= final_date:
-            targetf = output_dir/f'{event_date}.jl'
+            targetf = Path(output_dir)/f'{event_date}.jl'
             new += 1
         elif event_date and event_date < first_date:
-            targetf = old_news_dir/f'{event_date}.jl'
+            targetf = Path(old_news_dir)/f'{event_date}.jl'
             old += 1
         elif event_date and event_date > final_date:
-            targetf = date_error_dir/f'{event_date}.jl'
+            targetf = Path(date_error_dir)/f'{event_date}.jl'
             err += 1
         else:
-            targetf = date_error_dir/'dateless_articles.jl'
+            targetf = Path(date_error_dir)/'dateless_articles.jl'
             dateless += 1
 
+        targetf = str(targetf)
         try:    # to see if list() has been instantiated
             _ = len(news_by_date[targetf])
         except KeyError:
@@ -124,7 +125,7 @@ def gz_date_split(input_file: Path, output_dir: Path,
 
     # Flush articles to destination files
     for targetf, article_list in news_by_date.items():
-        with open(str(targetf), 'a') as tgtf:
+        with open(targetf, 'a') as tgtf:
             for article in article_list:
                 tgtf.write(f'{json.dumps(article)}\n')
 

@@ -58,7 +58,7 @@ python -u "${PY_SCRIPTS}sort_by_pub_date.py" \
 
 
 ## Vectorize
-n_shards=$(ls "${DATE_SPLIT}" | wc -l)
+n_shards=$(ls "${DATE_SPLIT}*.jl" | wc -l)
 echo "$n_shards to vectorize"
 
 if [[ $n_shards < 1 ]]; then

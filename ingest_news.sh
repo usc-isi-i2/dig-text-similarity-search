@@ -45,24 +45,28 @@ if [[ -d "$DATE_SPLIT" ]] || [[ -d "$DAILY_IDXS" ]]; then
 else
     mkdir "$DATE_SPLIT"
     mkdir "$DAILY_IDXS"
-    echo "Using $DATE_SPLIT and $DAILY_IDXS dirs"
+    echo "
+    Using $DATE_SPLIT
+    and $DAILY_IDXS dirs"
 fi
 
 
 ## Split
-echo "Splitting articles in $FILE by publication dates
-between $(date -d "-45 days" -I) and $YYYYMMDD..."
+echo "
+Splitting articles in $FILE by publication dates between
+$(date -d "-45 days" -I) and $YYYYMMDD..."
 python -u "${PY_SCRIPTS}sort_by_pub_date.py" \
 "${NEWS_DIR}${FILE}" "$DATE_SPLIT" \
 -i "$(date -d "-45 days" -I)" -f "${YYYYMMDD}";
 
 
 ## Vectorize
-n_shards=$(ls "${DATE_SPLIT}*.jl" | wc -l)
-echo "$n_shards to vectorize"
+n_shards=$(ls "$DATE_SPLIT"*.jl | wc -l)
+echo "Found $n_shards to vectorize"
 
-if [[ $n_shards < 1 ]]; then
-    echo "Exiting..."
+if [[ "$n_shards" < 1 ]]; then
+    echo "
+    Exiting..."
     exit 1
 fi
 
@@ -71,7 +75,8 @@ fi
 
 
 ## Save backup (old)
-echo "Performing local backup (old)..."
+echo "
+Performing local backup (old)..."
 BACKUP_DIR="/faiss/faiss_index_shards/backups/WL_${MM}${DD}"
 python -u "${PY_SCRIPTS}consolidate_shards.py" "$DAILY_IDXS" "$BACKUP_DIR" --cp;
 
@@ -88,7 +93,7 @@ echo "n" | python -u "${PY_SCRIPTS}consolidate_shards.py" \
 "$DAILY_IDXS" "$MAIN_IDXS" --zip -p "zip_to_${MM}${DD}" -t 2;
 
 cd "$MAIN_IDXS"
-AFTER=$(*.i*); cd -; printf "After: %s\n" "${AFTER[@]}"
+AFTER=$(*.i*); cd -; printf "After:  %s\n" "${AFTER[@]}"
 
 # Switch back to main service
 LOG_FILE="/faiss/dig-text-similarity-search/logs/service/deploy_${MM}${DD}.out"
@@ -101,14 +106,15 @@ echo "y" | python -u "${PY_SCRIPTS}consolidate_shards.py" \
 
 
 ## Cleanup
-rm "${DATE_SPLIT}*.jl" "${DATE_SPLIT}*/*.jl"
+rm "$DATE_SPLIT"*.jl "$DATE_SPLIT"*/*.jl
 rmdir "${DATE_SPLIT}old_news" "${DATE_SPLIT}date_error"
 
 mv "${NEWS_DIR}${FILE}" "${DONE_DIR}${FILE}"
 
 
 ## Save backup (new)
-echo "Saving new shards to s3..."
+echo "
+Saving new shards to s3..."
 
 # If not in BEFORE --> upload
 B4=" ${BEFORE[*]} "
@@ -126,5 +132,8 @@ for item in ${BEFORE[@]}; do
     fi
 done
 
-echo "Finished @$(date)"
+echo "
+
+Finished @$(date)
+"
 exit 1

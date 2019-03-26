@@ -122,18 +122,22 @@ mv "${NEWS_DIR}${FILE}" "${DONE_DIR}${FILE}"
 echo "
 Saving new shards to s3..."
 
-# If not in BEFORE --> upload
+# If item from AFTER not in BEFORE --> upload
 B4=" ${BEFORE[*]} "
 for item in ${AFTER[@]}; do
     if [[ ! $B4 =~ " $item " ]]; then
+        echo "
+        $item not found in BEFORE :: backing up to s3... "
         /faiss/dig-text-similarity-search/s3cp.sh "${MAIN_IDXS}${item}";
     fi
 done
 
-# If not in AFTER --> delete
+# If item from BEFORE not in AFTER --> delete
 AF7=" ${AFTER[*]} "
 for item in ${BEFORE[@]}; do
     if [[ ! $AF7 =~ " $item " ]]; then
+        echo "
+        $item not found  in AFTER :: attempting to remove from s3... "
         /faiss/dig-text-similarity-search/s3rm.sh "${MAIN_IDXS}${item}";
     fi
 done

@@ -13,6 +13,9 @@ SERVICE="/faiss/dig-text-similarity-search/py_scripts/service/"
 MAIN_IDXS="/faiss/faiss_index_shards/deployment_full/"
 TMP_IDXS="/green_room/idx_deploy_B/"
 
+echo "Main: $(ls "$MAIN_IDXS" | wc -l) shards"
+echo "Tmp: $(ls "$TMP_IDXS" | wc -l) shards"
+
 # Get file to process
 FILE=$(ls "${NEWS_DIR}" | head -1)
 
@@ -30,7 +33,7 @@ YYYY=$(echo "$YYYYMMDD" | cut -d "-" -f1)
 MM=$(echo "$YYYYMMDD" | cut -d "-" -f2)
 DD=$(echo "$YYYYMMDD" | cut -d "-" -f3)
 
-echo "$YYYY  $MM  $DD"
+echo "Year: $YYYY   Month: $MM      Day: $DD"
 
 # New working dirs
 DATE_SPLIT="${PUB_DATES}${YYYY}_extraction_${MM}-${DD}/"
@@ -42,11 +45,13 @@ if [[ -d "$DATE_SPLIT" ]] || [[ -d "$DAILY_IDXS" ]]; then
 else
     mkdir "$DATE_SPLIT"
     mkdir "$DAILY_IDXS"
+    echo "Using $DATE_SPLIT and $DAILY_IDXS dirs"
 fi
 
 
 ## Split
-echo "Splitting $FILE by publication date..."
+echo "Splitting articles in $FILE by publication dates
+between $(date -d "-45 days" -I) and $YYYYMMDD..."
 python -u "${PY_SCRIPTS}sort_by_pub_date.py" \
 "${NEWS_DIR}${FILE}" "$DATE_SPLIT" \
 -i "$(date -d "-45 days" -I)" -f "${YYYYMMDD}";
@@ -54,11 +59,19 @@ python -u "${PY_SCRIPTS}sort_by_pub_date.py" \
 
 ## Vectorize
 n_shards=$(ls "${DATE_SPLIT}" | wc -l)
+echo "$n_shards to vectorize"
+
+if [[ $n_shards < 1 ]]; then
+    echo "Exiting..."
+    exit 1
+fi
+
 /faiss/dig-text-similarity-search/vectorize_n_large_shards.sh \
 "$n_shards" "$DATE_SPLIT" "$DAILY_IDXS" "${DATE_SPLIT}progress.txt";
 
 
 ## Save backup (old)
+echo "Performing local backup (old)..."
 BACKUP_DIR="/faiss/faiss_index_shards/backups/WL_${MM}${DD}"
 python -u "${PY_SCRIPTS}consolidate_shards.py" "$DAILY_IDXS" "$BACKUP_DIR" --cp;
 
@@ -70,17 +83,17 @@ python -u "${SERVICE}similarity_server.py" "$TMP_IDXS" -l -c 6 &
 
 # Zip-merge into main indexes
 cd "$MAIN_IDXS"
-BEFORE=$(*.i*); cd -
+BEFORE=$(*.i*); cd -; echo "$BEFORE"
 echo "n" | python -u "${PY_SCRIPTS}consolidate_shards.py" \
 "$DAILY_IDXS" "$MAIN_IDXS" --zip -p "zip_to_${MM}${DD}" -t 2;
 
 cd "$MAIN_IDXS"
-AFTER=$(*.i*); cd -
+AFTER=$(*.i*); cd -; echo "$AFTER"
 
 # Switch back to main service
 LOG_FILE="/faiss/dig-text-similarity-search/logs/service/deploy_${MM}${DD}.out"
 kill -15 $(ps -ef | grep "[s]imilarity_server" | awk \'{print $2}\'); sleep 1;
-python -u "${SERVICE}similarity_server.py" "$MAIN_IDXS" -l -c 6 &
+python -u "${SERVICE}similarity_server.py" "$MAIN_IDXS" -l -c 6 >> "$LOG_FILE" &
 
 # Zip-merge into tmp
 echo "y" | python -u "${PY_SCRIPTS}consolidate_shards.py" \
@@ -95,6 +108,8 @@ mv "${NEWS_DIR}${FILE}" "${DONE_DIR}${FILE}"
 
 
 ## Save backup (new)
+echo "Saving new shards to s3..."
+
 # If not in BEFORE --> upload
 B4=" ${BEFORE[*]} "
 for item in ${AFTER[@]}; do

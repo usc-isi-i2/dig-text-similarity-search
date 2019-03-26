@@ -59,10 +59,10 @@ fi
 
 ## Split
 echo "Splitting articles in $FILE by publication dates between
-$(date -d "-45 days" -I) and $YYYYMMDD..."
+$(date -d "-45 days $YYYYMMDD" -I) and $YYYYMMDD..."
 python -u "${PY_SCRIPTS}sort_by_pub_date.py" \
 "${NEWS_DIR}${FILE}" "$DATE_SPLIT" \
--i "$(date -d "-45 days" -I)" -f "${YYYYMMDD}";
+-i "$(date -d "-45 days $YYYYMMDD" -I)" -f "$YYYYMMDD";
 
 
 ## Vectorize

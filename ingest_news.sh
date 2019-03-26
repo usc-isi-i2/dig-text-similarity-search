@@ -94,12 +94,12 @@ python -u "${SERVICE}similarity_server.py" "$TMP_IDXS" -l -c 6 &
 
 # Zip-merge into main indexes
 cd "$MAIN_IDXS"
-BEFORE=$(*.i*); cd -; printf "Before: %s\n" "${BEFORE[@]}"
+BEFORE=(*.i*); cd -; printf "Before: %s\n" "${BEFORE[@]}"
 echo "n" | python -u "${PY_SCRIPTS}consolidate_shards.py" \
 "$DAILY_IDXS" "$MAIN_IDXS" --zip -p "zip_to_${MM}${DD}" -t 2;
 
 cd "$MAIN_IDXS"
-AFTER=$(*.i*); cd -; printf "After:  %s\n" "${AFTER[@]}"
+AFTER=(*.i*); cd -; printf "After:  %s\n" "${AFTER[@]}"
 
 # Switch back to main service
 LOG_FILE="/faiss/dig-text-similarity-search/logs/service/deploy_${MM}${DD}.out"

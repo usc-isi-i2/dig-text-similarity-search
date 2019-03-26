@@ -127,7 +127,7 @@ B4=" ${BEFORE[*]} "
 for item in ${AFTER[@]}; do
     if [[ ! $B4 =~ " $item " ]]; then
         echo "
-        $item not found in BEFORE :: backing up to s3... "
+        * $item not found in BEFORE :: backing up to s3... "
         /faiss/dig-text-similarity-search/s3cp.sh "${MAIN_IDXS}${item}";
     fi
 done
@@ -137,7 +137,7 @@ AF7=" ${AFTER[*]} "
 for item in ${BEFORE[@]}; do
     if [[ ! $AF7 =~ " $item " ]]; then
         echo "
-        $item not found  in AFTER :: attempting to remove from s3... "
+        * $item not found in AFTER :: attempting to remove from s3... "
         /faiss/dig-text-similarity-search/s3rm.sh "${MAIN_IDXS}${item}";
     fi
 done

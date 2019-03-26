@@ -79,8 +79,8 @@ def gz_date_split(input_file: Path, output_dir: Path,
     assert p.isfile(input_file), f'File not found: {input_file}'
     assert '.jl' in input_file, f'Incorrect file format: {input_file}'
 
-    old_news_dir = output_dir/'old_news'
-    date_error_dir = output_dir/'date_error'
+    old_news_dir = Path(output_dir)/'old_news'
+    date_error_dir = Path(output_dir)/'date_error'
     os.makedirs(p.abspath(old_news_dir))
     os.makedirs(p.abspath(date_error_dir))
 

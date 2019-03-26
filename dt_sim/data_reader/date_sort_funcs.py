@@ -1,3 +1,4 @@
+import gc
 import os
 import os.path as p
 import json
@@ -131,6 +132,7 @@ def gz_date_split(input_file: Path, output_dir: Path,
 
         if i % 10000 == 0:
             news_by_date = flush(news_by_date)
+            gc.collect()
 
     srcf.close()
 

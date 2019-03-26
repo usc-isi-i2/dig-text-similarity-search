@@ -23,7 +23,8 @@ if [[ -z "$FILE" ]]; then
     echo "Nothing to process..."
     exit 1
 else
-    echo "Processing $FILE"
+    echo "
+    Processing $FILE"
 fi
 
 # Get YYYY-MM-DD
@@ -40,7 +41,9 @@ DATE_SPLIT="${PUB_DATES}${YYYY}_extraction_${MM}-${DD}/"
 DAILY_IDXS="${DAILY_DIR}${YYYY}_indexes_${MM}-${DD}/"
 
 if [[ -d "$DATE_SPLIT" ]] || [[ -d "$DAILY_IDXS" ]]; then
-    echo "$FILE has already been processed"
+    echo "
+    $FILE has already been processed!
+    Exiting..."
     exit 1
 else
     mkdir "$DATE_SPLIT"

@@ -83,7 +83,8 @@ def gz_date_split(input_file: Path, output_dir: Path,
             with open(tgtf, 'a') as f:
                 for art in article_list:
                     f.write(f'{json.dumps(art)}\n')
-        return dict()
+        del news
+        gc.collect()
 
     assert p.isfile(input_file), f'File not found: {input_file}'
     assert '.jl' in input_file, f'Incorrect file format: {input_file}'
@@ -131,12 +132,12 @@ def gz_date_split(input_file: Path, output_dir: Path,
         news_by_date[targetf].append(article)
 
         if i % 10000 == 0:
-            news_by_date = flush(news_by_date)
-            gc.collect()
+            flush(news_by_date)
+            news_by_date = dict()
 
     srcf.close()
 
-    _ = flush(news_by_date)
+    flush(news_by_date)
 
     m, s = divmod(time()-t_0, 60)
     print(f'Sorted {new+old+err+dateless} files in {int(m):2d}m{s:0.1f}s '

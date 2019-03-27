@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 
 ## Prep
+DT_SIM="$( cd "$( dirname "${BASH_SOURCE[0]}" )" > /dev/null && pwd )/"
+PREPROC="${DT_SIM}py_scripts/preprocessing/"
+SERVICE="${DT_SIM}py_scripts/service/"
+
 # Constant working dirs
 NEWS_DIR="/faiss/sage_news_data/raw/LN_WLFilt_extractions_IN/"
 DONE_DIR="/faiss/sage_news_data/raw/LN_WLFilt_extractions_OUT/"
 PUB_DATES="/faiss/sage_news_data/pub_date_split/"
 DAILY_DIR="/faiss/faiss_index_shards/tmp_daily_ingest/"
-
-PY_SCRIPTS="/faiss/dig-text-similarity-search/py_scripts/preprocessing/"
-SERVICE="/faiss/dig-text-similarity-search/py_scripts/service/"
 
 MAIN_IDXS="/faiss/faiss_index_shards/deployment_full/"
 TMP_IDXS="/green_room/idx_deploy_B/"
@@ -60,7 +61,7 @@ fi
 ## Split
 echo "Splitting articles in $FILE by publication dates between
 $(date -d "-45 days $YYYYMMDD" -I) and $YYYYMMDD..."
-python -u "${PY_SCRIPTS}sort_by_pub_date.py" \
+python -u "${PREPROC}sort_by_pub_date.py" \
 "${NEWS_DIR}${FILE}" "$DATE_SPLIT" \
 -i "$(date -d "-45 days $YYYYMMDD" -I)" -f "$YYYYMMDD";
 
@@ -69,14 +70,14 @@ python -u "${PY_SCRIPTS}sort_by_pub_date.py" \
 n_shards=$(ls "$DATE_SPLIT"*.jl | wc -l)
 echo "Found $n_shards to vectorize
 "
-
+# Exit if there is nothing to vectorize
 if [[ "$n_shards" < 1 ]]; then
     echo "Exiting...
     "
     exit 1
 fi
 
-/faiss/dig-text-similarity-search/vectorize_n_large_shards.sh \
+"$DT_SIM"vectorize_n_large_shards.sh \
 "$n_shards" "$DATE_SPLIT" "$DAILY_IDXS" "${DATE_SPLIT}progress.txt";
 
 
@@ -84,7 +85,7 @@ fi
 echo "
 Performing local backup (old)..."
 BACKUP_DIR="/faiss/faiss_index_shards/backups/WL_${MM}${DD}"
-python -u "${PY_SCRIPTS}consolidate_shards.py" "$DAILY_IDXS" "$BACKUP_DIR" --cp;
+python -u "${PREPROC}consolidate_shards.py" "$DAILY_IDXS" "$BACKUP_DIR" --cp;
 
 
 ## Merge into indexes
@@ -95,7 +96,7 @@ python -u "${SERVICE}similarity_server.py" "$TMP_IDXS" -l -c 6 &
 # Zip-merge into main indexes
 cd "$MAIN_IDXS"
 BEFORE=(*.i*); cd -; printf "Before: %s\n" "${BEFORE[@]}"
-echo "n" | python -u "${PY_SCRIPTS}consolidate_shards.py" \
+echo "n" | python -u "${PREPROC}consolidate_shards.py" \
 "$DAILY_IDXS" "$MAIN_IDXS" --zip -p "zip_to_${MM}${DD}" -t 2;
 
 cd "$MAIN_IDXS"
@@ -107,7 +108,7 @@ kill -15 $(ps -ef | grep "[s]imilarity_server" | awk \'{print $2}\'); sleep 1;
 python -u "${SERVICE}similarity_server.py" "$MAIN_IDXS" -l -c 6 >> "$LOG_FILE" &
 
 # Zip-merge into tmp
-echo "y" | python -u "${PY_SCRIPTS}consolidate_shards.py" \
+echo "y" | python -u "${PREPROC}consolidate_shards.py" \
 "$DAILY_IDXS" "$TMP_IDXS" --zip -p "zip_to_${MM}${DD}" -t 2;
 
 
@@ -128,7 +129,7 @@ for item in ${AFTER[@]}; do
     if [[ ! $B4 =~ " $item " ]]; then
         echo "
         * $item not found in BEFORE :: backing up to s3... "
-        /faiss/dig-text-similarity-search/s3cp.sh "${MAIN_IDXS}${item}";
+        "$DT_SIM"s3cp.sh "${MAIN_IDXS}${item}";
     fi
 done
 
@@ -138,10 +139,12 @@ for item in ${BEFORE[@]}; do
     if [[ ! $AF7 =~ " $item " ]]; then
         echo "
         * $item not found in AFTER :: attempting to remove from s3... "
-        /faiss/dig-text-similarity-search/s3rm.sh "${MAIN_IDXS}${item}";
+        "$DT_SIM"s3rm.sh "${MAIN_IDXS}${item}";
     fi
 done
 
+
+## FIN
 echo "
 
 Finished @$(date)

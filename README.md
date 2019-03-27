@@ -139,3 +139,6 @@ python py_scripts/service/call_similarity_service.py \
 
 The similarity server returns integer vector ids and their difference scores (L2) relative to the query vector. 
 ##### Dig-Text-Similarity-Search does not return text.
+
+#### Automated Ingestion:
+Please edit the `Constant working dirs` near the top of `ingest_news.sh` to be suitable for your filesystem. 

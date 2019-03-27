@@ -14,8 +14,8 @@ DAILY_DIR="/faiss/faiss_index_shards/tmp_daily_ingest/"
 MAIN_IDXS="/faiss/faiss_index_shards/deployment_full/"
 TMP_IDXS="/green_room/idx_deploy_B/"
 
-echo "Main: $MAIN_IDXS has $(ls "$MAIN_IDXS" | wc -l) shards"
-echo "Tmp: $TMP_IDXS has $(ls "$TMP_IDXS" | wc -l) shards
+echo "Main: $MAIN_IDXS has $(ls "$MAIN_IDXS"*.index | wc -l) shards"
+echo "Tmp: $TMP_IDXS has $(ls "$TMP_IDXS"*.index | wc -l) shards
 "
 
 # Get file to process
@@ -65,18 +65,18 @@ python -u "${PREPROC}sort_by_pub_date.py" \
 "${NEWS_DIR}${FILE}" "$DATE_SPLIT" \
 -i "$(date -d "-45 days $YYYYMMDD" -I)" -f "$YYYYMMDD";
 
-
-## Vectorize
+# Exit if there is nothing to vectorize
 n_shards=$(ls "$DATE_SPLIT"*.jl | wc -l)
 echo "Found $n_shards to vectorize
 "
-# Exit if there is nothing to vectorize
 if [[ "$n_shards" < 1 ]]; then
     echo "Exiting...
     "
     exit 1
 fi
 
+
+## Vectorize
 "$DT_SIM"vectorize_n_large_shards.sh \
 "$n_shards" "$DATE_SPLIT" "$DAILY_IDXS" "${DATE_SPLIT}progress.txt";
 

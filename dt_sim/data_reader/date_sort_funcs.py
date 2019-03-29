@@ -6,8 +6,9 @@ import gzip
 from time import time
 from pathlib import Path
 from datetime import date
+from typing import Dict
 
-__all__ = ['pub_date_split', 'gz_date_split']
+__all__ = ['pub_date_split', 'gz_date_split', 'gz_date_count']
 
 
 def pub_date_split(input_file: str, output_dir: str,
@@ -142,3 +143,35 @@ def gz_date_split(input_file: Path, output_dir: Path,
     m, s = divmod(time()-t_0, 60)
     print(f'Sorted {new+old+err+dateless} files in {int(m):2d}m{s:0.1f}s '
           f'({100*new/(new+old+err+dateless):0.1f}% published since {first_date})')
+
+
+def gz_date_count(input_file: Path) -> Dict[str, Dict[str, int]]:
+
+    if str(input_file).endswith('.gz'):
+        srcf = gzip.open(input_file, 'r')
+    else:
+        srcf = open(str(input_file), 'r')
+
+    # Sort article's target file by date
+    pubs_per_date = dict()
+    for line in srcf:
+        article = json.loads(line)
+
+        try:    # to find publication date
+            event_date = article['knowledge_graph']['event_date'][0]['value'].split('T')[0]
+            l_sent = len(article['split_sentences'])
+        except KeyError:
+            event_date = None
+            l_sent = 0
+
+        if event_date:
+            if event_date not in pubs_per_date:
+                pubs_per_date[event_date] = dict()
+                pubs_per_date[event_date]['n_art'] = 0
+                pubs_per_date[event_date]['l_sent'] = 0
+            pubs_per_date[event_date]['n_art'] += 1
+            pubs_per_date[event_date]['l_sent'] += l_sent
+
+    srcf.close()
+
+    return pubs_per_date

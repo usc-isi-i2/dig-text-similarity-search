@@ -20,6 +20,12 @@ echo "Tmp: $TMP_IDXS has $(ls "$TMP_IDXS"*.index | wc -l) shards
 
 # Process 1 file per call to shell script
 FILE=$(ls "${NEWS_DIR}" | head -1)
+if [[ -z "$FILE" ]]; then
+    printf "Nothing to process... \n"
+    exit 1
+else
+    printf "Processing $FILE \n"
+fi
 
 # Get extraction ISO date as YYYY, MM, & DD
 YYYYMMDD=$(echo "$FILE" | grep -Eo "[0-9]{4}\-[0-9]{2}\-[0-9]{2}")
@@ -33,9 +39,14 @@ echo "  * Year: $YYYY   * Month: $MM    * Day: $DD
 # New working dirs
 DATE_SPLIT="${PUB_DATES}${YYYY}_extraction_${MM}-${DD}/"
 DAILY_IDXS="${DAILY_DIR}${YYYY}_indexes_${MM}-${DD}/"
-mkdir "$DATE_SPLIT"     # Fail and exit if dirs exist
-mkdir "$DAILY_IDXS"     # Indication that file has already been processed
-
+# Fail and exit if dirs exist (Indication that file has already been processed)
+if [[ -d "$DATE_SPLIT" ]] || [[ -d "$DAILY_IDXS" ]]; then
+    printf "$FILE has already been processed! \nExiting... \n"
+    exit 1
+else
+    mkdir "$DATE_SPLIT"
+    mkdir "$DAILY_IDXS"
+fi
 
 
 ## Split

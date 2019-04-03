@@ -70,7 +70,7 @@ done
 
 ## Zip new indexes into deployed indexes
 # Switch to tmp service
-kill -15 $(ps -ef | grep "[s]imilarity_server" | awk \'{print $2}\'); sleep 1;
+kill -15 $(ps -ef | grep "[s]imilarity_server" | awk '{print $2}'); sleep 1;
 python -u "${SERVICE}similarity_server.py" "$TMP_IDXS" -l -c 6 &
 
 # Get indexes before merge
@@ -86,7 +86,7 @@ cd "$MAIN_IDXS"; AFTER=(*.i*); cd -; printf "After:  %s\n" "${AFTER[@]}"
 
 # Switch back to main service
 LOG_FILE="/faiss/dig-text-similarity-search/logs/service/deploy_${MM}${DD}.out"
-kill -15 $(ps -ef | grep "[s]imilarity_server" | awk \'{print $2}\'); sleep 1;
+kill -15 $(ps -ef | grep "[s]imilarity_server" | awk '{print $2}'); sleep 1;
 python -u "${SERVICE}similarity_server.py" "$MAIN_IDXS" -l -c 6 >> "$LOG_FILE" &
 
 # Second zip-merge into tmp indexes

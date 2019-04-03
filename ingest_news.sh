@@ -42,8 +42,7 @@ mkdir "$DAILY_IDXS"     # Indication that file has already been processed
 echo "Splitting articles in $FILE by publication dates between
 $(date -d "-45 days $YYYYMMDD" -I) and $YYYYMMDD"
 
-python -u "${PREPROC}sort_by_pub_date.py" \
-"${NEWS_DIR}${FILE}" "$DATE_SPLIT" \
+python -u "${PREPROC}sort_by_pub_date.py" "${NEWS_DIR}${FILE}" "$DATE_SPLIT" \
 -i "$(date -d "-45 days $YYYYMMDD" -I)" -f "$YYYYMMDD";
 
 
@@ -53,7 +52,7 @@ n_shards=$(ls "$DATE_SPLIT"*.jl | wc -l)
 
 # Exit if there is nothing to vectorize
 if [[ "$n_shards" > 0 ]]; then
-    echo "Found $n_shards to vectorize
+    echo "Found $n_shards day(s) of news to vectorize
 "
 else
     echo "Nothing to process... Exiting"
@@ -105,8 +104,7 @@ Saving new shards to s3..."
 B4=" ${BEFORE[*]} "
 for item in ${AFTER[@]}; do
     if [[ ! $B4 =~ " $item " ]]; then
-        echo "
-        * $item not found in BEFORE :: backing up to s3... "
+        printf "\n * $item not found in BEFORE :: backing up to s3... "
         aws s3 cp "${MAIN_IDXS}${item}" s3://lexisnexis-news-incremental"${MAIN_IDXS}${item}";
     fi
 done
@@ -115,8 +113,7 @@ done
 AF7=" ${AFTER[*]} "
 for item in ${BEFORE[@]}; do
     if [[ ! $AF7 =~ " $item " ]]; then
-        echo "
-        * $item not found in AFTER :: attempting to remove from s3... "
+        printf "\n * $item not found in AFTER :: attempting to remove from s3... "
         aws s3 rm s3://lexisnexis-news-incremental"${MAIN_IDXS}${item}";
     fi
 done
@@ -130,6 +127,6 @@ mv "${NEWS_DIR}${FILE}" "${DONE_DIR}${FILE}"
 
 echo "
 
-Finished @$(date)
+Finished @ $(date)
 "
 exit 1

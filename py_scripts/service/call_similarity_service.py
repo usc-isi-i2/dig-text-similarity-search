@@ -2,10 +2,10 @@ import requests
 from datetime import date
 from argparse import ArgumentParser
 
-arp = ArgumentParser(description='')
+arp = ArgumentParser(description='Search the index with any query')
 default_query = 'Do Elon Musk\'s tweets help Tesla stock?'
 arp.add_argument('-q', '--query', default=default_query,
-                 help=f'Search the index with any query '
+                 help=f'Cohesive sentences provide better results '
                       f'(Default: {default_query})')
 arp.add_argument('-s', '--start_date', default='2019-03-01',
                  help='Earliest ISO formatted publication date to search '

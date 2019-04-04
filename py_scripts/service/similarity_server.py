@@ -93,7 +93,7 @@ def text_similarity_search():
     if not start_date <= end_date:
         return jsonify({'message': 'Start-date must occur before end-date'}), 400
 
-    # Max date-range: 100 day-span
+    # Max date-range: 180 day-span
     max_range = date.isoformat(end_dt_obj - timedelta(180))
     if max_range > start_date:
         start_date = max_range

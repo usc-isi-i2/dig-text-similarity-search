@@ -3,14 +3,16 @@ from datetime import date
 from argparse import ArgumentParser
 
 arp = ArgumentParser(description='')
-arp.add_argument('-q', '--query', default='What is your Quest?',
-                 help='Search with your own query.')
+default_query = 'Do Elon Musk\'s tweets help Tesla stock?'
+arp.add_argument('-q', '--query', default=default_query,
+                 help=f'Search the index with any query '
+                      f'(Default: {default_query})')
 arp.add_argument('-s', '--start_date', default='2019-03-01',
                  help='Earliest ISO formatted publication date to search '
-                 '(Default: 2019-03-01)')
+                      '(Default: 2019-03-01)')
 arp.add_argument('-e', '--end_date', default=date.today().isoformat(),
                  help=f'Final ISO formatted publication date to search '
-                 f'(Default: Today {date.today().isoformat()})')
+                      f'(Default: Today {date.today().isoformat()})')
 opts = arp.parse_args()
 
 

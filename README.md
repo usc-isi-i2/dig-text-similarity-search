@@ -99,6 +99,9 @@ After successfully indexing a `news.jl` file, its path will be recorded in `prog
 
 ##### Every faiss shard should contain absolute partitions of the sentences within the corpus. Shards with conflicting `faiss_ids` may give incorrect results. 
 
+#### Automated Ingestion:
+Please edit the `Constant working dirs` near the top of `ingest_news.sh` to be suitable for your filesystem. 
+
 #### Query vectorization with docker:
 Before running the similarity server, encapsulate the Universal Sentence Encoder in a suitable 
 form for running in a docker container with:
@@ -134,11 +137,9 @@ appropriate for testing while in practice a service with numerous large indexes 
 Test the server with: 
 ```bash
 python py_scripts/service/call_similarity_service.py \
--q "What will be the short-term interest rate of Tesla stock in 2019?"
+-q "Do Elon Musk's tweets help Tesla stock?" \
+--start_date 2019-03-01 --end_date $(date -I)  # Ensure data exists within date-search-range
 ```
 
 The similarity server returns integer vector ids and their difference scores (L2) relative to the query vector. 
 ##### Dig-Text-Similarity-Search does not return text.
-
-#### Automated Ingestion:
-Please edit the `Constant working dirs` near the top of `ingest_news.sh` to be suitable for your filesystem. 

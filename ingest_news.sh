@@ -5,6 +5,10 @@ DT_SIM="/faiss/dig-text-similarity-search/"
 PREPROC="${DT_SIM}py_scripts/preprocessing/"
 SERVICE="${DT_SIM}py_scripts/service/"
 
+# Activate conda env
+ACTIVATE="/home/ubuntu/anaconda3/bin/activate"
+cd "$DT_SIM" && . "$ACTIVATE" dt_sim
+
 # Constant working dirs
 NEWS_DIR="/faiss/sage_news_data/raw/LN_WLFilt_extractions_IN/"
 DONE_DIR="/faiss/sage_news_data/raw/LN_WLFilt_extractions_OUT/"

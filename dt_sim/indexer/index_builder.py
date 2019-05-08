@@ -245,7 +245,7 @@ class OnDiskIVFBuilder(object):
             faiss.write_index(index, subindex_path)
 
     @staticmethod
-    def index_embs_and_ids(index: object,
+    def index_embs_and_ids(index: faiss.Index,
                            embeddings: np.array, faiss_ids: np.array) -> object:
         assert embeddings.shape[0] == faiss_ids.shape[0], \
             f'Found {embeddings.shape[0]} embeddings ' \

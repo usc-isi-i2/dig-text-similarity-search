@@ -26,11 +26,8 @@ SortedScoresIDs = List[Dict[str, Union[str, rawScoreIDs]]]
 
 class QueryProcessor(BaseProcessor):
 
-    def __init__(self, index_handler: object, query_vectorizer: object = None):
+    def __init__(self, index_handler: object, query_vectorizer: object):
         super().__init__()
-        if not query_vectorizer:
-            query_vectorizer = DockerVectorizer()
-
         self.indexer = index_handler
         self.vectorizer = query_vectorizer
 

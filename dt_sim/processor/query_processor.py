@@ -9,9 +9,8 @@ os.environ['OMP_WAIT_POLICY'] = 'PASSIVE'
 
 import numpy as np
 
-from dt_sim.faiss_cache import faiss_cache
+from dt_sim.indexer.faiss_cache import faiss_cache
 from .base_processor import BaseProcessor, QueryReturn
-from dt_sim.vectorizer.sentence_vectorizer import DockerVectorizer
 
 __all__ = ['QueryProcessor']
 

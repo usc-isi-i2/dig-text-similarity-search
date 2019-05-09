@@ -3,9 +3,9 @@ from typing import List, Tuple
 
 import numpy as np
 
-from dt_sim.faiss_cache import faiss_cache
+from dt_sim.indexer.faiss_cache import faiss_cache
 
-__all__ = ['BaseIndexer', 'faiss_cache',
+__all__ = ['BaseIndexer',
            'DiffScores', 'VectorIDs', 'FaissSearch']
 
 

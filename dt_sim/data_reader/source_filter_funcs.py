@@ -1,15 +1,18 @@
+import os.path as p
 import json
 from time import time
-from typing import Union, List, Tuple
+from pathlib import Path
+from typing import List, Tuple, Union
 
 __all__ = ['source_filter']
 
 
-def source_filter(input_file, output_file,
+def source_filter(input_file: Union[str, Path], output_file: Union[str, Path],
                   white_list: Union[List, Tuple] = None):
     t_0 = time()
     n_files, m_good = 0, 0
-    with open(input_file, 'r') as src, open(output_file, 'a') as dst:
+    with open(p.abspath(input_file), 'r') as src, \
+            open(p.abspath(output_file), 'a') as dst:
         for line in src:
             n_files += 1
             doc = json.loads(line)

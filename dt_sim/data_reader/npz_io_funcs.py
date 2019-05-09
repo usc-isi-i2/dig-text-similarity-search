@@ -1,47 +1,26 @@
-import os
 import os.path as p
 from time import time
-from typing import List, Tuple
+from pathlib import Path
+from typing import Tuple, Union
 
 import numpy as np
 
-__all__ = ['get_all_npz_paths',
-           'load_training_npz',
+__all__ = ['load_training_npz',
            'load_with_ids', 'save_with_ids']
 
 
 Embeddings_IDs_Sents = Tuple[np.array, np.array, np.array]
 
 
-#### Misc ####
-def get_all_npz_paths(npz_parent_dir: str) -> List[str]:
-    """
-    Finds all .npz files nested anywhere within a parent directory.
-
-    :param npz_parent_dir: Parent directory of .npz files
-    :return: List of full paths to .npz files sorted alphabetically
-    """
-    assert p.isdir(npz_parent_dir), \
-        'Input Error: {} must point to an existing directory' \
-        ''.format(npz_parent_dir)
-
-    npz_paths = list()
-    for (dirpath, _, filenames) in os.walk(npz_parent_dir, topdown=True):
-        for f in filenames:
-            if f.endswith('.npz'):
-                npz_paths.append(p.abspath(p.join(dirpath, f)))
-    return sorted(npz_paths)
-
-
 #### Load .npz ####
-def load_training_npz(training_set_path: str, npz_top_dir: str = None,
+def load_training_npz(training_set_path: str, npz_dir: str = None,
                       n_vectors: int = 1000000, dim: int = 512) -> np.array:
     """
     Merges .npz files into a memory mapped, numpy array for training a
     base faiss index.
 
     :param training_set_path: Path to training_set.dat
-    :param npz_top_dir: Parent dir containing .npz files
+    :param npz_dir: Parent dir containing .npz files
     :param n_vectors: Number of vectors to put into training set
     :param dim: Embedding dimensionality
     :return: Memory mapped training set array
@@ -52,10 +31,10 @@ def load_training_npz(training_set_path: str, npz_top_dir: str = None,
         # Load
         ts_memmap = np.memmap(training_set_path, dtype=np.float32,
                               mode='r', shape=(n_vectors, dim))
-    elif npz_top_dir:
+    elif npz_dir:
         # Find
-        npz_paths = get_all_npz_paths(npz_top_dir)
-        print('Found {} .npz files'.format(len(npz_paths)))
+        npz_paths = list(Path(npz_dir).glob('*.npz'))
+        print(f'Found {len(npz_paths)} .npz files')
 
         # Empty
         ts_memmap = np.memmap(training_set_path, dtype=np.float32,
@@ -68,8 +47,8 @@ def load_training_npz(training_set_path: str, npz_top_dir: str = None,
             emb, _, _ = load_with_ids(npz_paths[npz_count])
             emb_batch = emb_count + emb.shape[0]
             npz_count += 1
-            print('Loaded {}/{} vectors of {}d from {} files...'
-                  ''.format(emb_batch, n_vectors, emb.shape[1], npz_count))
+            print(f'Loaded {emb_batch}/{n_vectors} vectors '
+                  f'of {emb.shape[1]}d from {npz_count} files...')
             if emb_batch > n_vectors:
                 stop = n_vectors - emb_count
                 ts_memmap[emb_count:n_vectors, :] = emb[:stop, :]
@@ -89,12 +68,12 @@ def load_training_npz(training_set_path: str, npz_top_dir: str = None,
                               shape=(n_vectors, dim))
 
     m, s = divmod(time()-t_load, 60)
-    print('Training set loaded in {}m{:0.2f}s'.format(int(m), s))
+    print(f'Training set loaded in {int(m)}m{s:0.2f}s')
     return training_set
 
 
-def load_with_ids(file_path: str, mmap: bool = True, load_sents=False
-                  ) -> Embeddings_IDs_Sents:
+def load_with_ids(file_path: Union[str, Path], mmap: bool = True,
+                  load_sents=False) -> Embeddings_IDs_Sents:
     """
     Load preprocessed sentence embeddings with corresponding integer ids.
     Note: Loading sentences is optional
@@ -147,8 +126,8 @@ def save_with_ids(file_path: str, embeddings, sent_ids,
         sentences = np.array(sentences, dtype=np.str)
 
     assert len(embeddings) == len(sent_ids), \
-        'Error: len mismatch. Found {} embeddings and {} sent_ids' \
-        ''.format(len(embeddings), len(sent_ids))
+        f'Error: len mismatch. ' \
+        f'Found {len(embeddings)} embeddings and {len(sent_ids)} sent_ids'
 
     # Save
     if compressed:

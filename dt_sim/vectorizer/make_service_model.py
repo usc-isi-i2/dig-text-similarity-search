@@ -70,7 +70,6 @@ SERVE_PATH = p.abspath(p.join(p.dirname(__file__),
                               f'./service_models/{MODEL_NAME}/{VERSION}'))
 
 # Build MetaGraph
-# TODO: Make metagraph with both models
 with tf.Graph().as_default():
     module = hub.Module(MODEL_LINK, name=MODEL_NAME)
     text = tf.placeholder(tf.string, shape=[None], name='text')

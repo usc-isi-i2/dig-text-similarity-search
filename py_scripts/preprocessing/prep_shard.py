@@ -77,13 +77,12 @@ candidates = cp.candidate_files(prepped_news, raw_news, verbose=opts.verbose)
 file_to_process = candidates[:1]   # Preprocesses one news.jl per call
 
 
-def main(raw_jl,
-         input_dir: str = opts.input_dir, output_dir: str = opts.output_dir,
+def main(raw_jl, output_dir: str = opts.output_dir,
          m_per_batch: int = opts.m_per_batch, n_per_minibatch: int = opts.n_per_minibatch,
          no_delete: bool = opts.no_delete, verbose: bool = opts.verbose,
          add_shard: bool = opts.add_shard, url: str = opts.url):
 
-    subidx_dir, shard_date = cp.init_paths(raw_jl, input_dir)
+    subidx_dir, shard_date = cp.init_paths(raw_jl)
     if verbose:
         print('Will process: {}\n'.format(raw_jl))
 

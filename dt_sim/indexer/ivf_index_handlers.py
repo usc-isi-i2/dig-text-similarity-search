@@ -1,11 +1,14 @@
 import re
 from time import sleep
+from pathlib import Path
+from typing import Union
 from multiprocessing import Pipe, Process, Queue
 
 import faiss
 import numpy as np
 
 from .base_indexer import *
+from .faiss_cache import faiss_cache
 
 __all__ = ['DeployShards', 'RangeShards']
 
@@ -38,12 +41,12 @@ class DeployShards(BaseIndexer):
             self.index.add_shard(shard)
 
     @staticmethod
-    def load_shard(path_to_shard: str, nprobe: int = 4):
+    def load_shard(path_to_shard: Union[str, Path], nprobe: int = 4):
         shard = faiss.read_index(path_to_shard)
         shard.nprobe = nprobe
         return shard
 
-    def add_shard(self, new_shard_path: str):
+    def add_shard(self, new_shard_path: Union[str, Path]):
         if new_shard_path in self.paths_to_shards:
             print('WARNING: This shard is already online \n'
                   '         Aborting...')
@@ -55,7 +58,8 @@ class DeployShards(BaseIndexer):
 
 #### Parallelized Nearest Neighbor Search ####
 class Shard(Process):
-    def __init__(self, shard_name, shard_path, input_pipe, output_queue,
+    def __init__(self, shard_name, shard_path: Union[str, Path],
+                 input_pipe: Pipe, output_queue: Queue,
                  nprobe: int = 4, daemon: bool = False):
         """ RangeShards search worker """
         super().__init__(name=shard_name)
@@ -80,7 +84,8 @@ class Shard(Process):
 
 
 class RangeShards(BaseIndexer):
-    def __init__(self, shard_dir, nprobe: int = 4, get_nested: bool = False):
+    def __init__(self, shard_dir: Union[str, Path], nprobe: int = 4,
+                 get_nested: bool = False):
         """
         For deploying multiple, pre-made IVF indexes as shards.
             (intended for on-disk indexes that do not fit in memory)
@@ -142,7 +147,7 @@ class RangeShards(BaseIndexer):
         self.lock = False
         return self.joint_sort([D], [I])
 
-    def load_shard(self, shard_path):
+    def load_shard(self, shard_path: Union[str, Path]):
         shard_name = shard_path.replace('.index', '')
         shard_pipe, handler_pipe = Pipe(False)
         shard = Shard(shard_name, shard_path,
@@ -150,7 +155,7 @@ class RangeShards(BaseIndexer):
                       nprobe=self.nprobe, daemon=False)
         self.shards[shard_name] = (handler_pipe, shard)
 
-    def add_shard(self, new_shard_path: str):
+    def add_shard(self, new_shard_path: Union[str, Path]):
         # Lock search while deploying a new shard
         self.lock = True
 

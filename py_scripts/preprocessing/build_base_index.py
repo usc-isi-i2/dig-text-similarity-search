@@ -30,7 +30,7 @@ opts = arp.parse_args()
 
 # <editor-fold desc="Limit Numpy Threads">
 if opts.num_threads:
-    print('\nRestricting numpy to {} thread(s)\n'.format(opts.num_threads))
+    print(f'\nRestricting numpy to {opts.num_threads} thread(s)\n')
     os.environ['OPENBLAS_NUM_THREADS'] = opts.num_threads
     os.environ['NUMEXPR_NUM_THREADS'] = opts.num_threads
     os.environ['MKL_NUM_THREADS'] = opts.num_threads
@@ -60,7 +60,7 @@ def main():
         npz_dir=opts.input_npz_dir, n_tr_vectors=opts.m_training_vectors
     )
 
-    print('\nProcess completed in {:0.2f}s'.format(time()-t_start))
+    print(f'\nProcess completed in {time()-t_start:0.2f}s')
 
 
 if __name__ == '__main__':

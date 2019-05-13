@@ -3,9 +3,9 @@ import os.path as p
 import json
 import requests
 from time import time
+from pathlib import Path
 from typing import List, Union
 
-import numpy as np
 import tensorflow as tf
 import tensorflow_hub as hub
 
@@ -19,14 +19,14 @@ class DockerVectorizer(BaseVectorizer):
     Note: Ensure docker container is running before importing class.
     """
     def __init__(self, large: bool = False, model_name: str = None):
-        BaseVectorizer.__init__(self)
+        super().__init__()
 
         if not model_name and large:
             model_name = 'USE-large-v3'
             self.large_USE = True
         elif not model_name:
             model_name = 'USE-lite-v2'
-        self.url = 'http://localhost:8501/v1/models/{}:predict'.format(model_name)
+        self.url = f'http://localhost:8501/v1/models/{model_name}:predict'
 
     def make_vectors(self, query: Union[str, List[str]]):
         """ Takes one query """
@@ -49,8 +49,8 @@ class SentenceVectorizer(BaseVectorizer):
     """
     Intended for batch Corpus Vectorization
     """
-    def __init__(self, large: bool = False, path_to_model: str = None):
-        BaseVectorizer.__init__(self)
+    def __init__(self, large: bool = False, path_to_model: Union[str, Path] = None):
+        super().__init__()
 
         model_parent_dir = p.abspath(p.join(p.dirname(__file__), 'model/'))
         if large:
@@ -66,15 +66,14 @@ class SentenceVectorizer(BaseVectorizer):
             self.path_to_model = model_path
         elif not path_to_model:
             self.path_to_model = model_url
-            if not p.isdir(model_parent_dir):
-                os.mkdir(model_parent_dir)
+            os.makedirs(model_parent_dir, exist_ok=True)
             os.environ['TFHUB_CACHE_DIR'] = model_parent_dir
         else:
             self.path_to_model = p.abspath(path_to_model)
 
         self.graph = None
         self.model = None
-        print('Loading model: {}'.format(self.path_to_model))
+        print(f'Loading model: {self.path_to_model}')
         self.define_graph()
         print('Done loading model')
         self.session = None
@@ -123,10 +122,8 @@ class SentenceVectorizer(BaseVectorizer):
                         embeddings.append(self.session.run(make_embeddings))
                         if verbose:
                             timing.append(time() - t_0)
-                            print('  ** {:5d}/{}'
-                                  ' : {:3.3f}s :: {:3.3f}s avg'
-                                  ''.format(i, len(batched_tensors),
-                                            timing[-1], sum(timing)/len(timing)))
+                            print(f'  ** {i:5d}/{len(batched_tensors)}'
+                                  f' : {timing[-1]:3.3f}s :: {sum(timing)/len(timing):3.3f}s avg')
                             i += 1
                     except tf.errors.OutOfRangeError:
                         break
@@ -138,8 +135,6 @@ class SentenceVectorizer(BaseVectorizer):
                 embeddings.append(self.session.run(basic_batch))
                 if verbose:
                     tm, ts = divmod(time() - t_st, 60)
-                    print('  ** {:5d}/{}'
-                          ' : {:3.3f}s :: {}m{:.1f}s tot'
-                          ''.format(i, len(batched_tensors),
-                                    time() - t_1, int(tm), ts))
+                    print(f'  ** {i:5d}/{len(batched_tensors)}'
+                          f' : {time() - t_1:3.3f}s :: {int(tm)}m{ts:.1f}s tot')
         return embeddings

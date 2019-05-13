@@ -84,30 +84,30 @@ optional arguments:
 Dig-text-similarity-search is designed for very large text corpora (> 1 billion sentence vectors). 
 Faiss indexes that are searchable on-disk are used to achieve this level of scalability. 
 
-Build a small example index from the file `data/example/sample_news_2018-05-11.jl` by running:
+Build a small example index by running:
 ```bash
 #   Arg1: n news.jl files to index
 #   Arg2: path/to/dir/ containing news.jl files (will select most recent date)
 #   Arg3: path/to/save/ on-disk searchable news.index & news.ivfdata
 
-./vectorize_n_small_shards.sh 1 data/example/ data/tmp_idx_files/
+./vectorize_n_small_shards.sh 3 data/example/ data/tmp_idx_files/
 ```
 
 ###### Note: Multi-Batch Vectorization usually uses larger batches of 65,536 sentences (i.e. 16,384 was chosen for illustrative purposes). 
 
 After successfully indexing a `news.jl` file, its path will be recorded in `progress.txt`.
 
-##### Every faiss shard should contain absolute partitions of the sentences within the corpus. Shards with conflicting `faiss_ids` may give incorrect results. 
+Every faiss shard should contain absolute partitions of the sentences within the corpus. Shards with conflicting `faiss_ids` may give incorrect results. 
 
 #### Automated Ingestion:
-Please edit the `Constant working dirs` near the top of `ingest_news.sh` to be suitable for your filesystem. 
+This library can constantly update its searchable indexe shards by running `ingest_news.sh` as a cron job. This script was written with our production system in mind, so please edit the `Constant working dirs` near the top of `ingest_news.sh` to be suitable for your filesystem. 
 
 #### Query vectorization with docker:
 Before running the similarity server, encapsulate the Universal Sentence Encoder in a suitable 
 form for running in a docker container with:
 
 ```bash
-./prep_small_USE.sh
+./prep_small_USE.sh 001 # (Optional) 001 specifies model version number. Highest value will be used
 ```
 
 Then run the container locally through port `8501` for online query vectorization with: 
@@ -116,11 +116,10 @@ Then run the container locally through port `8501` for online query vectorizatio
 ./run_small_USE.sh
 ```
 
-Note: Although it is possible to do so, it is not recommended to use 
-the dockerized model for preprocessing.
+###### Note: Although it is possible to do so, it is not recommended to use the dockerized model for preprocessing.
 
 #### Configuration:
-Configuration instructions for the similarity server can be found in `py_scripys/configs/config.py`
+The main consideration for configuration is the model embedding space. For test purposes, the small USE (DAN) is suitable because of its computational efficiency. For higher quality results, please use the large USE (Transformer) and preprocess the corpus with a GPU. 
 
 #### Similarity Service:
 Run the server with:
@@ -136,10 +135,23 @@ appropriate for testing while in practice a service with numerous large indexes 
 
 Test the server with: 
 ```bash
+# Ensure data exists within date-search-range
+# Maximum date-range is 180 days (truncates oldest)
+
 python py_scripts/service/call_similarity_service.py \
 -q "Do Elon Musk's tweets help Tesla stock?" \
---start_date 2019-03-01 --end_date $(date -I)  # Ensure data exists within date-search-range
+--start_date 2019-03-01 --end_date 2019-03-07   
 ```
 
 The similarity server returns integer vector ids and their difference scores (L2) relative to the query vector. 
-##### Dig-Text-Similarity-Search does not return text.
+
+Ex:
+```bash
+[ 
+  {"doc_id": "123555292", "score": "0.52493644", "sentence_id": "1235552920002"}, 
+  {"doc_id": "123555296", "score": "0.54516137", "sentence_id": "1235552960000"}, 
+  {"doc_id": "123608930", "score": "0.5835233", "sentence_id": "1236089300011"} 
+]
+```
+
+#### Final Note: Dig-Text-Similarity-Search does not return text.

@@ -47,7 +47,7 @@ opts = arp.parse_args()
 # </editor-fold>
 
 if opts.num_threads:
-    print('\nRestricting numpy to {} thread(s)\n'.format(opts.num_threads))
+    print(f'\nRestricting numpy to {opts.num_threads} thread(s)\n')
     os.environ['OPENBLAS_NUM_THREADS'] = opts.num_threads
     os.environ['NUMEXPR_NUM_THREADS'] = opts.num_threads
     os.environ['MKL_NUM_THREADS'] = opts.num_threads
@@ -77,27 +77,25 @@ candidates = cp.candidate_files(prepped_news, raw_news, verbose=opts.verbose)
 file_to_process = candidates[:1]   # Preprocesses one news.jl per call
 
 
-def main(raw_jl,
-         input_dir: str = opts.input_dir, output_dir: str = opts.output_dir,
+def main(raw_jl, output_dir: str = opts.output_dir,
          m_per_batch: int = opts.m_per_batch, n_per_minibatch: int = opts.n_per_minibatch,
          no_delete: bool = opts.no_delete, verbose: bool = opts.verbose,
          add_shard: bool = opts.add_shard, url: str = opts.url):
 
-    subidx_dir, shard_date = cp.init_paths(raw_jl, input_dir)
+    subidx_dir, shard_date = cp.init_paths(raw_jl)
     if verbose:
-        print('Will process: {}\n'.format(raw_jl))
+        print(f'Will process: {raw_jl}\n')
 
     # Check File Content
     if verbose:
-        print('\nReading file: {}'.format(raw_jl))
+        print(f'\nReading file: {raw_jl}')
 
     jl_stats = check_all_docs(raw_jl, batch_size=m_per_batch)
     (doc_count, line_count, junk, n_batches) = jl_stats
     if verbose:
-        print('* Found {} good documents with {} total sentences\n'
-              '* Will skip {} junk documents\n'
-              '* Processing {} batches\n'
-              ''.format(doc_count, line_count, junk, n_batches))
+        print(f'* Found {doc_count} good documents with {line_count} total sentences\n'
+              f'* Will skip {junk} junk documents\n'
+              f'* Processing {n_batches} batches\n')
 
     # Preprocess
     t_start = time()
@@ -105,14 +103,13 @@ def main(raw_jl,
     for i, (batched_sents, batched_ids) in enumerate(doc_batch_gen):
         t_0 = time()
         if verbose:
-            print('  Starting doc batch:  {:3d}'.format(i+1))
+            print(f'  Starting doc batch:  {i+1:3d}')
 
-        subidx = str(raw_jl.split('/')[-1]).replace('.jl', '_{:03d}_sub.index'.format(i))
+        subidx = str(raw_jl.split('/')[-1]).replace('.jl', f'_{i:03d}_sub.index')
         subidx_path = p.join(subidx_dir, subidx)
 
         if p.exists(subidx_path):
-            print('  File exists: {} \n'
-                  '  Skipping...  '.format(subidx_path))
+            print(f'  File exists: {subidx_path} \n Skipping...  ')
             cp.index_builder.include_subidx_path(subidx_path)
         else:
             # Vectorize
@@ -122,33 +119,32 @@ def main(raw_jl,
             )
             t_vect = time()
             if verbose:
-                print('  * Vectorized in {:6.2f}s'.format(t_vect - t_0))
+                print(f'  * Vectorized in {t_vect - t_0:6.2f}s')
 
             # Make faiss subindex
             subidx_path = check_unique(subidx_path)
             cp.index_builder.generate_subindex(subidx_path, emb_batch, id_batch)
             t_subidx = time()
             if verbose:
-                print('  * Subindexed in {:6.2f}s'.format(t_subidx - t_vect))
+                print(f'  * Subindexed in {t_subidx - t_vect:6.2f}s')
 
             # Clear graph
             del emb_batch, batched_sents, id_batch
             cp.vectorizer.close_session()
             t_reset = time()
             if verbose:
-                print('  * Cleared TF in {:6.2f}s'.format(t_reset - t_subidx))
+                print(f'  * Cleared TF in {t_reset - t_subidx:6.2f}s')
 
             # Restart TF session if necessary
             if i < n_batches - 1:
                 cp.vectorizer.start_session()
                 if verbose:
-                    print('  * Started TF in {:6.2f}s'.format(time() - t_reset))
+                    print(f'  * Started TF in {time() - t_reset:6.2f}s')
 
         if verbose:
             mp, sp = divmod(time() - t_start, 60)
-            print('  Completed doc batch: {:3d}/{}      '
-                  '  Total time passed: {:3d}m{:0.2f}s\n'
-                  ''.format(i+1, n_batches, int(mp), sp))
+            print(f'  Completed doc batch: {i+1:3d}/{n_batches}      '
+                  f'  Total time passed: {int(mp):3d}m{sp:0.2f}s\n')
 
     # Merge
     # TODO: Title indexes
@@ -160,7 +156,7 @@ def main(raw_jl,
     merged_ivfdata_path = p.join(output_dir, merged_ivfdata_path)
     merged_ivfdata_path = check_unique(merged_ivfdata_path)
     if verbose:
-        print('\n  Merging {} on-disk'.format(merged_index_path.split('/')[-1]))
+        print(f'\n  Merging {merged_index_path.split("/")[-1]} on-disk')
 
     assert cp.index_builder.index_path_clear(merged_index_path)
     assert cp.index_builder.index_path_clear(merged_ivfdata_path, '.ivfdata')
@@ -170,8 +166,7 @@ def main(raw_jl,
 
     if verbose:
         mm, sm = divmod(time() - t_merge, 60)
-        print('  Merged subindexes ({} vectors) in: {:3d}m{:0.2f}s'
-              ''.format(n_vect, int(mm), sm))
+        print(f'  Merged subindexes ({n_vect} vectors) in: {int(mm):3d}m{sm:0.2f}s')
 
     # Record progress
     cp.record_progress(raw_jl)
@@ -189,7 +184,7 @@ def main(raw_jl,
             r = requests.put(url, params=payload)
             print(r.text)
         except Exception as e:
-            print('Shard was not added because an exception occurred: {}'.format(e))
+            print(f'Shard was not added because an exception occurred: {e}')
 
 
 if __name__ == '__main__':

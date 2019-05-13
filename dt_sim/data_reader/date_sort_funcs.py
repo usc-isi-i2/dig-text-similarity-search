@@ -6,12 +6,15 @@ import gzip
 from time import time
 from pathlib import Path
 from datetime import date
-from typing import Dict
+from typing import Dict, Union
 
 __all__ = ['pub_date_split', 'gz_date_split', 'gz_date_count']
 
 
-def pub_date_split(input_file: str, output_dir: str,
+PublicationCounts = Dict[str, Dict[str, int]]
+
+
+def pub_date_split(input_file: Union[str, Path], output_dir: Union[str, Path],
                    cutoff_date: str = '0000-00-00',
                    ingest_date: str = str(date.today())):
     """
@@ -68,7 +71,7 @@ def pub_date_split(input_file: str, output_dir: str,
           f'({100*new/(new+old+err+dateless):0.1f}% published since {cutoff_date})')
 
 
-def gz_date_split(input_file: Path, output_dir: Path,
+def gz_date_split(input_file: Union[str, Path], output_dir: Union[str, Path],
                   first_date: str = '0000-00-00', final_date: str = '9999-99-99'):
     """
     Sorts articles by publication date.
@@ -88,7 +91,8 @@ def gz_date_split(input_file: Path, output_dir: Path,
         gc.collect()
 
     assert p.isfile(input_file), f'File not found: {input_file}'
-    assert '.jl' in input_file, f'Incorrect file format: {input_file}'
+    assert '.jl' in input_file, f'Incorrect file format: {input_file}. ' \
+        f'Input file must be a json lines file (.jl)'
 
     old_news_dir = Path(output_dir)/'old_news'
     date_error_dir = Path(output_dir)/'date_error'
@@ -145,7 +149,7 @@ def gz_date_split(input_file: Path, output_dir: Path,
           f'({100*new/(new+old+err+dateless):0.1f}% published since {first_date})')
 
 
-def gz_date_count(input_file: Path) -> Dict[str, Dict[str, int]]:
+def gz_date_count(input_file: Union[str, Path]) -> PublicationCounts:
 
     if str(input_file).endswith('.gz'):
         srcf = gzip.open(input_file, 'r')

@@ -2,6 +2,7 @@ import os
 import os.path as p
 import re
 from time import time
+from pathlib import Path
 from typing import List, Union
 
 import numpy as np
@@ -13,13 +14,13 @@ from dt_sim.indexer.base_indexer import BaseIndexer
 __all__ = ['OnDiskIVFBuilder']
 
 
-class OnDiskIVFBuilder(object):
+class OnDiskIVFBuilder:
     """
     For building IVF indexes that do not fit in memory (searched on-disk).
     Building an on-disk index requires an empty, pre-trained base index.
     """
 
-    def __init__(self, path_to_base_index: str):
+    def __init__(self, path_to_base_index: Union[str, Path]):
         self.path_to_base_index = p.abspath(path_to_base_index)
         self.subindex_path_totals = dict()
 
@@ -60,7 +61,7 @@ class OnDiskIVFBuilder(object):
         while len(moving_indexes):
             index_path = moving_indexes.pop()
             # Note: This will fail if any paths have a second ISO-date
-            check_date = re.search(ISO_seed, index_path).group()
+            check_date = re.search(ISO_seed, str(index_path)).group()
 
             group = list()
             group.append(index_path)
@@ -102,14 +103,14 @@ class OnDiskIVFBuilder(object):
 
         # Delete intermediate files that were zipped into
         for tmp_idx in stale_files:
-            os.remove(tmp_idx)
-            os.remove(tmp_idx.replace('.index', '.ivfdata'))
+            os.remove(str(tmp_idx))
+            os.remove(str(tmp_idx).replace('.index', '.ivfdata'))
 
         # Optionally delete daily indexes
         if 'y' in input('\nDelete newly vectorized daily indexes? [y/N]: ').lower():
             for tmp_idx in optional_del:
-                os.remove(tmp_idx)
-                os.remove(tmp_idx.replace('.index', '.ivfdata'))
+                os.remove(str(tmp_idx))
+                os.remove(str(tmp_idx).replace('.index', '.ivfdata'))
 
         return 1
 
@@ -141,12 +142,13 @@ class OnDiskIVFBuilder(object):
         for idx in moving_indexes:
             n_vect += self.mv_index_and_ivfdata(
                 index_path=idx,
-                ivfdata_path=idx.replace('.index', '.ivfdata'),
+                ivfdata_path=str(idx).replace('.index', '.ivfdata'),
                 to_dir=to_dir, mkdir=mkdir, only_cp=only_cp
             )
         return n_vect
 
-    def mv_index_and_ivfdata(self, index_path: str, ivfdata_path: str, to_dir: str,
+    def mv_index_and_ivfdata(self, index_path: Union[str, Path],
+                             ivfdata_path: Union[str, Path], to_dir: Union[str, Path],
                              mkdir: bool = False, only_cp: bool = False) -> int:
         """
         This function moves a specific on-disk faiss.index and its
@@ -196,8 +198,8 @@ class OnDiskIVFBuilder(object):
                   f' * {to_dir} exists: {p.isdir(to_dir)} \n'
                   f' * mkdir: {mkdir} \n * only_cp: {only_cp} \n')
 
-    def merge_IVFs(self, index_path: str, ivfdata_path: str,
-                   ivfindex_paths: List[str] = None) -> int:
+    def merge_IVFs(self, index_path: Union[str, Path], ivfdata_path: Union[str, Path],
+                   ivfindex_paths: List[Union[str, Path]] = None) -> int:
         """
         An on-disk index must be built from existing subindexes. The
         inverted file list (IVF) from each subindex is merged into one
@@ -246,7 +248,7 @@ class OnDiskIVFBuilder(object):
 
     @staticmethod
     def index_embs_and_ids(index: faiss.Index,
-                           embeddings: np.array, faiss_ids: np.array) -> object:
+                           embeddings: np.array, faiss_ids: np.array) -> faiss.Index:
         assert embeddings.shape[0] == faiss_ids.shape[0], \
             f'Found {embeddings.shape[0]} embeddings ' \
             f'and {faiss_ids.shape[0]} faiss_ids'
@@ -272,7 +274,7 @@ class OnDiskIVFBuilder(object):
             n_vectors += n_vect
         print(f' {len(self.subindex_path_totals)} subindexes ({n_vectors} vectors)')
 
-    def load_base_idx(self) -> object:
+    def load_base_idx(self) -> faiss.Index:
         base_index = faiss.read_index(self.path_to_base_index)
         if base_index.is_trained and base_index.ntotal == 0:
             return base_index
@@ -348,7 +350,7 @@ class OnDiskIVFBuilder(object):
         return n_vect
 
     @staticmethod
-    def find_indexes(check_dir: str, recursive: bool = False) -> List[str]:
+    def find_indexes(check_dir: str, recursive: bool = False) -> List[Path]:
         return BaseIndexer.get_index_paths(check_dir, recursive=recursive)
 
     @staticmethod

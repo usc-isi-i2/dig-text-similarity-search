@@ -32,7 +32,7 @@ opts = arp.parse_args()
 # </editor-fold>
 
 if opts.num_threads:
-    print('\nRestricting numpy to {} thread(s)\n'.format(opts.num_threads))
+    print(f'\nRestricting numpy to {opts.num_threads} thread(s)\n')
     os.environ['OPENBLAS_NUM_THREADS'] = opts.num_threads
     os.environ['NUMEXPR_NUM_THREADS'] = opts.num_threads
     os.environ['MKL_NUM_THREADS'] = opts.num_threads
@@ -54,7 +54,7 @@ def main():
     # Paths
     input_file = opts.input_file
     if opts.report:
-        print('Will process: {}\n'.format(input_file))
+        print(f'Will process: {input_file}\n')
 
     date_today = str(datetime.date.today())
     if date_today in input_file:
@@ -77,16 +77,15 @@ def main():
 
     # Check File Content
     if opts.report:
-        print('\nReading file: {}'.format(input_file))
+        print(f'\nReading file: {input_file}')
 
     line_counts = check_training_docs(input_file, batch_size=opts.m_per_batch)
     (doc_count, line_count, good_sents, junk, n_batches, n_good_batches) = line_counts
     if opts.report:
-        print('* Found {} good documents with {} lines and {} good sentences\n'
-              '* Will skip {} junk documents\n'
-              '* Processing {}:{} batches\n'
-              ''.format(doc_count, line_count, good_sents,
-                        junk, n_good_batches, n_batches))
+        print(f'* Found {doc_count} good documents with {line_count} lines '
+              f'and {good_sents} good sentences\n'
+              f'* Will skip {junk} junk documents\n'
+              f'* Processing {n_good_batches}:{n_batches} batches\n')
 
     # Make Training Vectors
     t_start = time()
@@ -94,14 +93,13 @@ def main():
     for i, (batched_sents, batched_ids) in enumerate(doc_batch_gen, start=1):
         t_0 = time()
         if opts.report:
-            print('  Starting doc batch:  {:3d}'.format(i))
+            print(f'  Starting doc batch:  {i:3d}')
 
-        npz = str(input_file.split('/')[-1]).replace('.jl', '_{:03d}_train.npz'.format(i))
+        npz = str(input_file.split('/')[-1]).replace('.jl', f'_{i:03d}_train.npz')
         npz_path = p.join(daily_dir, npz)
 
         if p.exists(npz_path):
-            print('  File exists: {} \n'
-                  '  Skipping...  '.format(npz_path))
+            print(f'  File exists: {npz_path} \n Skipping...  ')
         else:
             # Vectorize
             emb_batch, id_batch = cp.batch_vectorize(
@@ -110,7 +108,7 @@ def main():
             )
             t_vect = time()
             if opts.report:
-                print('  * Vectorized in {:6.2f}s'.format(t_vect - t_0))
+                print(f'  * Vectorized in {t_vect - t_0:6.2f}s')
 
             # Save .npz for later
             npz_path = check_unique(npz_path)
@@ -118,30 +116,29 @@ def main():
                           sentences=batched_sents, compressed=False)
             t_npz = time()
             if opts.report:
-                print('  * Saved .npz in {:6.2f}s'.format(t_npz - t_vect))
+                print(f'  * Saved .npz in {t_npz - t_vect:6.2f}s')
 
             # Clear graph
             del emb_batch, id_batch, batched_sents, batched_ids
             cp.vectorizer.close_session()
             t_reset = time()
             if opts.report:
-                print('  * Cleared TF in {:6.2f}s'.format(t_reset - t_npz))
+                print(f'  * Cleared TF in {t_reset - t_npz:6.2f}s')
 
             # Restart TF session if necessary
             if i < n_batches:
                 cp.vectorizer.start_session()
                 if opts.report:
-                    print('  * Started TF in {:6.2f}s'.format(time() - t_reset))
+                    print(f'  * Started TF in {time() - t_reset:6.2f}s')
 
             if opts.report:
                 mp, sp = divmod(time() - t_start, 60)
-                print('  Completed doc batch: {:3d}/{}      '
-                      '  Total time passed: {:3d}m{:0.2f}s\n'
-                      ''.format(i, n_good_batches, int(mp), sp))
+                print(f'  Completed doc batch: {i:3d}/{n_good_batches}      '
+                      f'  Total time passed: {int(mp):3d}m{sp:0.2f}s\n')
 
 
 if __name__ == '__main__':
     if p.isfile(opts.input_file):
         main()
     else:
-        print('File not found: {}'.format(opts.input_file))
+        print(f'File not found: {opts.input_file}')

@@ -9,9 +9,8 @@ os.environ['OMP_WAIT_POLICY'] = 'PASSIVE'
 
 import numpy as np
 
-from dt_sim.faiss_cache import faiss_cache
+from dt_sim.indexer.faiss_cache import faiss_cache
 from .base_processor import BaseProcessor, QueryReturn
-from dt_sim.vectorizer.sentence_vectorizer import DockerVectorizer
 
 __all__ = ['QueryProcessor']
 
@@ -69,9 +68,9 @@ class QueryProcessor(BaseProcessor):
 
         t_r = time()
         if verbose:
-            print('  Query vectorized in --- {:0.4f}s'.format(t_s - t_v))
-            print('  Index searched in ----- {:0.4f}s'.format(t_p - t_s))
-            print('  Payload formatted in -- {:0.4f}s'.format(t_r - t_p))
+            print(f'  Query vectorized in --- {t_s - t_v:0.4f}s')
+            print(f'  Index searched in ----- {t_p - t_s:0.4f}s')
+            print(f'  Payload formatted in -- {t_r - t_p:0.4f}s')
 
         return similar_docs[:k]
 
@@ -199,16 +198,16 @@ class QueryProcessor(BaseProcessor):
                 lines = traceback.format_exception(exc_type, exc_val, exc_trace)
                 print(''.join(lines))
                 print(e)
-                print('Could not add shard: {}'.format(shard_path))
+                print(f'Could not add shard: {shard_path}')
         elif not os.path.isfile(shard_path):
-            print('Error: Path does not specify a file: {}'.format(shard_path))
+            print(f'Error: Path does not specify a file: {shard_path}')
         elif not shard_path.endswith('.index'):
-            print('Error: Path does not lead to .index: {}'.format(shard_path))
+            print(f'Error: Path does not lead to .index: {shard_path}')
         else:
-            print('Error: Unexpected input: {}'.format(shard_path))
+            print(f'Error: Unexpected input: {shard_path}')
 
     def print_shards(self):
         n_shards = len(self.indexer.paths_to_shards)
-        print('Faiss Index Shards Deployed: {}'.format(n_shards))
+        print(f'Faiss Index Shards Deployed: {n_shards}')
         for i, shard_path in enumerate(self.indexer.paths_to_shards, start=1):
-            print(' {:3d}/{}: {}'.format(i, n_shards, shard_path))
+            print(f' {i:3d}/{n_shards}: {shard_path}')

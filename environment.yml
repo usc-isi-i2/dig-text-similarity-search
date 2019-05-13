@@ -6,6 +6,7 @@ channels:
 dependencies:
   - python=3.6
   - faiss-cpu=1.5.1
+  - pip>=19.1.1
   - pip:
     - numpy
     - tensorflow
@@ -18,6 +19,7 @@ dependencies:
     - pandas
     - ipykernel
     - jupyter
+    - jupyterlab
     - dash==0.27.0
     - dash-html-components==0.12.0
     - dash-core-components==0.28.0 

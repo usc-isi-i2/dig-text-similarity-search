@@ -42,7 +42,7 @@ class DeployShards(BaseIndexer):
 
     @staticmethod
     def load_shard(path_to_shard: Union[str, Path], nprobe: int = 4):
-        shard = faiss.read_index(path_to_shard)
+        shard = faiss.read_index(path_to_shard, faiss.IO_FLAG_ONDISK_SAME_DIR)
         shard.nprobe = nprobe
         return shard
 
@@ -66,7 +66,7 @@ class Shard(Process):
         self.daemon = daemon
 
         self.input = input_pipe
-        self.index = faiss.read_index(shard_path)
+        self.index = faiss.read_index(shard_path, faiss.IO_FLAG_ONDISK_SAME_DIR)
         self.index.nprobe = nprobe
         self.output = output_queue
 
@@ -148,9 +148,9 @@ class RangeShards(BaseIndexer):
         return self.joint_sort([D], [I])
 
     def load_shard(self, shard_path: Union[str, Path]):
-        shard_name = shard_path.replace('.index', '')
+        shard_name = str(shard_path).replace('.index', '')
         shard_pipe, handler_pipe = Pipe(False)
-        shard = Shard(shard_name, shard_path,
+        shard = Shard(shard_name, str(shard_path),
                       input_pipe=shard_pipe, output_queue=self.results,
                       nprobe=self.nprobe, daemon=False)
         self.shards[shard_name] = (handler_pipe, shard)
@@ -159,7 +159,7 @@ class RangeShards(BaseIndexer):
         # Lock search while deploying a new shard
         self.lock = True
 
-        shard_name = new_shard_path.replace('.index', '')
+        shard_name = str(new_shard_path).replace('.index', '')
         if new_shard_path in self.paths_to_shards or \
                 shard_name in self.shards:
             print('WARNING: This shard is already online \n'

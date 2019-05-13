@@ -145,4 +145,13 @@ python py_scripts/service/call_similarity_service.py \
 
 The similarity server returns integer vector ids and their difference scores (L2) relative to the query vector. 
 
+Ex:
+```bash
+[ 
+  {"doc_id": "123555292", "score": "0.52493644", "sentence_id": "1235552920002"}, 
+  {"doc_id": "123555296", "score": "0.54516137", "sentence_id": "1235552960000"}, 
+  {"doc_id": "123608930", "score": "0.5835233", "sentence_id": "1236089300011"} 
+]
+```
+
 #### Final Note: Dig-Text-Similarity-Search does not return text.

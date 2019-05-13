@@ -19,6 +19,7 @@ dependencies:
     - pandas
     - ipykernel
     - jupyter
+    - jupyterlab
     - dash==0.27.0
     - dash-html-components==0.12.0
     - dash-core-components==0.28.0 

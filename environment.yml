@@ -6,6 +6,7 @@ channels:
 dependencies:
   - python=3.6
   - faiss-cpu=1.5.1
+  - pip>=19.1.1
   - pip:
     - numpy
     - tensorflow

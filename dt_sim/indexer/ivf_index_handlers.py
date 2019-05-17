@@ -113,7 +113,7 @@ class RangeShards(BaseIndexer):
             shard.start()
             self.n_shards += 1
 
-    @faiss_cache(64)
+    @faiss_cache(256)
     def search(self, query_vector: np.array, k: int, radius: float = 0.65,
                start: str = '0000-00-00', end: str = '9999-99-99'
                ) -> FaissSearch:
@@ -141,7 +141,7 @@ class RangeShards(BaseIndexer):
         D, I = list(), list()
         while n_results > 0 or not self.results.empty():
             dd, ii = self.results.get()
-            D.extend(dd), I.extend(ii)
+            D.extend(dd[:k]), I.extend(ii[:k])
             n_results -= 1
 
         self.lock = False

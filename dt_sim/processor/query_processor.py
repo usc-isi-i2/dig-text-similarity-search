@@ -29,8 +29,9 @@ class QueryProcessor(BaseProcessor):
         super().__init__()
         self.indexer = index_handler
         self.vectorizer = query_vectorizer
+        self.n_queries = 0
 
-    @faiss_cache(32)
+    @faiss_cache(1)
     def query_corpus(self, query_str: str, k: int = 5, radius: float = 0.65,
                      start: str = '0000-00-00', end: str = '9999-99-99',
                      rerank_by_doc: bool = True, verbose: bool = True
@@ -67,10 +68,12 @@ class QueryProcessor(BaseProcessor):
             similar_docs = self.format_payload_singles(doc_hits)
 
         t_r = time()
+        self.n_queries += 1
         if verbose:
-            print(f'  Query vectorized in --- {t_s - t_v:0.4f}s')
-            print(f'  Index searched in ----- {t_p - t_s:0.4f}s')
-            print(f'  Payload formatted in -- {t_r - t_p:0.4f}s')
+            print(f' Q: {self.n_queries} \n'
+                  f' * Query vectorized in --- {t_s - t_v:0.4f}s \n' 
+                  f' * Index searched in ----- {t_p - t_s:0.4f}s \n'
+                  f' * Payload formatted in -- {t_r - t_p:0.4f}s \n')
 
         return similar_docs[:k]
 

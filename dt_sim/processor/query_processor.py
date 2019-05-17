@@ -70,10 +70,10 @@ class QueryProcessor(BaseProcessor):
         t_r = time()
         self.n_queries += 1
         if verbose:
-            print(f' Q: {self.n_queries} \n'
-                  f' * Query vectorized in --- {t_s - t_v:0.4f}s \n' 
-                  f' * Index searched in ----- {t_p - t_s:0.4f}s \n'
-                  f' * Payload formatted in -- {t_r - t_p:0.4f}s \n')
+            print(f'\n Q: {self.n_queries}'
+                  f'\n * Query vectorized in --- {t_s - t_v:0.4f}s' 
+                  f'\n * Index searched in ----- {t_p - t_s:0.4f}s'
+                  f'\n * Payload formatted in -- {t_r - t_p:0.4f}s')
 
         return similar_docs[:k]
 

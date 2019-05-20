@@ -217,7 +217,7 @@ class OnDiskIVFBuilder:
         if not ivfindex_paths:
             ivfindex_paths = list(self.subindex_path_totals.keys())
         for subindex_path in ivfindex_paths:
-            index = faiss.read_index(subindex_path, faiss.IO_FLAG_MMAP)
+            index = faiss.read_index(p.abspath(subindex_path), faiss.IO_FLAG_MMAP)
             ivfs.append(index.invlists)
             index.own_invlists = False  # Prevents de-allocation
             del index
@@ -261,8 +261,8 @@ class OnDiskIVFBuilder:
         if isinstance(paths_to_add, str):
             paths_to_add = [paths_to_add]
         for subidx_path in paths_to_add:
-            if p.isfile(subidx_path) and subidx_path.endswith('.index'):
-                n_vect = faiss.read_index(subidx_path).ntotal
+            if p.isfile(subidx_path) and str(subidx_path).endswith('.index'):
+                n_vect = faiss.read_index(p.abspath(subidx_path)).ntotal
                 self.subindex_path_totals[subidx_path] = n_vect
             else:
                 print(f'Unable to add index: {subidx_path}')
@@ -287,7 +287,6 @@ class OnDiskIVFBuilder:
                          npz_dir: str = None, n_tr_vectors: int = 1000000,
                          idx_type: str = 'IVF', compression: str = 'Flat',
                          dim: int = 512, base_index_path: str = None):
-        # TODO: Docstring
         if not base_index_path:
             base_index_path = self.path_to_base_index
         assert self.index_path_clear(base_index_path)
@@ -319,7 +318,6 @@ class OnDiskIVFBuilder:
         print(' Saving trained base index...')
         faiss.write_index(index, save_path)
         print(f' Index saved as {save_path}')
-        # TODO: index_metadata.txt
 
     @staticmethod
     def get_vector_count(index_dir: str,
@@ -343,7 +341,7 @@ class OnDiskIVFBuilder:
                     check_date = re.search(ISO_seed, index_path).group()
                     # Dates are inclusive
                     if start_date <= check_date <= end_date:
-                        n_vect += faiss.read_index(index_path).ntotal
+                        n_vect += faiss.read_index(p.abspath(index_path)).ntotal
             if not recursive:
                 break
 

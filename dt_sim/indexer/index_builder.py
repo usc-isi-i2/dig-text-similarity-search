@@ -66,12 +66,12 @@ class OnDiskIVFBuilder:
             group = list()
             group.append(index_path)
             for idx_path in moving_indexes:
-                if check_date in idx_path:
+                if check_date in str(idx_path):
                     group.append(idx_path)
                     moving_indexes.pop(moving_indexes.index(idx_path))
             # Skips rewriting an existing index if nothing will zip into it
             for idx_path in current_indexes:
-                if check_date in idx_path:
+                if check_date in str(idx_path):
                     group.append(idx_path)
                     stale_files.append(idx_path)
             moving_groups[check_date] = group

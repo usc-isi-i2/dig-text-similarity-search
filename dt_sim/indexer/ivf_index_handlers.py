@@ -42,7 +42,10 @@ class DeployShards(BaseIndexer):
 
     @staticmethod
     def load_shard(path_to_shard: Union[str, Path], nprobe: int = 4):
-        shard = faiss.read_index(path_to_shard, faiss.IO_FLAG_ONDISK_SAME_DIR)
+        try:
+            shard = faiss.read_index(path_to_shard)
+        except RuntimeError:
+            shard = faiss.read_index(path_to_shard, faiss.IO_FLAG_ONDISK_SAME_DIR)
         shard.nprobe = nprobe
         return shard
 
@@ -65,9 +68,12 @@ class Shard(Process):
         super().__init__(name=shard_name)
         self.daemon = daemon
 
-        self.input = input_pipe
-        self.index = faiss.read_index(shard_path, faiss.IO_FLAG_ONDISK_SAME_DIR)
+        try:
+            self.index = faiss.read_index(shard_path)
+        except RuntimeError:
+            self.index = faiss.read_index(shard_path, faiss.IO_FLAG_ONDISK_SAME_DIR)
         self.index.nprobe = nprobe
+        self.input = input_pipe
         self.output = output_queue
 
     def run(self):

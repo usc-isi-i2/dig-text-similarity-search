@@ -87,16 +87,10 @@ done
 kill -15 $(ps -ef | grep "[s]imilarity_server" | awk '{print $2}'); sleep 1;
 python -u "${SERVICE}similarity_server.py" "$TMP_IDXS" -l -c 6 &
 
-# Get indexes before merge
-cd "$MAIN_IDXS"; BEFORE=(*.i*); cd -; printf "Before: %s\n" "${BEFORE[@]}"
-
 # Zip-merge into main indexes
 # Note: echo "n" prevents deleting new indexes before second zip
 echo "n" | python -u "${PREPROC}consolidate_shards.py" \
 "$DAILY_IDXS" "$MAIN_IDXS" --zip -p "zip_to_${MM}${DD}" -t 2;
-
-# Get indexes after merge
-cd "$MAIN_IDXS"; AFTER=(*.i*); cd -; printf "After:  %s\n" "${AFTER[@]}"
 
 # Switch back to main service
 LOG_FILE="/faiss/dig-text-similarity-search/logs/service/deploy_${MM}${DD}.out"
@@ -112,26 +106,8 @@ echo "y" | python -u "${PREPROC}consolidate_shards.py" \
 
 ## Save backups to S3
 echo "
-Saving new shards to s3..."
-
-# If item from AFTER not in BEFORE --> upload
-B4=" ${BEFORE[*]} "
-for item in ${AFTER[@]}; do
-    if [[ ! $B4 =~ " $item " ]]; then
-        printf "\n * $item not found in BEFORE :: backing up to s3... \n"
-        aws s3 cp "${MAIN_IDXS}${item}" s3://lexisnexis-news-incremental"${MAIN_IDXS}${item}";
-    fi
-done
-
-# If item from BEFORE not in AFTER --> delete
-AF7=" ${AFTER[*]} "
-for item in ${BEFORE[@]}; do
-    if [[ ! $AF7 =~ " $item " ]]; then
-        printf "\n * $item not found in AFTER :: attempting to remove from s3... \n"
-        aws s3 rm s3://lexisnexis-news-incremental"${MAIN_IDXS}${item}";
-    fi
-done
-
+Syncing s3..."
+aws s3 sync "${MAIN_IDXS}" s3://lexisnexis-news-incremental"${MAIN_IDXS}" --delete
 
 
 ## Cleanup

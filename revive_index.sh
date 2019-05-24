@@ -21,17 +21,13 @@ read -p "Continue sync? [y/N]" -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     cd "$MAIN_IDXS"
-    aws s3 sync s3://lexisnexis-news-incremental/"$MAIN_IDXS" .
+    aws s3 sync s3://lexisnexis-news-incremental"$MAIN_IDXS" .
 else
     exit 1
 fi
 
 # cd TMP and remove existing indexes
 cd "$TMP_IDXS" && rm *.i*
-ACTIVATE="/home/ubuntu/anaconda3/bin/activate"
-. "$ACTIVATE" dig_text_similarity
 
-# Prepare TMP Indexes
-DT_SIM="/faiss/dig-text-similarity-search/"
-python -u "${DT_SIM}py_scripts/preprocessing/consolidate_shards.py" \
-"$MAIN_IDXS" "$TMP_IDXS" -c -t 2        # Copy, N-Threads 2
+# Copy existing indexes
+cp "$MAIN_IDXS"*.i* .
